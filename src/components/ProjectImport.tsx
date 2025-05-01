@@ -8,7 +8,6 @@ import { Project, Task } from "@/types/project";
 import { toast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, X, Save } from "lucide-react";
 import Icon from "@/components/ui/icon";
 
 interface ProjectImportProps {

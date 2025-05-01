@@ -53,6 +53,7 @@ const ProjectList = ({
     return new Date(dateString).toLocaleDateString();
   };
 
+
   const getAssignedUserName = (assignedTo: string | string[] | null | undefined) => {
     if (!assignedTo) return "—";
     
@@ -67,6 +68,7 @@ const ProjectList = ({
     const user = users?.find(u => u.id === assignedTo);
     return user ? user.username : assignedTo;
   };
+
 
   const handleProjectUpdate = (updatedProject: Project) => {
     if (onUpdateProject) {

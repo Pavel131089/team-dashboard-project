@@ -39,29 +39,24 @@ const Employee = () => {
       
       allProjects.forEach(project => {
 
-  // Обновление задачи
-  const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
-    const updatedProjects = projects.map(project => {
-      if (project.id === projectId) {
-        // Задача в текущем проекте
-        const updatedTasks = project.tasks.map(task => 
-          task.id === updatedTask.id ? updatedTask : task
-        );
-        
-        return {
-          ...project,
-          tasks: updatedTasks,
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return project;
-    });
-    
-    setProjects(updatedProjects);
-    localStorage.setItem("projects", JSON.stringify(updatedProjects));
-  };
+        project.tasks.forEach(task => {
+          if (task.assignedTo && (
+            Array.isArray(task.assignedTo) 
+              ? task.assignedTo.includes(userData.id)
+              : task.assignedTo === userData.id
+          )) {
+            employeeTasks.push({
+              project,
+              task
+            });
+          }
+        });
+      });
+      
+      setMyTasks(employeeTasks);
+    }
+  }, [navigate]);
 
-  };
 
   const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
     const updatedProjects = projects.map(project => {

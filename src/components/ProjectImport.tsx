@@ -187,6 +187,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     return result;
   };
 
+
   const handleImport = async () => {
     if (!file) {
       setError('Выберите файл для импорта');
@@ -220,7 +221,6 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
       } else {
         throw new Error('Неподдерживаемый формат файла. Используйте .csv');
       }
-      }
 
       // Создаем проект
       const newProject: Project = {
@@ -246,6 +246,8 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     } finally {
       setIsImporting(false);
     }
+  };
+
   };
 
   return (

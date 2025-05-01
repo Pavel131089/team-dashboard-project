@@ -332,6 +332,9 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
                     <label
                       htmlFor="excelFileUpload"
                       className="relative cursor-pointer text-primary underline"
+                    >Выберите Excel файл</label> или перетащите его сюда
+                  </div>
+
                     >
                       <span>Выберите Excel файл</span>
                     </label>{' '}

@@ -110,22 +110,30 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
         </div>
         
         <div>
-          <Label htmlFor="assignedToNames">Исполнители (через запятую)</Label>
-          <Input
-            id="assignedToNames"
-            name="assignedToNames"
-            value={assigneeInput}
-            onChange={handleInputChange}
-            placeholder="Имена исполнителей"
-          />
-        </div>
-        
-        <div className="md:col-span-2">
-          <Label htmlFor="description">Описание</Label>
-          <Textarea
-            id="description"
-            name="description"
-            value={newTask.description}
+
+  const handleTaskUpdate = (taskId: string, updates: Partial<Task>) => {
+    const updatedTasks = project.tasks.map(task => {
+      if (task.id === taskId) {
+        return { ...task, ...updates };
+      }
+      return task;
+    });
+    
+    const updatedProject = { ...project, tasks: updatedTasks };
+    onProjectUpdate(updatedProject);
+  };
+  
+  const handleTaskDelete = (taskId: string) => {
+    const updatedTasks = project.tasks.filter(task => task.id !== taskId);
+    const updatedProject = { ...project, tasks: updatedTasks };
+    onProjectUpdate(updatedProject);
+    setShowAddTask(false);
+    toast({
+      title: "Задача удалена",
+      description: "Задача была успешно удалена из проекта"
+    });
+  };
+
             onChange={handleInputChange}
             placeholder="Описание задачи"
             rows={3}

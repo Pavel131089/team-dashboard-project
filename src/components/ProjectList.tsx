@@ -42,11 +42,22 @@ const ProjectList = ({
   users = []
 }: ProjectListProps) => {
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
-  
+
   const getProgressColor = (progress: number) => {
     if (progress < 30) return "bg-red-500";
     if (progress < 70) return "bg-yellow-500";
     return "bg-green-500";
+  };
+  
+  const handleDeleteProject = (projectId: string) => {
+    const updatedProjects = projects.filter(p => p.id !== projectId);
+    if (onProjectsUpdated) {
+      onProjectsUpdated(updatedProjects);
+      toast({
+        title: "Проект удален",
+        description: "Проект и все его задачи были успешно удалены"
+      });
+    }
   };
 
   const formatDate = (dateString: string | null) => {

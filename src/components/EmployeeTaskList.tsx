@@ -17,6 +17,7 @@ interface EmployeeTaskListProps {
 }
 
 const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps) => {
+
   // Фильтрация задач, назначенных этому сотруднику
   const employeeTasks = tasks.map(item => {
     if ('task' in item) {
@@ -35,8 +36,19 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
     }
     return task.assignedTo === userId;
   });
+  
+  const handleDeleteTask = (projectId: string, taskId: string) => {
+    if (onTaskUpdate) {
+      // Вызываем обработчик с особым флагом для удаления
+      const taskToDelete = employeeTasks.find(({ task }) => task.id === taskId)?.task;
+      if (taskToDelete && projectId) {
+        // Создаем копию задачи с флагом удаления
+        const taskWithDeleteFlag = { ...taskToDelete, _deleted: true };
+        onTaskUpdate(projectId, taskWithDeleteFlag);
+      }
+    }
+  };
 
-  const getProjectName = (task: Task, taskItem: any) => {
     if (task.projectName) return task.projectName;
     
     // Если задача пришла с проектом в объекте

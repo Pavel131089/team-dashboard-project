@@ -40,29 +40,51 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
   
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
 
+
   const handleExport = async () => {
     setIsLoading(true);
     
     try {
-      // В реальном приложении здесь был бы код для генерации файла экспорта
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Имитация экспорта
+      // Получение данных для экспорта
+      let dataToExport = [];
       
-      let message = "Отчет успешно экспортирован";
-      
-      if (exportType === "employee" && selectedEmployee) {
-        message = `Экспортирован отчет по сотруднику`;
+      if (exportType === "all") {
+        dataToExport = projects;
       } else if (exportType === "project" && selectedProject) {
-        const project = projects.find(p => p.id === selectedProject);
-        message = `Экспортирован отчет по проекту "${project?.name}"`;
+        dataToExport = projects.filter(p => p.id === selectedProject);
+      } else if (exportType === "employee" && selectedEmployee) {
+        // Фильтруем задачи по сотруднику
+        dataToExport = projects.map(project => ({
+          ...project,
+          tasks: project.tasks.filter(task => 
+            task.assignedTo && task.assignedTo.includes(selectedEmployee)
+          )
+        })).filter(project => project.tasks.length > 0);
       }
+      
+      // Форматируем данные для CSV
+      const headers = "Project,Task,Description,Price,Time,Progress,Assigned To\n";
+      const rows = dataToExport.flatMap(project => 
+        project.tasks.map(task => 
+          `"${project.name}","${task.name}","${task.description}",${task.price},${task.estimatedTime},${task.progress}%,"${task.assignedToNames?.join(', ') || ''}"`
+        )
+      ).join('\n');
+      
+      const csvContent = `data:text/csv;charset=utf-8,${headers}${rows}`;
+      const encodedUri = encodeURI(csvContent);
+      
+      // Создаем ссылку для скачивания
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `report-${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
       toast({
         title: "Экспорт завершен",
-        description: message,
+        description: "Отчет успешно скачан",
       });
-      
-      // В реальном приложении здесь был бы код для скачивания файла
-      
     } catch (error) {
       toast({
         title: "Ошибка экспорта",
@@ -73,6 +95,7 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
       setIsLoading(false);
     }
   };
+
 
   const isExportDisabled = () => {
     if (isLoading) return true;

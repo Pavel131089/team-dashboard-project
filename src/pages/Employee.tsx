@@ -27,47 +27,47 @@ const Employee = () => {
     const userData = JSON.parse(userStr) as User;
     if (!userData.isAuthenticated) {
       navigate("/login");
+
+  // Обработчик обновления задачи
+  const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
+    // Если задача не назначена текущему пользователю, не обновляем её
+    if (!updatedTask.assignedTo?.includes(currentUser.id)) {
       return;
     }
     
-    setUser(userData);
-    
-    // Загрузка проектов из localStorage (в реальном приложении будет API)
-    const projectsStr = localStorage.getItem("projects");
-    if (projectsStr) {
-      const allProjects = JSON.parse(projectsStr) as Project[];
-      setProjects(allProjects);
-      
-      // Фильтрация задач сотрудника
-      const employeeTasks: {project: Project, task: Task}[] = [];
-      
-      allProjects.forEach(project => {
-        project.tasks.forEach(task => {
-          if (task.assignedTo && (
-            Array.isArray(task.assignedTo) 
-              ? task.assignedTo.includes(userData.id)
-              : task.assignedTo === userData.id
-          )) {
-            employeeTasks.push({
-              project,
-              task
-            });
-          }
-        });
-      });
-      
-      setMyTasks(employeeTasks);
+    // Если задача завершена на 100%, устанавливаем actualEndDate
+    if (updatedTask.progress === 100 && !updatedTask.actualEndDate) {
+      updatedTask.actualEndDate = new Date().toISOString();
     }
-  }, [navigate]);
-
-  const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
-    // Обновляем задачу в проекте
+    
+    // Обновляем массив проектов
     const updatedProjects = projects.map(project => {
       if (project.id === projectId) {
         return {
           ...project,
           tasks: project.tasks.map(task => 
             task.id === updatedTask.id ? updatedTask : task
+          )
+        };
+      }
+      return project;
+    });
+    
+    setProjects(updatedProjects);
+    localStorage.setItem("projects", JSON.stringify(updatedProjects));
+    
+    toast({
+      title: "Задача обновлена",
+      description: `Прогресс задачи "${updatedTask.name}" установлен на ${updatedTask.progress}%`,
+    });
+  };
+  
+  // Обработчик выхода из системы
+  const handleLogout = () => {
+    localStorage.removeItem("currentUser");
+    navigate("/login");
+  };
+
           )
         };
       }

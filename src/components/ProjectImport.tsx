@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -6,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { toast } from 'sonner';
 import { Project, Task } from '../types/project';
 import Icon from './ui/icon';
-
 
 interface ProjectImportProps {
   onImport: (project: Project) => void;
@@ -40,7 +38,6 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
       fileInputRef.current.value = '';
     }
   };
-
 
   const processCSVData = (content: string): Task[] => {
     const lines = content.split(/\r\n|\n/).filter(line => line.trim() !== '');
@@ -106,8 +103,6 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     return tasks;
   };
 
-  };
-
   const handleImport = async () => {
     if (!file) {
       setError('Выберите файл для импорта');
@@ -139,7 +134,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
 
       // Создаем проект
       const newProject: Project = {
-        id: uuidv4(),
+        id: crypto.randomUUID(),
         name: projectName,
         description: `Импортировано из ${file.name}`,
         tasks: tasks,
@@ -249,19 +244,22 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
           <div className="mt-6 text-xs text-gray-500">
             <p className="font-semibold">Формат CSV файла:</p>
             <div className="bg-slate-100 p-2 rounded mt-1">
-              <code>name,description,status,priority,assignedTo,progress,estimatedTime</code>
+              <code>Наименование работ,Комментарий,Т/З,Стоимость</code>
             </div>
             <p className="mt-2">
               Где:
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-1">
-              <li><strong>name</strong> - название задачи (обязательно)</li>
-              <li><strong>description</strong> - описание задачи</li>
-              <li><strong>status</strong> - статус задачи (TODO, IN_PROGRESS, DONE)</li>
-              <li><strong>priority</strong> - приоритет (LOW, MEDIUM, HIGH)</li>
-              <li><strong>assignedTo</strong> - исполнители (можно указать несколько через запятую)</li>
-              <li><strong>progress</strong> - прогресс выполнения (число от 0 до 100)</li>
-              <li><strong>estimatedTime</strong> - оценка времени в часах</li>
+              <li><strong>Наименование работ</strong> - название задачи (обязательно)</li>
+              <li><strong>Комментарий</strong> - описание или комментарий к задаче</li>
+              <li><strong>Т/З</strong> - трудозатраты в часах</li>
+              <li><strong>Стоимость</strong> - стоимость работы</li>
+            </ul>
+            <p className="mt-3">Примечание:</p>
+            <ul className="list-disc pl-5 space-y-1 mt-1">
+              <li>Приоритет задачи устанавливается руководителем после импорта</li>
+              <li>Исполнители назначаются автоматически, когда сотрудники берут задачи в работу</li>
+              <li>Статус задачи можно будет изменить в системе как руководителю, так и исполнителю</li>
             </ul>
           </div>
         </div>

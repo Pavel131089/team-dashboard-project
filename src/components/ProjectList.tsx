@@ -55,6 +55,7 @@ const ProjectList = ({
     if (progress < 30) return "bg-red-500";
     if (progress < 70) return "bg-yellow-500";
     return "bg-green-500";
+  };
 
   const handleDeleteProjectClick = (projectId: string) => {
     setProjectToDelete(projectId);

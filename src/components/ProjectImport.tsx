@@ -316,6 +316,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
             </TabsContent>
             <TabsContent value="excel" className="mt-4">
               <div className="border-2 border-dashed rounded-lg p-6 text-center">
+
                 <input
                   type="file"
                   id="excelFileUpload"
@@ -323,6 +324,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
                   accept=".xls,.xlsx"
                   className="hidden"
                 />
+
                 <div className="space-y-2">
                   <Icon name="FileSpreadsheet" className="mx-auto h-12 w-12 text-gray-400" />
                   <div className="text-sm">

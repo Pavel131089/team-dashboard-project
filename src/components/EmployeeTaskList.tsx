@@ -78,6 +78,10 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
             <TableHead>Статус</TableHead>
             <TableHead>Даты</TableHead>
             <TableHead>Прогресс</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {employeeTasks.map(({ task, project }) => (
             <TableRow key={task.id}>
               <TableCell className="font-medium">
                 <div>{task.name || "—"}</div>
@@ -94,7 +98,6 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
                     </ul>
                   </div>
                 )}
-              </TableCell>
               </TableCell>
               <TableCell>
                 {getProjectName(task, { project })}

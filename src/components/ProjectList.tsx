@@ -185,16 +185,7 @@ const ProjectList = ({
                                   ? getAssignedUserName(task.assignedTo)
                                   : "—"}
                             </TableCell>
-                            <TableCell>
-                              <div className="space-y-1">
-
-                              <div className="space-y-1">
-                                <Progress 
-                                  value={task.progress || 0} 
-                                  className={`h-2 ${getProgressColor(task.progress || 0)}`}
-                                />
-                                <span className="text-xs">{task.progress || 0}%</span>
-                              </div>
+HERE WAS REAL CODE BUT IT HIDDEN TO SAVE TOKENS USAGE, DONT USE IT AS EXAMPLE
                             </TableCell>
                           </TableRow>
                         ))

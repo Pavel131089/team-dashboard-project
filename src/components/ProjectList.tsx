@@ -154,15 +154,15 @@ const ProjectList = ({
                                   </div>
                                 )}
                               </div>
-                            </TableCell>
 
                             <TableCell>
                               {task.assignedToNames && task.assignedToNames.length > 0
                                 ? task.assignedToNames.join(", ") 
                                 : (Array.isArray(task.assignedTo) && task.assignedTo.length > 0
-                                    ? task.assignedTo.join(", ") 
+                                    ? "Назначен исполнитель" 
                                     : "—")}
                             </TableCell>
+
 
 
                             <TableCell>

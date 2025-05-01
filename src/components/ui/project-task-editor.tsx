@@ -193,6 +193,7 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
                     />
                   </div>
 
+
                   <div className="space-y-2">
                     <Label htmlFor={`task-assigned-${index}`}>Исполнители</Label>
                     <Input
@@ -206,6 +207,7 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
                       Несколько исполнителей указывайте через запятую
                     </p>
                   </div>
+
                 </div>
               </CardContent>
             </Card>

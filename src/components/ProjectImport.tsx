@@ -191,6 +191,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     // Заглушка для будущей реализации
   };
 
+
   const handleImport = async () => {
     if (!file) {
       setError('Выберите файл для импорта');
@@ -218,11 +219,25 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
         console.log(`Получено содержимое файла, длина: ${content.length} символов`);
         tasks = processCSVData(content);
       } else if (['xls', 'xlsx'].includes(fileExt || '')) {
-        toast.error('Импорт Excel файлов временно недоступен. Используйте CSV формат.');
-        setIsImporting(false);
-        return;
+        console.log('Обрабатываем как Excel файл');
+        // Импортируем xlsx динамически
+        const XLSX = await import('xlsx');
+        
+        // Чтение файла как ArrayBuffer
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Получаем первый лист
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
+        // Преобразуем в JSON
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        // Преобразуем данные в задачи, аналогично CSV
+        tasks = processExcelData(jsonData);
       } else {
-        throw new Error('Неподдерживаемый формат файла. Используйте .csv');
+        throw new Error('Неподдерживаемый формат файла. Используйте .csv, .xls или .xlsx');
       }
 
       // Создаем проект

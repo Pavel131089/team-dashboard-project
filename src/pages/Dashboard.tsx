@@ -26,14 +26,8 @@ const Dashboard = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [user, setUser] = useState<User | null>(null);
 
-
-const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState("projects");
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [user, setUser] = useState<User | null>(null);
-
+  // Загрузка данных пользователя из localStorage
   useEffect(() => {
-    // Загрузка данных пользователя из localStorage
     const userFromStorage = localStorage.getItem('user');
     if (userFromStorage) {
       try {
@@ -45,8 +39,8 @@ const Dashboard = () => {
     }
   }, []);
 
+  // Загрузка проектов из localStorage
   useEffect(() => {
-    // Загрузка проектов из localStorage
     const projectsFromStorage = localStorage.getItem('projects');
     if (projectsFromStorage) {
       try {
@@ -57,8 +51,8 @@ const Dashboard = () => {
     }
   }, []);
 
-    
-    // Загрузка пользователей
+  // Загрузка пользователей
+  useEffect(() => {
     const usersData = localStorage.getItem("users");
     
     if (usersData) {
@@ -81,35 +75,6 @@ const Dashboard = () => {
       setUsers(defaultUsers);
       localStorage.setItem("users", JSON.stringify(defaultUsers));
     }
-  }, [navigate]);
-
-  useEffect(() => {
-    // Загрузка проектов из localStorage
-    const loadProjects = () => {
-      try {
-        const savedProjects = localStorage.getItem("projects");
-        if (savedProjects) {
-          setProjects(JSON.parse(savedProjects));
-        }
-      } catch (error) {
-        console.error("Ошибка загрузки проектов:", error);
-      }
-    };
-    
-    // Загрузка пользователя из localStorage
-    const loadUser = () => {
-      try {
-        const savedUser = localStorage.getItem("user");
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
-        }
-      } catch (error) {
-        console.error("Ошибка загрузки пользователя:", error);
-      }
-    };
-    
-    loadProjects();
-    loadUser();
   }, []);
 
   const handleLogout = () => {
@@ -362,3 +327,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

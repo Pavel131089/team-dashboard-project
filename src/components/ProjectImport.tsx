@@ -97,27 +97,29 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
           // Индексы колонок
           const nameIndex = headers.findIndex(h => h.toLowerCase().includes('название') || h.toLowerCase().includes('наименование'));
           const descIndex = headers.findIndex(h => h.toLowerCase().includes('описание') || h.toLowerCase().includes('комментарий'));
-          const priceIndex = headers.findIndex(h => h.toLowerCase().includes('стоимость') || h.toLowerCase().includes('цена'));
-          const timeIndex = headers.findIndex(h => h.toLowerCase().includes('время') || h.toLowerCase().includes('т/з'));
-          
-          if (nameIndex === -1) {
-            throw new Error("В файле отсутствует колонка с названием задачи");
-          }
 
-          // Парсим строки данных
-          const parsedTasks: Omit<Task, 'id' | 'progress' | 'assignedTo' | 'actualStartDate' | 'actualEndDate'>[] = [];
-          
-          for (let i = 1; i < rows.length; i++) {
-            if (!rows[i].trim()) continue; // Пропускаем пустые строки
-            
-            const columns = rows[i].split(',').map(col => col.trim());
-            
-            if (columns.length <= nameIndex) continue; // Пропускаем строки с недостаточным количеством колонок
-            
-            parsedTasks.push({
-              name: columns[nameIndex] || "Без названия",
-              description: descIndex >= 0 && columns.length > descIndex ? columns[descIndex] : "",
-              price: priceIndex >= 0 && columns.length > priceIndex ? parseInt(columns[priceIndex]) || 0 : 0,
+    try {
+      // Разбираем содержимое CSV файла
+      const rows = csvContent.split('\n');
+      if (rows.length < 2) {
+        setError("Файл не содержит данных");
+        return;
+      }
+
+      // Получаем заголовки
+      const headers = rows[0].split(',').map(header => header.trim().toLowerCase());
+
+      // Создаем проект
+      const newProject: Project = {
+        id: crypto.randomUUID(),
+        name: projectName || "Импортированный проект " + new Date().toLocaleString(),
+        description: projectDescription || "Импортированный из CSV",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        tasks: []
+      };
+
               estimatedTime: timeIndex >= 0 && columns.length > timeIndex ? parseInt(columns[timeIndex]) || 0 : 0,
               startDate: null,
               endDate: null,

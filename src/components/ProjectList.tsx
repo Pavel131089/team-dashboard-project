@@ -183,16 +183,18 @@ const ProjectList = ({
                                  ? task.assignedToNames.join(", ") 
                                  : getAssignedUserName(task.assignedTo)}
                              </TableCell>
+                             
+                             <TableCell>
+                               <div className="space-y-1">
+                                 <Progress 
+                                   value={task.progress || 0} 
+                                   className={`h-2 ${getProgressColor(task.progress || 0)}`}
+                                 />
+                                 <span className="text-xs">{task.progress || 0}%</span>
+                               </div>
+                             </TableCell>
+                           </TableRow>
 
-                              <div className="space-y-1">
-                                <Progress 
-                                  value={task.progress || 0} 
-                                  className={`h-2 ${getProgressColor(task.progress || 0)}`}
-                                />
-                                <span className="text-xs">{task.progress || 0}%</span>
-                              </div>
-                            </TableCell>
-                          </TableRow>
                         ))
                       )}
                     </TableBody>

@@ -142,7 +142,7 @@ const ProjectList = ({
                                 </span>
                               )}
                             </TableCell>
-                             <TableCell>{task.price || 0}</TableCell>
+                            <TableCell>{task.price || 0}</TableCell>
                             <TableCell>{task.estimatedTime || 0}</TableCell>
                             <TableCell>
                               <div className="text-xs">
@@ -154,18 +154,16 @@ const ProjectList = ({
                                   </div>
                                 )}
                               </div>
-
+                            </TableCell>
                             <TableCell>
                               {task.assignedToNames && task.assignedToNames.length > 0
                                 ? task.assignedToNames.join(", ") 
                                 : (typeof task.assignedTo === 'string' && task.assignedTo 
                                     ? task.assignedTo
                                     : (Array.isArray(task.assignedTo) && task.assignedTo.length > 0
-                                        ? "Назначен исполнитель" 
+                                        ? task.assignedTo.join(", ")
                                         : "—"))}
                             </TableCell>
-
-
                             <TableCell>
                               <div className="w-full flex items-center space-x-2">
                                 <Progress 

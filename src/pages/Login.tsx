@@ -16,6 +16,7 @@ const Login = () => {
   const [role, setRole] = useState<UserRole>("employee");
   const navigate = useNavigate();
 
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -28,14 +29,62 @@ const Login = () => {
       return;
     }
 
-    // В реальном приложении здесь будет логика авторизации через API
-    // Для демонстрации переходим сразу в личный кабинет в зависимости от роли
+    // Проверка учетных данных
+    const usersStr = localStorage.getItem("users");
+    const users = usersStr ? JSON.parse(usersStr) : [];
     
-    // Сохраняем данные пользователя в localStorage
+    // Найдем пользователя по имени пользователя (email)
+    const user = users.find((u: any) => u.email === username);
+    
+    if (!user || user.password !== password) {
+      // Если это первый вход и нет пользователей, создаем администратора
+      if (users.length === 0 && role === "manager") {
+        // Создаем первого руководителя
+        const newUser = {
+          id: Math.random().toString(36).substring(2),
+          name: username,
+          email: username,
+          password: password,
+          role: "manager"
+        };
+        
+        localStorage.setItem("users", JSON.stringify([newUser]));
+        
+        // Авторизуем пользователя
+        localStorage.setItem("user", JSON.stringify({ 
+          username, 
+          role,
+          id: newUser.id,
+          isAuthenticated: true
+        }));
+        
+        navigate("/dashboard");
+        return;
+      }
+      
+      toast({
+        title: "Ошибка",
+        description: "Неверный логин или пароль",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Проверяем соответствие роли
+    if (user.role !== role) {
+      toast({
+        title: "Ошибка",
+        description: "Указана неверная роль для данного пользователя",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Авторизуем пользователя
     localStorage.setItem("user", JSON.stringify({ 
-      username, 
-      role,
-      id: Math.random().toString(36).substring(2),
+      username: user.name, 
+      role: user.role,
+      id: user.id,
       isAuthenticated: true
     }));
     
@@ -47,9 +96,10 @@ const Login = () => {
     
     toast({
       title: "Успешный вход",
-      description: `Добро пожаловать в систему, ${username}!`,
+      description: `Добро пожаловать в систему, ${user.name}!`,
     });
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100">

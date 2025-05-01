@@ -68,12 +68,15 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6">
+
         <Tabs defaultValue="projects">
           <TabsList className="mb-6">
             <TabsTrigger value="projects">Проекты</TabsTrigger>
+            <TabsTrigger value="users">Пользователи</TabsTrigger>
             <TabsTrigger value="import">Импорт данных</TabsTrigger>
             <TabsTrigger value="export">Экспорт отчетов</TabsTrigger>
           </TabsList>
+
           
           <TabsContent value="projects">
             <Card>

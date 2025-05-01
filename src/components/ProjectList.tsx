@@ -154,9 +154,9 @@ const ProjectList = ({
                                   </div>
                                 )}
                               </div>
-                            </TableCell>
+
                             <TableCell>
-                              {task.assignedToNames && task.assignedToNames.length > 0
+                              {task.assignedToNames && task.assignedToNames.length > 0 
                                 ? task.assignedToNames.join(", ") 
                                 : (typeof task.assignedTo === 'string' && task.assignedTo 
                                     ? task.assignedTo
@@ -164,6 +164,8 @@ const ProjectList = ({
                                         ? task.assignedTo.join(", ")
                                         : "—"))}
                             </TableCell>
+
+
                             <TableCell>
                               <div className="w-full flex items-center space-x-2">
                                 <Progress 

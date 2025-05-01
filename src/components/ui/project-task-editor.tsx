@@ -190,9 +190,7 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
                       value={task.price || ""}
                       onChange={(e) => handleTaskChange(index, 'price', parseInt(e.target.value) || 0)}
                       placeholder="Введите стоимость в рублях"
-                    />
-                  </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor={`task-assignedToNames-${index}`}>Исполнители</Label>
                     <Input
@@ -201,11 +199,13 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
                       onChange={(e) => {
                         const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
                         handleTaskChange(index, 'assignedToNames', names);
+                        // Также обновляем assignedTo для совместимости
+                        handleTaskChange(index, 'assignedTo', names.length > 0 ? names : null);
                       }}
                       placeholder="Введите имена через запятую"
                     />
                   </div>
-                </div>
+
               </CardContent>
             </Card>
           ))}

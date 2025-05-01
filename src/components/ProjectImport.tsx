@@ -3,11 +3,9 @@ import React, { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-
 import { toast } from 'sonner';
 import { Project, Task } from '../types/project';
 import Icon from './ui/icon';
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 interface ProjectImportProps {
@@ -20,7 +18,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
   const [isImporting, setIsImporting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<string>('excel');
+  const [activeTab, setActiveTab] = useState<string>('csv');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -189,11 +187,6 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     return result;
   };
 
-  const handleImportJson = () => {
-    // Заглушка для будущей реализации
-  };
-
-
   const handleImport = async () => {
     if (!file) {
       setError('Выберите файл для импорта');
@@ -342,6 +335,16 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
                       {file.name}
                     </div>
                   )}
+                </div>
+              </div>
+              
+              <div className="mt-3 text-amber-700 p-3 bg-amber-50 rounded-md">
+                <div className="flex gap-2">
+                  <Icon name="AlertTriangle" className="w-5 h-5" />
+                  <div>
+                    <p className="font-medium">Важно: Импорт Excel файлов временно недоступен.</p>
+                    <p className="text-sm">Пожалуйста, используйте CSV формат.</p>
+                  </div>
                 </div>
               </div>
             </TabsContent>

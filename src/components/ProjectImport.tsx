@@ -53,12 +53,18 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setExcelFile(e.target.files[0]);
+      setError(null); // Сбрасываем ошибку при выборе нового файла
     }
   };
 
   const handleImportFromExcel = async () => {
     if (!excelFile) {
-      setError("Пожалуйста, выберите Excel-файл для импорта");
+      setError("Пожалуйста, выберите файл для импорта");
+      return;
+    }
+
+    if (!projectName.trim()) {
+      setError("Пожалуйста, введите название проекта перед импортом");
       return;
     }
 
@@ -66,51 +72,96 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
     setError(null);
 
     try {
-      // В реальном приложении здесь был бы код для парсинга Excel файла
-      // Это упрощенная имитация - просто имитируем создание задач из файла
+      // Создаем FileReader для чтения файла
+      const reader = new FileReader();
       
-      // Проверяем, заполнено ли название проекта
-      if (!projectName.trim()) {
-        throw new Error("Пожалуйста, введите название проекта перед импортом");
-      }
+      reader.onload = (evt) => {
+        try {
+          if (!evt.target || !evt.target.result) {
+            throw new Error("Не удалось прочитать файл");
+          }
+          
+          // Получаем содержимое файла как строку
+          const csvContent = evt.target.result.toString();
+          
+          // Разбиваем по строкам
+          const rows = csvContent.split('\n');
+          
+          // Проверяем, что есть хотя бы заголовок и одна строка данных
+          if (rows.length < 2) {
+            throw new Error("Файл не содержит данных");
+          }
+          
+          // Предполагаем, что первая строка - заголовки
+          const headers = rows[0].split(',').map(header => header.trim());
+          
+          // Индексы колонок
+          const nameIndex = headers.findIndex(h => h.toLowerCase().includes('название') || h.toLowerCase().includes('наименование'));
+          const descIndex = headers.findIndex(h => h.toLowerCase().includes('описание') || h.toLowerCase().includes('комментарий'));
+          const priceIndex = headers.findIndex(h => h.toLowerCase().includes('стоимость') || h.toLowerCase().includes('цена'));
+          const timeIndex = headers.findIndex(h => h.toLowerCase().includes('время') || h.toLowerCase().includes('т/з'));
+          
+          if (nameIndex === -1) {
+            throw new Error("В файле отсутствует колонка с названием задачи");
+          }
+
+          // Парсим строки данных
+          const parsedTasks: Omit<Task, 'id' | 'progress' | 'assignedTo' | 'actualStartDate' | 'actualEndDate'>[] = [];
+          
+          for (let i = 1; i < rows.length; i++) {
+            if (!rows[i].trim()) continue; // Пропускаем пустые строки
+            
+            const columns = rows[i].split(',').map(col => col.trim());
+            
+            if (columns.length <= nameIndex) continue; // Пропускаем строки с недостаточным количеством колонок
+            
+            parsedTasks.push({
+              name: columns[nameIndex] || "Без названия",
+              description: descIndex >= 0 && columns.length > descIndex ? columns[descIndex] : "",
+              price: priceIndex >= 0 && columns.length > priceIndex ? parseInt(columns[priceIndex]) || 0 : 0,
+              estimatedTime: timeIndex >= 0 && columns.length > timeIndex ? parseInt(columns[timeIndex]) || 0 : 0,
+              startDate: null,
+              endDate: null,
+              assignedToNames: [],
+            });
+          }
+          
+          if (parsedTasks.length === 0) {
+            throw new Error("Не удалось импортировать задачи из файла");
+          }
+          
+          // Добавляем импортированные задачи к существующим
+          setTasks([...tasks, ...parsedTasks]);
+          setExcelFile(null);
+          
+          toast({
+            title: "Данные импортированы",
+            description: `Импортировано ${parsedTasks.length} задач из файла`,
+          });
+          
+        } catch (err: any) {
+          setError(err.message || "Ошибка при обработке файла");
+          console.error(err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
       
-      // Имитация парсинга Excel - создаем тестовые задачи
-      const parsedTasks = [
-        {
-          name: "Задача из Excel 1",
-          description: "Импортирована автоматически",
-          price: 5000,
-          estimatedTime: 10,
-          startDate: null,
-          endDate: null,
-          assignedToNames: [],
-        },
-        {
-          name: "Задача из Excel 2",
-          description: "Импортирована автоматически",
-          price: 7500,
-          estimatedTime: 15,
-          startDate: null,
-          endDate: null,
-          assignedToNames: [],
-        },
-      ];
+      reader.onerror = () => {
+        setError("Ошибка чтения файла");
+        setIsLoading(false);
+      };
       
-      setTasks([...tasks, ...parsedTasks]);
-      setExcelFile(null);
-      
-      toast({
-        title: "Данные импортированы",
-        description: `Импортировано ${parsedTasks.length} задач из Excel`,
-      });
+      // Начинаем чтение файла как текст
+      reader.readAsText(excelFile);
       
     } catch (err: any) {
-      setError(err.message || "Произошла ошибка при импорте из Excel");
+      setError(err.message || "Произошла ошибка при импорте из файла");
       console.error(err);
-    } finally {
       setIsLoading(false);
     }
   };
+
 
   const handleSaveProject = async () => {
     if (!projectName.trim()) {

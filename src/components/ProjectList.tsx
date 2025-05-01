@@ -158,14 +158,14 @@ const ProjectList = ({
 
 
                             <TableCell>
-                              {/* Этот блок обрабатывает разные форматы данных исполнителей */}
-                              {task.assignedToNames && task.assignedToNames.length > 0 
-                                ? task.assignedToNames.join(", ") 
-                                : typeof task.assignedTo === 'string' && task.assignedTo
-                                  ? "Пользователь " + task.assignedTo
-                                  : Array.isArray(task.assignedTo) && task.assignedTo.length > 0
-                                    ? "Пользователи " + task.assignedTo.join(", ")
-                                    : "—"}
+                              {/* Получаем имя пользователя из массива users по ID */}
+                              {task.assignedTo ? (
+                                Array.isArray(task.assignedTo) ? 
+                                  task.assignedTo.map(id => users.find(user => user.id === id)?.username || id).join(", ") : 
+                                  users.find(user => user.id === task.assignedTo)?.username || task.assignedTo
+                              ) : "—"}
+                            </TableCell>
+
                             </TableCell>
 
                             </TableCell>

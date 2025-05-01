@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -40,67 +41,105 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
   };
 
   const processCSVData = (content: string): Task[] => {
-    const lines = content.split(/\r\n|\n/).filter(line => line.trim() !== '');
-    
-    if (lines.length < 2) {
-      throw new Error('Файл должен содержать как минимум заголовок и одну строку данных');
-    }
-
-    const headerLine = lines[0];
-    const headers = headerLine.split(',').map(h => h.trim().toLowerCase());
-    
-    // Найдем индексы нужных колонок
-    const nameIndex = headers.findIndex(h => ['name', 'название', 'задача', 'наименование работ', 'работа', 'наименование'].includes(h));
-    const descriptionIndex = headers.findIndex(h => ['description', 'описание', 'desc', 'коментарий', 'комментарий', 'примечание'].includes(h));
-    const estimatedTimeIndex = headers.findIndex(h => ['estimatedtime', 'время', 'т/з', 'трудозатраты', 'трудоемкость'].includes(h));
-    const priceIndex = headers.findIndex(h => ['price', 'стоимость', 'цена', 'сумма'].includes(h));
-
-    if (nameIndex === -1) {
-      throw new Error('В файле должна быть колонка с названием работы (наименование работ, название, задача)');
-    }
-
-    const tasks: Task[] = [];
-
-    // Начинаем с 1, чтобы пропустить заголовок
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i];
-      // Учитываем запятые внутри кавычек
-      const columns = line.match(/(?:^|,)(?:"([^"]*(?:""[^"]*)*)"|([^,]*))/g)
-        ?.map(column => {
-          // Убираем лишние запятые и кавычки
-          return column.replace(/^,/, '').replace(/^"|"$/g, '').replace(/""/g, '"');
-        }) || [];
-
-      if (columns.length === 0 || columns.every(c => c.trim() === '')) {
-        continue; // Пропускаем пустые строки
+    try {
+      // Разбиваем на строки, отфильтровываем пустые строки
+      const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
+      
+      if (lines.length < 2) {
+        throw new Error('Файл должен содержать как минимум заголовок и одну строку данных');
       }
 
-      // Убедимся, что у нас есть имя задачи
-      const taskName = nameIndex >= 0 && columns.length > nameIndex ? columns[nameIndex] : `Задача ${i}`;
-      if (!taskName || taskName.trim() === '') {
-        continue; // Пропускаем задачи без имени
+      // Получаем заголовки из первой строки и нормализуем их
+      const headerLine = lines[0];
+      const headers = headerLine.split(',').map(h => h.trim().toLowerCase());
+      
+      // Проверяем наличие обязательного заголовка "Наименование работ"
+      const nameIndex = headers.findIndex(h => 
+        ['name', 'название', 'задача', 'наименование работ', 'наименование', 'работы', 'работа', 'наименование работ'].includes(h)
+      );
+      
+      if (nameIndex === -1) {
+        throw new Error('В файле должна быть колонка с названием работы (наименование работ, название, задача)');
+      }
+      
+      // Находим индексы других колонок
+      const descriptionIndex = headers.findIndex(h => 
+        ['description', 'описание', 'desc', 'коментарий', 'комментарий', 'примечание'].includes(h)
+      );
+      
+      const estimatedTimeIndex = headers.findIndex(h => 
+        ['estimatedtime', 'время', 'т/з', 'трудозатраты', 'трудоемкость', 'часы'].includes(h)
+      );
+      
+      const priceIndex = headers.findIndex(h => 
+        ['price', 'стоимость', 'цена', 'сумма'].includes(h)
+      );
+
+      const tasks: Task[] = [];
+
+      // Обрабатываем строки данных, начиная со второй строки
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        // Парсим CSV, учитывая возможные кавычки
+        let columns: string[] = [];
+        let inQuotes = false;
+        let currentValue = '';
+        
+        for (let j = 0; j < line.length; j++) {
+          const char = line[j];
+          
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            columns.push(currentValue.trim());
+            currentValue = '';
+          } else {
+            currentValue += char;
+          }
+        }
+        
+        // Добавляем последнюю колонку
+        columns.push(currentValue.trim());
+
+        // Проверяем наличие имени задачи
+        const taskName = nameIndex >= 0 && columns.length > nameIndex ? columns[nameIndex] : '';
+        if (!taskName || taskName.trim() === '') {
+          continue; // Пропускаем задачи без имени
+        }
+
+        // Создаем объект задачи
+        tasks.push({
+          id: crypto.randomUUID(),
+          name: taskName,
+          description: descriptionIndex >= 0 && columns.length > descriptionIndex 
+            ? columns[descriptionIndex] 
+            : '',
+          status: 'TODO',
+          priority: 'MEDIUM',
+          assignedTo: [],
+          progress: 0,
+          estimatedTime: estimatedTimeIndex >= 0 && columns.length > estimatedTimeIndex 
+            ? parseFloat(columns[estimatedTimeIndex]) || 0 
+            : 0,
+          price: priceIndex >= 0 && columns.length > priceIndex 
+            ? parseFloat(columns[priceIndex]) || 0 
+            : 0,
+          startDate: null,
+          endDate: null,
+          actualStartDate: null,
+          actualEndDate: null,
+          comments: [],
+          assignedToNames: []
+        });
       }
 
-      tasks.push({
-        id: crypto.randomUUID(), // используем UUID для генерации ID
-        name: taskName,
-        description: descriptionIndex >= 0 && columns.length > descriptionIndex ? columns[descriptionIndex] : '',
-        status: 'TODO', // По умолчанию устанавливаем статус "TODO"
-        priority: 'MEDIUM', // По умолчанию средний приоритет
-        assignedTo: [], // Пустой массив исполнителей - заполнится автоматически
-        progress: 0, // Начальный прогресс 0%
-        estimatedTime: estimatedTimeIndex >= 0 && columns.length > estimatedTimeIndex ? parseFloat(columns[estimatedTimeIndex]) || 0 : 0,
-        price: priceIndex >= 0 && columns.length > priceIndex ? parseFloat(columns[priceIndex]) || 0 : 0,
-        startDate: null,
-        endDate: null,
-        assignedToNames: [],
-        actualStartDate: null,
-        actualEndDate: null,
-        comments: [], // Пустой массив комментариев
-      });
+      return tasks;
+    } catch (error) {
+      console.error('Ошибка при обработке CSV:', error);
+      throw error;
     }
-
-    return tasks;
   };
 
   const handleImport = async () => {
@@ -122,14 +161,14 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
       let tasks: Task[] = [];
 
       // Определяем формат файла по расширению
-      if (file.name.endsWith('.csv')) {
+      if (file.name.toLowerCase().endsWith('.csv')) {
         tasks = processCSVData(content);
       } else {
         throw new Error('Неподдерживаемый формат файла. Используйте .csv');
       }
 
       if (tasks.length === 0) {
-        throw new Error('Не удалось импортировать задачи из файла');
+        throw new Error('Не удалось импортировать задачи из файла. Проверьте формат CSV.');
       }
 
       // Создаем проект
@@ -241,12 +280,12 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
             </Button>
           </div>
 
-          <div className="mt-6 text-xs text-gray-500">
-            <p className="font-semibold">Формат CSV файла:</p>
-            <div className="bg-slate-100 p-2 rounded mt-1">
+          <div className="mt-6 text-xs text-gray-500 border-t pt-4">
+            <p className="font-semibold mb-2">Формат CSV файла:</p>
+            <div className="bg-slate-100 p-2 rounded mt-1 overflow-x-auto">
               <code>Наименование работ,Комментарий,Т/З,Стоимость</code>
             </div>
-            <p className="mt-2">
+            <p className="mt-2 font-medium">
               Где:
             </p>
             <ul className="list-disc pl-5 space-y-1 mt-1">
@@ -255,11 +294,18 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
               <li><strong>Т/З</strong> - трудозатраты в часах</li>
               <li><strong>Стоимость</strong> - стоимость работы</li>
             </ul>
-            <p className="mt-3">Примечание:</p>
+            <p className="mt-3 font-medium">Требования к CSV файлу:</p>
+            <ul className="list-disc pl-5 space-y-1 mt-1">
+              <li>Первая строка должна содержать заголовки колонок</li>
+              <li>Колонки разделяются запятыми</li>
+              <li>Кавычки используются для текста, содержащего запятые</li>
+              <li>Файл должен быть сохранен в кодировке UTF-8</li>
+            </ul>
+            <p className="mt-3 font-medium">Примечание:</p>
             <ul className="list-disc pl-5 space-y-1 mt-1">
               <li>Приоритет задачи устанавливается руководителем после импорта</li>
               <li>Исполнители назначаются автоматически, когда сотрудники берут задачи в работу</li>
-              <li>Статус задачи можно будет изменить в системе как руководителю, так и исполнителю</li>
+              <li>Пример содержимого файла: <code>Покраска стен,Покраска стен в гостиной,4,5000</code></li>
             </ul>
           </div>
         </div>

@@ -211,7 +211,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
                 </label>{' '}
                 или перетащите его сюда
               </div>
-              <p className="text-xs text-gray-500">*.csv файлы</p>
+              <p className="text-xs text-gray-500">Только CSV файлы (*.csv)</p>
 
               {file && file.name.toLowerCase().endsWith('.csv') && (
                 <div className="mt-2 text-sm text-gray-500 flex justify-center items-center">

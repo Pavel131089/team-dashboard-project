@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -6,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { toast } from 'sonner';
 import { Project, Task } from '../types/project';
 import Icon from './ui/icon';
-HERE WAS REAL CODE BUT IT HIDDEN TO SAVE TOKENS USAGE, DONT USE IT AS EXAMPLE
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import * as XLSX from 'xlsx';
 
 interface ProjectImportProps {
   onImport: (project: Project) => void;
@@ -18,7 +20,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
   const [isImporting, setIsImporting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<string>('csv');
+  const [activeTab, setActiveTab] = useState<string>('excel');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -187,39 +189,124 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     return result;
   };
 
-  // Функция для обработки XLS/XLSX файлов
+  // Функция для обработки Excel файлов
   const processExcelFile = async (file: File): Promise<Task[]> => {
     try {
-      // Для обработки Excel файлов потребуется дополнительная библиотека
-      // Например, xlsx или exceljs
-      // Для этого примера просто сообщаем пользователю, что нужно установить эти библиотеки
-      
       console.log('Начинаем импорт Excel файла:', file.name);
       
-      throw new Error('Для поддержки Excel файлов необходимо установить библиотеку xlsx. Обратитесь к разработчику.');
-      
-      // После установки библиотеки xlsx можно будет реализовать так:
-      /*
-      const XLSX = await import('xlsx');
+      // Чтение файла Excel
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
       
+      // Получаем первый лист
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      
+      // Преобразуем лист в JSON
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       
       if (jsonData.length < 2) {
         throw new Error('Файл должен содержать как минимум заголовок и одну строку данных');
       }
       
-      // Обработка заголовков
-      const headers = (jsonData[0] as string[]).map(h => h.trim().toLowerCase());
+      // Получаем заголовки
+      const headers = (jsonData[0] as any[]).map(h => 
+        h ? String(h).trim().toLowerCase() : ''
+      );
       
-      // Проверка и обработка данных, аналогично CSV
-      // ...
+      console.log('Заголовки Excel:', headers);
       
-      // Возвращаем массив задач
+      // Находим индексы колонок
+      const nameIndex = headers.findIndex(h => 
+        h && ['name', 'название', 'задача', 'наименование', 'работы', 'работа', 'наименованиеработ']
+          .includes(h.replace(/[\s_-]/g, ''))
+      );
+      
+      if (nameIndex === -1) {
+        throw new Error('В файле должна быть колонка с названием работы (наименование работ, название, задача)');
+      }
+      
+      const descriptionIndex = headers.findIndex(h => 
+        h && ['description', 'описание', 'desc', 'коментарий', 'комментарий', 'примечание']
+          .includes(h.replace(/[\s_-]/g, ''))
+      );
+      
+      const estimatedTimeIndex = headers.findIndex(h => 
+        h && ['estimatedtime', 'время', 'тз', 'трудозатраты', 'трудоемкость', 'часы']
+          .includes(h.replace(/[\s_-]/g, ''))
+      );
+      
+      const priceIndex = headers.findIndex(h => 
+        h && ['price', 'стоимость', 'цена', 'сумма']
+          .includes(h.replace(/[\s_-]/g, ''))
+      );
+      
+      console.log(`Индексы колонок: имя=${nameIndex}, описание=${descriptionIndex}, время=${estimatedTimeIndex}, цена=${priceIndex}`);
+      
+      const tasks: Task[] = [];
+      
+      // Обрабатываем данные (начиная со второй строки)
+      for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i] as any[];
+        
+        // Пропускаем пустые строки
+        if (!row || row.length === 0) continue;
+        
+        // Получаем имя задачи
+        const taskName = nameIndex >= 0 && row.length > nameIndex ? String(row[nameIndex] || '') : '';
+        
+        if (!taskName || taskName.trim() === '') {
+          console.log(`Пропускаем строку ${i}, нет имени задачи`);
+          continue;
+        }
+        
+        // Парсинг числовых значений
+        let estimatedTime = 0;
+        if (estimatedTimeIndex >= 0 && row.length > estimatedTimeIndex && row[estimatedTimeIndex] !== undefined) {
+          const timeValue = row[estimatedTimeIndex];
+          if (typeof timeValue === 'number') {
+            estimatedTime = timeValue;
+          } else if (typeof timeValue === 'string') {
+            estimatedTime = parseFloat(timeValue.replace(',', '.')) || 0;
+          }
+        }
+        
+        let price = 0;
+        if (priceIndex >= 0 && row.length > priceIndex && row[priceIndex] !== undefined) {
+          const priceValue = row[priceIndex];
+          if (typeof priceValue === 'number') {
+            price = priceValue;
+          } else if (typeof priceValue === 'string') {
+            price = parseFloat(priceValue.replace(',', '.')) || 0;
+          }
+        }
+        
+        // Создаем задачу
+        const task: Task = {
+          id: crypto.randomUUID(),
+          name: taskName,
+          description: descriptionIndex >= 0 && row.length > descriptionIndex 
+            ? String(row[descriptionIndex] || '') 
+            : '',
+          status: 'TODO',
+          priority: 'MEDIUM',
+          assignedTo: [],
+          progress: 0,
+          estimatedTime,
+          price,
+          startDate: null,
+          endDate: null,
+          actualStartDate: null,
+          actualEndDate: null,
+          comments: [],
+          assignedToNames: []
+        };
+        
+        tasks.push(task);
+        console.log(`Добавлена задача из Excel: ${task.name}`);
+      }
+      
+      console.log(`Всего обработано задач из Excel: ${tasks.length}`);
       return tasks;
-      */
     } catch (error) {
       console.error('Ошибка при обработке Excel файла:', error);
       throw error;

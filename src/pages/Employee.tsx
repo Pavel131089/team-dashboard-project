@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,6 @@ import { Project, Task, User } from "@/types/project";
 import EmployeeTaskList from "@/components/EmployeeTaskList";
 
 const Employee = () => {
-
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [myTasks, setMyTasks] = useState<{project: Project, task: Task}[]>([]);
@@ -62,6 +60,10 @@ const Employee = () => {
     }
   }, [navigate]);
 
+  const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
+    // Обновляем задачу в проекте
+    const updatedProjects = projects.map(project => {
+      if (project.id === projectId) {
         return {
           ...project,
           tasks: project.tasks.map(task => 

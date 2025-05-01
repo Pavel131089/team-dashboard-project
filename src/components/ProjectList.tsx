@@ -156,13 +156,13 @@ const ProjectList = ({
                               </div>
                             </TableCell>
                             <TableCell>
-                              {task.assignedToNames && task.assignedToNames.length > 0 
-                                ? task.assignedToNames.join(", ") 
-                                : (typeof task.assignedTo === 'string' && task.assignedTo 
-                                    ? task.assignedTo
-                                    : (Array.isArray(task.assignedTo) && task.assignedTo.length > 0
-                                        ? task.assignedTo.join(", ")
-                                        : "—"))}
+            <TableCell>
+              {task.assignedToNames && task.assignedToNames.length > 0 
+                ? task.assignedToNames.join(", ") 
+                : (typeof task.assignedTo === 'string' && task.assignedTo 
+                    ? task.assignedTo
+                    : "—")}
+            </TableCell>
                             </TableCell>
                             <TableCell>
                               <div className="w-full flex items-center space-x-2">

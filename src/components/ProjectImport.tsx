@@ -6,10 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { toast } from 'sonner';
 import { Project, Task } from '../types/project';
 import Icon from './ui/icon';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-
-import Icon from './ui/icon';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+HERE WAS REAL CODE BUT IT HIDDEN TO SAVE TOKENS USAGE, DONT USE IT AS EXAMPLE
 
 interface ProjectImportProps {
   onImport: (project: Project) => void;

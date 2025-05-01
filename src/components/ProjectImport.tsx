@@ -4,8 +4,10 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { toast } from 'sonner';
-import { v4 as uuidv4 } from 'uuid';
+
+import { toast } from 'sonner';
 import { Project, Task } from '../types/project';
+
 import Icon from './ui/icon';
 
 interface ProjectImportProps {

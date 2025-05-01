@@ -177,15 +177,17 @@ const ProjectList = ({
                                 )}
                               </div>
                             </TableCell>
-
                             <TableCell>
-                              {task.assignedToNames && task.assignedToNames.length > 0 
-                                ? task.assignedToNames.join(", ") 
-                                : task.assignedTo 
-                                  ? getAssignedUserName(task.assignedTo)
-                                  : "—"}
+                              {getAssignedUserName(task.assignedTo)}
                             </TableCell>
-HERE WAS REAL CODE BUT IT HIDDEN TO SAVE TOKENS USAGE, DONT USE IT AS EXAMPLE
+                            <TableCell>
+                              <div className="space-y-1">
+                                <Progress 
+                                  value={task.progress || 0} 
+                                  className={getProgressColor(task.progress || 0)}
+                                />
+                                <span className="text-xs">{task.progress || 0}%</span>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))

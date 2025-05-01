@@ -9,6 +9,11 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import DeleteConfirmationDialog from "@/components/ui/delete-confirmation-dialog";
+import { Button } from "@/components/ui/button";
+import Icon from "@/components/ui/icon";
+import { useState } from "react";
+import { toast } from "@/components/ui/use-toast";
 
 interface EmployeeTaskListProps {
   tasks: {project: any, task: Task}[] | Task[];
@@ -17,6 +22,8 @@ interface EmployeeTaskListProps {
 }
 
 const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps) => {
+  const [taskToDelete, setTaskToDelete] = useState<{projectId: string, taskId: string} | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Фильтрация задач, назначенных этому сотруднику
   const employeeTasks = tasks.map(item => {
@@ -38,17 +45,30 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
   });
   
   const handleDeleteTask = (projectId: string, taskId: string) => {
-    if (onTaskUpdate) {
-      // Вызываем обработчик с особым флагом для удаления
-      const taskToDelete = employeeTasks.find(({ task }) => task.id === taskId)?.task;
-      if (taskToDelete && projectId) {
-        // Создаем копию задачи с флагом удаления
-        const taskWithDeleteFlag = { ...taskToDelete, _deleted: true };
-        onTaskUpdate(projectId, taskWithDeleteFlag);
-      }
-    }
+    setTaskToDelete({ projectId, taskId });
+    setIsDeleteDialogOpen(true);
   };
 
+  const confirmDelete = () => {
+    if (taskToDelete && onTaskUpdate) {
+      // Находим задачу, которую нужно удалить
+      const taskItem = employeeTasks.find(({ task }) => task.id === taskToDelete.taskId);
+      if (taskItem && taskToDelete.projectId) {
+        // Создаем копию задачи с флагом удаления
+        const taskWithDeleteFlag = { ...taskItem.task, _deleted: true };
+        onTaskUpdate(taskToDelete.projectId, taskWithDeleteFlag);
+        toast({
+          title: "Задача удалена",
+          description: `Задача "${taskItem.task.name}" была успешно удалена.`,
+        });
+      }
+    }
+    setIsDeleteDialogOpen(false);
+    setTaskToDelete(null);
+  };
+
+  const getProjectName = (task: Task, taskItem: {project: any}) => {
+    // Если у задачи есть projectName
     if (task.projectName) return task.projectName;
     
     // Если задача пришла с проектом в объекте
@@ -89,6 +109,7 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
             <TableHead>Статус</TableHead>
             <TableHead>Даты</TableHead>
             <TableHead>Прогресс</TableHead>
+            <TableHead>Действия</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -161,10 +182,31 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
                   />
                 </div>
               </TableCell>
+              <TableCell>
+                {task.progress === 100 && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => project && handleDeleteTask(project.id, task.id)}
+                    disabled={!project}
+                  >
+                    <Icon name="Trash2" size={16} />
+                  </Button>
+                )}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={confirmDelete}
+        title="Удалить задачу"
+        description="Вы уверены, что хотите удалить задачу? Это действие нельзя отменить."
+      />
     </div>
   );
 };

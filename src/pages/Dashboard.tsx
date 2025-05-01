@@ -72,6 +72,8 @@ const Dashboard = () => {
       <main className="container mx-auto px-4 py-6">
 
         <Tabs defaultValue="projects">
+
+        <Tabs defaultValue="projects">
           <TabsList className="mb-6">
             <TabsTrigger value="projects">Проекты</TabsTrigger>
             <TabsTrigger value="users">Пользователи</TabsTrigger>
@@ -94,6 +96,20 @@ const Dashboard = () => {
                   onProjectsUpdated={handleProjectsUpdated}
                   userRole="manager"
                 />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <CardTitle>Управление пользователями</CardTitle>
+                <CardDescription>
+                  Добавление и управление пользователями системы
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <UserManagement />
               </CardContent>
             </Card>
           </TabsContent>
@@ -126,8 +142,7 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+
   );
 };
 

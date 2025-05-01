@@ -24,19 +24,31 @@ const Dashboard = () => {
     tasks: [],
   });
   const [users, setUsers] = useState<User[]>([]);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const userFromStorage = localStorage.getItem("user");
     
-    if (!user.isAuthenticated) {
+    if (!userFromStorage) {
       navigate("/login");
-    } else if (user.role !== "manager") {
-      navigate("/employee");
+      return;
+    }
+    
+    try {
+      const parsedUser = JSON.parse(userFromStorage);
+      if (!parsedUser.isAuthenticated) {
+        navigate("/login");
+        return;
+      } else if (parsedUser.role !== "manager") {
+        navigate("/employee");
+        return;
+      }
+      setUser(parsedUser);
+    } catch (error) {
+      console.error("Ошибка при парсинге данных пользователя:", error);
+      navigate("/login");
     }
 
-    // Загрузка проектов из localStorage
-
-  useEffect(() => {
     // Загрузка проектов из localStorage
     const projectsData = localStorage.getItem("projects");
     if (projectsData) {
@@ -44,18 +56,20 @@ const Dashboard = () => {
         const loadedProjects = JSON.parse(projectsData);
         setProjects(loadedProjects);
       } catch (error) {
-        console.error("Error loading projects:", error);
+        console.error("Ошибка при загрузке проектов:", error);
+        setProjects([]);
       }
     }
 
-    // Загрузка пользователя из localStorage
-    const userData = localStorage.getItem("user");
-    if (userData) {
+    // Загрузка пользователей из localStorage
+    const usersData = localStorage.getItem("users");
+    if (usersData) {
       try {
-        const loadedUser = JSON.parse(userData);
-        setUser(loadedUser);
+        const loadedUsers = JSON.parse(usersData);
+        setUsers(loadedUsers);
       } catch (error) {
-        console.error("Error loading user:", error);
+        console.error("Ошибка при загрузке пользователей:", error);
+        setUsers([]);
       }
     } else {
       // Создаем дефолтного пользователя, если не существует
@@ -65,32 +79,56 @@ const Dashboard = () => {
         role: "manager",
         isAuthenticated: true
       };
-      setUser(defaultUser);
-      localStorage.setItem("user", JSON.stringify(defaultUser));
+      const defaultUsers = [defaultUser];
+      setUsers(defaultUsers);
+      localStorage.setItem("users", JSON.stringify(defaultUsers));
     }
-  }, []);
+  }, [navigate]);
 
-  // Обработчик обновления проектов
-  const handleProjectsUpdated = (updatedProjects: Project[]) => {
+  const handleLogout = () => {
+    if (user) {
+      const updatedUser = { ...user, isAuthenticated: false };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    }
+    navigate("/login");
+  };
+
+  const handleAddProject = () => {
+    if (!newProject.name) {
+      toast.error("Введите название проекта");
+      return;
+    }
+
+    const project: Project = {
+      id: crypto.randomUUID(),
+      name: newProject.name,
+      description: newProject.description || "",
+      status: "active",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tasks: [],
+    };
+
+    const updatedProjects = [...projects, project];
     setProjects(updatedProjects);
     localStorage.setItem("projects", JSON.stringify(updatedProjects));
+    
+    setNewProject({
+      name: "",
+      description: "",
+      tasks: [],
+    });
+    
+    setIsDialogOpen(false);
+    toast.success("Проект создан");
   };
 
-  // Обработчик обновления пользователей
-  const handleUsersUpdated = (updatedUsers: any) => {
-    // Обновляем текущего пользователя, если он изменился
-    const currentUser = updatedUsers.find((u: any) => u.id === user?.id);
-    if (currentUser) {
-      setUser(currentUser);
-      localStorage.setItem("user", JSON.stringify(currentUser));
-    }
-  };
   const handleAddTask = (projectId: string, task: Partial<Task>) => {
     const updatedProjects = projects.map(project => {
       if (project.id === projectId) {
         return {
           ...project,
-          tasks: [...project.tasks, { ...task, id: crypto.randomUUID() }],
+          tasks: [...project.tasks, { ...task, id: crypto.randomUUID() } as Task],
           updatedAt: new Date().toISOString(),
         };
       }

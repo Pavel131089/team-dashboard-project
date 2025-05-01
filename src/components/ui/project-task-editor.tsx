@@ -143,6 +143,17 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
             placeholder="0"
           />
         </div>
+        <div>
+          <Label htmlFor="price">Цена (₽)</Label>
+          <Input
+            id="price"
+            name="price"
+            type="number"
+            value={newTask.price === 0 ? "" : newTask.price}
+            onChange={handleInputChange}
+            placeholder="0"
+          />
+        </div>
         
         <div>
           <Label htmlFor="estimatedTime">Время (ч)</Label>
@@ -154,6 +165,33 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
             onChange={handleInputChange}
             placeholder="0"
           />
+        </div>
+        
+        <div>
+          <Label htmlFor="progress">Прогресс выполнения (%)</Label>
+          <div className="flex items-center space-x-2">
+            <Input
+              id="progress"
+              name="progress"
+              type="number"
+              min="0"
+              max="100"
+              value={newTask.progress === 0 ? "" : newTask.progress}
+              onChange={handleInputChange}
+              placeholder="0"
+            />
+            <input
+              type="range"
+              id="progress-slider"
+              name="progress"
+              min="0"
+              max="100"
+              step="5"
+              value={newTask.progress || 0}
+              onChange={handleInputChange}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
         </div>
         
         <div>

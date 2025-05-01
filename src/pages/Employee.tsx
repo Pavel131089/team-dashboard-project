@@ -138,15 +138,17 @@ const Employee = () => {
               <CardTitle>Мои задачи</CardTitle>
               <CardDescription>
                 Задачи, назначенные на вас
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
               <EmployeeTaskList 
                 tasks={userTasks} 
                 userId={user.id}
-                onTaskUpdate={handleTaskUpdate}
+                onTaskUpdate={(projectId, updatedTask) => {
+                  // Если задача завершена на 100%, устанавливаем actualEndDate
+                  if (updatedTask.progress === 100 && !updatedTask.actualEndDate) {
+                    updatedTask.actualEndDate = new Date().toISOString();
+                  }
+                  handleTaskUpdate(projectId, updatedTask);
+                }}
               />
-            </CardContent>
           </Card>
           
           <Card>

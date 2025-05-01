@@ -41,6 +41,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     }
   };
 
+
   const processCSVData = (content: string): Task[] => {
     const lines = content.split(/\r\n|\n/).filter(line => line.trim() !== '');
     
@@ -52,16 +53,13 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     const headers = headerLine.split(',').map(h => h.trim().toLowerCase());
     
     // Найдем индексы нужных колонок
-    const nameIndex = headers.findIndex(h => ['name', 'название', 'задача', 'task'].includes(h));
-    const descriptionIndex = headers.findIndex(h => ['description', 'описание', 'desc'].includes(h));
-    const statusIndex = headers.findIndex(h => ['status', 'статус'].includes(h));
-    const priorityIndex = headers.findIndex(h => ['priority', 'приоритет'].includes(h));
-    const assignedToIndex = headers.findIndex(h => ['assignedto', 'assigned to', 'assigned', 'исполнитель', 'назначено'].includes(h));
-    const progressIndex = headers.findIndex(h => ['progress', 'прогресс', 'выполнено', 'done'].includes(h));
-    const timeIndex = headers.findIndex(h => ['time', 'время', 'estimatedtime', 'estimated', 'оценка'].includes(h));
+    const nameIndex = headers.findIndex(h => ['name', 'название', 'задача', 'наименование работ', 'работа', 'наименование'].includes(h));
+    const descriptionIndex = headers.findIndex(h => ['description', 'описание', 'desc', 'коментарий', 'комментарий', 'примечание'].includes(h));
+    const estimatedTimeIndex = headers.findIndex(h => ['estimatedtime', 'время', 'т/з', 'трудозатраты', 'трудоемкость'].includes(h));
+    const priceIndex = headers.findIndex(h => ['price', 'стоимость', 'цена', 'сумма'].includes(h));
 
     if (nameIndex === -1) {
-      throw new Error('В файле должна быть колонка с названием задачи (name, название, задача)');
+      throw new Error('В файле должна быть колонка с названием работы (наименование работ, название, задача)');
     }
 
     const tasks: Task[] = [];
@@ -87,25 +85,27 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
       }
 
       tasks.push({
-        id: uuidv4(),
+        id: crypto.randomUUID(), // используем UUID для генерации ID
         name: taskName,
         description: descriptionIndex >= 0 && columns.length > descriptionIndex ? columns[descriptionIndex] : '',
-        status: statusIndex >= 0 && columns.length > statusIndex ? columns[statusIndex] : 'TODO',
-        priority: priorityIndex >= 0 && columns.length > priorityIndex ? columns[priorityIndex] : 'MEDIUM',
-        assignedTo: assignedToIndex >= 0 && columns.length > assignedToIndex && columns[assignedToIndex] 
-          ? columns[assignedToIndex].split(',').map(id => id.trim()) 
-          : [],
-        progress: progressIndex >= 0 && columns.length > progressIndex ? parseInt(columns[progressIndex]) || 0 : 0,
-        estimatedTime: timeIndex >= 0 && columns.length > timeIndex ? parseInt(columns[timeIndex]) || 0 : 0,
+        status: 'TODO', // По умолчанию устанавливаем статус "TODO"
+        priority: 'MEDIUM', // По умолчанию средний приоритет
+        assignedTo: [], // Пустой массив исполнителей - заполнится автоматически
+        progress: 0, // Начальный прогресс 0%
+        estimatedTime: estimatedTimeIndex >= 0 && columns.length > estimatedTimeIndex ? parseFloat(columns[estimatedTimeIndex]) || 0 : 0,
+        price: priceIndex >= 0 && columns.length > priceIndex ? parseFloat(columns[priceIndex]) || 0 : 0,
         startDate: null,
         endDate: null,
-        assignedToNames: assignedToIndex >= 0 && columns.length > assignedToIndex && columns[assignedToIndex] 
-          ? columns[assignedToIndex].split(',').map(name => name.trim()) 
-          : [],
+        assignedToNames: [],
+        actualStartDate: null,
+        actualEndDate: null,
+        comments: [], // Пустой массив комментариев
       });
     }
 
     return tasks;
+  };
+
   };
 
   const handleImport = async () => {

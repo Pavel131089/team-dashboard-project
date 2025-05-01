@@ -220,9 +220,6 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
       } else {
         throw new Error('Неподдерживаемый формат файла. Используйте .csv');
       }
-
-      if (tasks.length === 0) {
-        throw new Error('Не удалось импортировать задачи из файла. Проверьте формат файла и структуру данных.');
       }
 
       // Создаем проект

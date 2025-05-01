@@ -4,17 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Project, Task, User } from "@/types/project";
 import EmployeeTaskList from "@/components/EmployeeTaskList";
+import { toast } from "@/components/ui/use-toast";
 
 const Employee = () => {
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [myTasks, setMyTasks] = useState<{project: Project, task: Task}[]>([]);
   const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    navigate("/login");
-  };
 
   useEffect(() => {
     // Проверка авторизации
@@ -27,11 +23,47 @@ const Employee = () => {
     const userData = JSON.parse(userStr) as User;
     if (!userData.isAuthenticated) {
       navigate("/login");
+      return;
+    }
+    
+    setUser(userData);
+    
+    // Загрузка проектов
+    const projectsStr = localStorage.getItem("projects");
+    if (projectsStr) {
+      const projectsData = JSON.parse(projectsStr) as Project[];
+      setProjects(projectsData);
+      
+      // Фильтрация задач, назначенных на текущего пользователя
+      const tasksForUser: {project: Project, task: Task}[] = [];
+      
+      projectsData.forEach(project => {
+        project.tasks.forEach(task => {
+          if (task.assignedTo && (
+            typeof task.assignedTo === 'string' ? 
+            task.assignedTo === userData.id : 
+            task.assignedTo.includes(userData.id)
+          )) {
+            tasksForUser.push({
+              project,
+              task
+            });
+          }
+        });
+      });
+      
+      setMyTasks(tasksForUser);
+    }
+  }, [navigate]);
 
   // Обработчик обновления задачи
   const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
     // Если задача не назначена текущему пользователю, не обновляем её
-    if (!updatedTask.assignedTo?.includes(currentUser.id)) {
+    if (user && updatedTask.assignedTo && (
+      typeof updatedTask.assignedTo === 'string' ? 
+      updatedTask.assignedTo !== user.id : 
+      !updatedTask.assignedTo.includes(user.id)
+    )) {
       return;
     }
     
@@ -56,27 +88,6 @@ const Employee = () => {
     setProjects(updatedProjects);
     localStorage.setItem("projects", JSON.stringify(updatedProjects));
     
-    toast({
-      title: "Задача обновлена",
-      description: `Прогресс задачи "${updatedTask.name}" установлен на ${updatedTask.progress}%`,
-    });
-  };
-  
-  // Обработчик выхода из системы
-  const handleLogout = () => {
-    localStorage.removeItem("currentUser");
-    navigate("/login");
-  };
-
-          )
-        };
-      }
-      return project;
-    });
-    
-    setProjects(updatedProjects);
-    localStorage.setItem("projects", JSON.stringify(updatedProjects));
-    
     // Обновляем список задач сотрудника
     const updatedMyTasks = myTasks.map(item => {
       if (item.project.id === projectId && item.task.id === updatedTask.id) {
@@ -89,6 +100,17 @@ const Employee = () => {
     });
     
     setMyTasks(updatedMyTasks);
+    
+    toast({
+      title: "Задача обновлена",
+      description: `Прогресс задачи "${updatedTask.name}" установлен на ${updatedTask.progress}%`,
+    });
+  };
+  
+  // Обработчик выхода из системы
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    navigate("/login");
   };
 
   if (!user) {
@@ -164,7 +186,8 @@ const AvailableTasks = ({
   
   projects.forEach(project => {
     project.tasks.forEach(task => {
-      if (!task.assignedTo) {
+      // Показываем задачи без исполнителей или задачи, которые можно взять нескольким исполнителям
+      if (!task.assignedTo || (Array.isArray(task.assignedTo) && !task.assignedTo.includes(userId))) {
         availableTasks.push({
           project,
           task
@@ -177,10 +200,21 @@ const AvailableTasks = ({
     const project = projects.find(p => p.id === projectId)!;
     const task = project.tasks.find(t => t.id === taskId)!;
     
+    // Обновляем assignedTo, сохраняя список исполнителей если он уже существует
+    let updatedAssignedTo: string | string[] = userId;
+    
+    if (task.assignedTo) {
+      if (Array.isArray(task.assignedTo)) {
+        updatedAssignedTo = [...task.assignedTo, userId];
+      } else if (task.assignedTo !== userId) {
+        updatedAssignedTo = [task.assignedTo, userId];
+      }
+    }
+    
     const updatedTask: Task = {
       ...task,
-      assignedTo: userId,
-      actualStartDate: new Date().toISOString()
+      assignedTo: updatedAssignedTo,
+      actualStartDate: task.actualStartDate || new Date().toISOString()
     };
     
     onTaskUpdate(projectId, updatedTask);

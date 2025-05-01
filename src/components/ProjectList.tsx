@@ -156,14 +156,18 @@ const ProjectList = ({
                               </div>
                             </TableCell>
 
+
                             <TableCell>
+                              {/* Этот блок обрабатывает разные форматы данных исполнителей */}
                               {task.assignedToNames && task.assignedToNames.length > 0 
                                 ? task.assignedToNames.join(", ") 
-                                : Array.isArray(task.assignedTo) && task.assignedTo.length > 0
-                                  ? task.assignedTo.join(", ")
-                                  : typeof task.assignedTo === 'string' && task.assignedTo
-                                    ? task.assignedTo
+                                : typeof task.assignedTo === 'string' && task.assignedTo
+                                  ? "Пользователь " + task.assignedTo
+                                  : Array.isArray(task.assignedTo) && task.assignedTo.length > 0
+                                    ? "Пользователи " + task.assignedTo.join(", ")
                                     : "—"}
+                            </TableCell>
+
                             </TableCell>
 
                             <TableCell>

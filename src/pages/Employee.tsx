@@ -140,12 +140,13 @@ const Employee = () => {
                 Задачи, назначенные на вас
               </CardDescription>
             </CardHeader>
-            <CardContent>
+
               <EmployeeTaskList 
-                tasks={userTasks} 
+                tasks={userTasks.map(item => ({ task: item.task, project: item.project }))} 
                 userId={user.id}
                 onTaskUpdate={handleTaskUpdate}
               />
+
             </CardContent>
           </Card>
           

@@ -14,18 +14,36 @@ import { Progress } from "@/components/ui/progress";
 
 interface EmployeeTaskListProps {
   tasks: Task[];
-  employeeId: string;
-  employeeName: string;
+  userId: string;
+  onTaskUpdate?: (projectId: string, task: Task) => void;
 }
 
-const EmployeeTaskList = ({ tasks, employeeId, employeeName }: EmployeeTaskListProps) => {
+const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps) => {
   // Фильтрация задач, назначенных этому сотруднику
-  const employeeTasks = tasks.filter(task => {
+  const employeeTasks = tasks.map(item => item.task || item).filter(task => {
     if (Array.isArray(task.assignedTo)) {
-      return task.assignedTo.includes(employeeId);
+      return task.assignedTo.includes(userId);
     }
-    return task.assignedTo === employeeId;
+    return task.assignedTo === userId;
   });
+
+  const getProjectName = (task: Task) => {
+    if (task.projectName) return task.projectName;
+    
+    // Если задача передана как часть объекта с проектом
+    if ('project' in (tasks.find(t => 
+      (t.task && t.task.id === task.id) || 
+      (t.id === task.id)
+    ) || {})) {
+      const taskWithProject = tasks.find(t => 
+        (t.task && t.task.id === task.id) || 
+        (t.id === task.id)
+      );
+      return taskWithProject.project?.name || "—";
+    }
+    
+    return "—";
+  };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "—";
@@ -41,14 +59,14 @@ const EmployeeTaskList = ({ tasks, employeeId, employeeName }: EmployeeTaskListP
   if (employeeTasks.length === 0) {
     return (
       <div className="text-center py-6">
-        <p className="text-slate-500">Нет назначенных задач для {employeeName}</p>
+        <p className="text-slate-500">Нет назначенных задач для сотрудника</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <h3 className="font-medium text-lg">Задачи сотрудника: {employeeName}</h3>
+      <h3 className="font-medium text-lg">Задачи сотрудника:</h3>
       <Table>
         <TableHeader>
           <TableRow>
@@ -63,13 +81,13 @@ const EmployeeTaskList = ({ tasks, employeeId, employeeName }: EmployeeTaskListP
           {employeeTasks.map((task) => (
             <TableRow key={task.id}>
               <TableCell className="font-medium">
-                <div>{task.name}</div>
+                <div>{task.name || "—"}</div>
                 <div className="text-xs text-slate-500 mt-1">
-                  {task.description}
+                  {task.description || "—"}
                 </div>
               </TableCell>
               <TableCell>
-                {task.projectName || "—"}
+                {getProjectName(task)}
               </TableCell>
               <TableCell>
                 {task.progress === 100 ? (

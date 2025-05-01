@@ -85,7 +85,9 @@ const Dashboard = () => {
       localStorage.setItem("user", JSON.stringify(currentUser));
     }
   };
-
+  const handleAddTask = (projectId: string, task: Partial<Task>) => {
+    const updatedProjects = projects.map(project => {
+      if (project.id === projectId) {
         return {
           ...project,
           tasks: [...project.tasks, { ...task, id: crypto.randomUUID() }],

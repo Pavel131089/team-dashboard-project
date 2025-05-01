@@ -177,15 +177,13 @@ const ProjectList = ({
                                 )}
                               </div>
                             </TableCell>
-
                             <TableCell>
-                              {task.assignedToNames ? (
+                              {task.assignedToNames && task.assignedToNames.length > 0 ? (
                                 task.assignedToNames.join(", ")
                               ) : (
                                 getAssignedUserName(task.assignedTo)
                               )}
                             </TableCell>
-
                             <TableCell>
                               <div className="space-y-1">
                                 <Progress 

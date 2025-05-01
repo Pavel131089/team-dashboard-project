@@ -1,27 +1,17 @@
 
 import { useState } from "react";
 import { Project, Task } from "@/types/project";
-import { Button } from "@/components/ui/button";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
-  AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/use-toast";
 import ProjectTaskEditor from "@/components/ui/project-task-editor";
-import { Badge } from "@/components/ui/badge";
 import DeleteConfirmationDialog from "@/components/ui/delete-confirmation-dialog";
-import Icon from "@/components/ui/icon";
+import ProjectHeader from "@/components/projects/ProjectHeader";
+import ProjectActions from "@/components/projects/ProjectActions";
+import ProjectTasksTable from "@/components/projects/ProjectTasksTable";
 
 interface User {
   id: string;
@@ -50,12 +40,6 @@ const ProjectList = ({
   const [taskToDelete, setTaskToDelete] = useState<{projectId: string, taskId: string} | null>(null);
   const [isDeleteProjectDialogOpen, setIsDeleteProjectDialogOpen] = useState(false);
   const [isDeleteTaskDialogOpen, setIsDeleteTaskDialogOpen] = useState(false);
-
-  const getProgressColor = (progress: number) => {
-    if (progress < 30) return "bg-red-500";
-    if (progress < 70) return "bg-yellow-500";
-    return "bg-green-500";
-  };
 
   const handleDeleteProjectClick = (projectId: string) => {
     setProjectToDelete(projectId);
@@ -87,7 +71,6 @@ const ProjectList = ({
     }
   };
 
-  
   const confirmDeleteTask = () => {
     if (taskToDelete) {
       const { projectId, taskId } = taskToDelete;
@@ -193,153 +176,22 @@ const ProjectList = ({
             onValueChange={(value) => setExpandedProject(value || null)}
           >
             <AccordionItem value={project.id}>
-              <AccordionTrigger className="px-4 py-3 hover:bg-slate-50">
-                <div className="flex-1 text-left">
-                  <span className="font-medium text-slate-900">{project.name}</span>
-                  <div className="text-sm text-slate-500 font-normal mt-1">
-                    {project.description}
-                  </div>
-                </div>
-              </AccordionTrigger>
+              <ProjectHeader project={project} />
               <AccordionContent>
-                <div className="px-4 py-2 bg-slate-50 border-t border-b">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium">Задачи проекта</h3>
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm text-slate-500">
-                        Всего задач: {project.tasks.length}
-                      </div>
-                      {userRole === "manager" && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDeleteProjectClick(project.id)}
-                        >
-                          <Icon name="Trash2" size={16} className="mr-1" />
-                          Удалить проект
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Название</TableHead>
-                        <TableHead>Статус</TableHead>
-                        <TableHead>Стоимость</TableHead>
-                        <TableHead>Время</TableHead>
-                        <TableHead>Даты</TableHead>
-                        <TableHead>Исполнитель</TableHead>
-                        <TableHead>Прогресс</TableHead>
-                        {userRole === "manager" && <TableHead>Действия</TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {project.tasks.map((task) => (
-                        <TableRow key={task.id}>
-                          <TableCell>
-                            <div className="font-medium">{task.name}</div>
-                            <div className="text-xs text-slate-500 mt-1">{task.description}</div>
-                            {task.comments && task.comments.length > 0 && (
-                              <div className="mt-2 text-xs bg-gray-50 p-2 rounded border border-gray-200">
-                                <div className="font-medium text-gray-700 mb-1">Комментарии:</div>
-                                <ul className="list-disc pl-4 space-y-1">
-                                  {task.comments.map((comment, index) => (
-                                    <li key={index} className="text-gray-600">{comment}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {task.progress === 100 ? (
-                              <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">
-                                Завершено
-                              </Badge>
-                            ) : task.assignedTo ? (
-                              <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                                В работе
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">
-                                Ожидает
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {task.price ? `${task.price} ₽` : "—"}
-                          </TableCell>
-                          <TableCell>
-                            {task.estimatedTime ? `${task.estimatedTime} ч` : "—"}
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-xs">
-                              <div>План: {formatDate(task.startDate)} — {formatDate(task.endDate)}</div>
-                              {task.actualStartDate && (
-                                <div className="mt-1">
-                                  Факт: {formatDate(task.actualStartDate)} 
-                                  {task.actualEndDate ? ` — ${formatDate(task.actualEndDate)}` : ""}
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {getAssignedUserName(task.assignedTo)}
-                          </TableCell>
-                          <TableCell>
-                            <div className="w-full flex flex-col space-y-2">
-                              <div className="flex items-center space-x-2">
-                                <Progress 
-                                  value={task.progress || 0} 
-                                  className="h-2 w-24"
-                                  indicatorClassName={
-                                    task.progress < 30 ? "bg-red-500" :
-                                    task.progress < 70 ? "bg-yellow-500" :
-                                    "bg-green-500"
-                                  }
-                                />
-                                <span className="text-xs">{task.progress || 0}%</span>
-                              </div>
-                              <input 
-                                type="range" 
-                                min="0" 
-                                max="100" 
-                                step="5"
-                                value={task.progress || 0}
-                                onChange={(e) => {
-                                  const updatedTask = {
-                                    ...task,
-                                    progress: parseInt(e.target.value)
-                                  };
-                                  if (updatedTask.progress === 100 && !updatedTask.actualEndDate) {
-                                    updatedTask.actualEndDate = new Date().toISOString();
-                                  }
-                                  handleTaskUpdate(project.id, updatedTask);
-                                }}
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                              />
-                            </div>
-                          </TableCell>
-                          {userRole === "manager" && (
-                            <TableCell>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => handleDeleteTaskClick(project.id, task.id)}
-                              >
-                                <Icon name="Trash2" size={16} />
-                              </Button>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                <ProjectActions 
+                  projectId={project.id}
+                  tasksCount={project.tasks.length}
+                  onDeleteProject={handleDeleteProjectClick}
+                  userRole={userRole}
+                />
+                <ProjectTasksTable 
+                  project={project}
+                  userRole={userRole}
+                  formatDate={formatDate}
+                  getAssignedUserName={getAssignedUserName}
+                  onTaskUpdate={handleTaskUpdate}
+                  onDeleteTask={handleDeleteTaskClick}
+                />
                 {userRole === "manager" && (
                   <ProjectTaskEditor 
                     project={project} 

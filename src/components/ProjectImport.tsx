@@ -187,6 +187,9 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     return result;
   };
 
+  const handleImportJson = () => {
+    // Заглушка для будущей реализации
+  };
 
   const handleImport = async () => {
     if (!file) {
@@ -246,11 +249,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     } finally {
       setIsImporting(false);
     }
-
-  const handleImportJson = () => {
-    // Заглушка для будущей реализации
   };
-
 
   return (
     <Card className="w-full max-w-3xl mx-auto">
@@ -347,8 +346,8 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
               </div>
               <div className="mt-3 text-amber-700 text-sm bg-amber-50 p-3 rounded">
                 <Icon name="AlertTriangle" className="w-4 h-4 inline mr-1" />
-                <span className="font-medium">Важно:</span> Для поддержки Excel файлов потребуется установить дополнительную библиотеку. 
-                Обратитесь к разработчику для активации этой функции.
+                <span className="font-medium">Важно:</span> Импорт Excel файлов временно недоступен. 
+                Пожалуйста, используйте CSV формат.
               </div>
             </TabsContent>
           </Tabs>
@@ -366,7 +365,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
             </Button>
             <Button 
               onClick={handleImport} 
-              disabled={!file || isImporting}
+              disabled={!file || isImporting || (file && ['xls', 'xlsx'].includes(file.name.split('.').pop()?.toLowerCase() || ''))}
             >
               {isImporting ? (
                 <>
@@ -433,4 +432,3 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
 };
 
 export default ProjectImport;
-

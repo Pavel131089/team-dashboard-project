@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Project, User } from "@/types/project";
 import ProjectList from "@/components/ProjectList";
 import ProjectImport from "@/components/ProjectImport";
-
 import ProjectExport from "@/components/ProjectExport";
 import UserManagement from "@/components/UserManagement";
 
@@ -70,9 +69,6 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6">
-
-        <Tabs defaultValue="projects">
-
         <Tabs defaultValue="projects">
           <TabsList className="mb-6">
             <TabsTrigger value="projects">Проекты</TabsTrigger>
@@ -80,7 +76,6 @@ const Dashboard = () => {
             <TabsTrigger value="import">Импорт данных</TabsTrigger>
             <TabsTrigger value="export">Экспорт отчетов</TabsTrigger>
           </TabsList>
-
           
           <TabsContent value="projects">
             <Card>
@@ -142,7 +137,8 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
-
+      </main>
+    </div>
   );
 };
 

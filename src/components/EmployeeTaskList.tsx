@@ -1,164 +1,112 @@
 
 import { useState } from "react";
-import { Project, Task } from "@/types/project";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
+import { Task } from "@/types/project";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { toast } from "@/components/ui/use-toast";
-
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 interface EmployeeTaskListProps {
-  tasks: {project: Project; task: Task}[];
-  userId: string;
-  userNames?: string[]; // Добавлено поле с именами пользователя
-  onTaskUpdate: (projectId: string, task: Task) => void;
+  tasks: Task[];
+  employeeId: string;
+  employeeName: string;
 }
 
+const EmployeeTaskList = ({ tasks, employeeId, employeeName }: EmployeeTaskListProps) => {
+  // Фильтрация задач, назначенных этому сотруднику
+  const employeeTasks = tasks.filter(task => {
+    if (Array.isArray(task.assignedTo)) {
+      return task.assignedTo.includes(employeeId);
+    }
+    return task.assignedTo === employeeId;
+  });
 
-const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps) => {
-  const [selectedTask, setSelectedTask] = useState<{project: Project; task: Task} | null>(null);
-  const [progressValue, setProgressValue] = useState<number[]>([0]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-
-  const handleUpdateProgress = () => {
-    if (!selectedTask) return;
-    
-    const newProgress = progressValue[0];
-
-    const updatedTask: Task = {
-      ...selectedTask.task,
-      progress: newProgress,
-      actualEndDate: newProgress === 100 ? new Date().toISOString() : selectedTask.task.actualEndDate
-    };
-
-    onTaskUpdate(selectedTask.project.id, updatedTask);
-
-
-
-    
-    onTaskUpdate(selectedTask.project.id, updatedTask);
-    setIsDialogOpen(false);
-    
-    toast({
-      title: "Прогресс обновлен",
-      description: `Прогресс задачи "${selectedTask.task.name}" установлен на ${newProgress}%`,
-    });
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "—";
+    return new Date(dateString).toLocaleDateString();
   };
 
-  const openProgressDialog = (task: {project: Project; task: Task}) => {
-    setSelectedTask(task);
-    setProgressValue([task.task.progress]);
-    setIsDialogOpen(true);
+  const getProgressColor = (progress: number) => {
+    if (progress < 30) return "bg-red-500";
+    if (progress < 70) return "bg-yellow-500";
+    return "bg-green-500";
   };
 
-  if (tasks.length === 0) {
+  if (employeeTasks.length === 0) {
     return (
-      <div className="text-center py-4 text-slate-500">
-        У вас пока нет задач
+      <div className="text-center py-6">
+        <p className="text-slate-500">Нет назначенных задач для {employeeName}</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      {tasks.map((item) => (
-        <div 
-          key={item.task.id} 
-          className="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
-        >
-          <div className="flex justify-between">
-            <div>
-              <p className="font-medium text-slate-900">{item.task.name}</p>
-              <p className="text-sm text-slate-500 mt-1">
-                Проект: {item.project.name}
-              </p>
-            </div>
-            <div className="flex items-center">
-              <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs mr-2">
-                {item.task.progress}%
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => openProgressDialog(item)}
-              >
-                Обновить
-              </Button>
-            </div>
-          </div>
-          
-          <p className="text-sm text-slate-700 mt-2">
-            {item.task.description}
-          </p>
-          
-          <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-green-600 h-2 rounded-full" 
-              style={{ width: `${item.task.progress}%` }}
-            ></div>
-          </div>
-          
-          <div className="mt-2 flex flex-wrap gap-2 text-xs">
-            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-              Цена: {item.task.price} ₽
-            </span>
-            <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded">
-              Время: {item.task.estimatedTime} ч
-            </span>
-            {item.task.actualStartDate && (
-              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
-                Начато: {new Date(item.task.actualStartDate).toLocaleDateString()}
-              </span>
-            )}
-            {item.task.actualEndDate && (
-              <span className="bg-teal-100 text-teal-800 px-2 py-1 rounded">
-                Завершено: {new Date(item.task.actualEndDate).toLocaleDateString()}
-              </span>
-            )}
-          </div>
-        </div>
-      ))}
-      
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Обновление прогресса задачи</DialogTitle>
-            <DialogDescription>
-              Укажите текущий процент выполнения задачи "{selectedTask?.task.name}"
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <div className="flex items-center justify-between mb-2">
-              <span>Прогресс:</span>
-              <span className="font-medium">{progressValue[0]}%</span>
-            </div>
-            <Slider
-              value={progressValue}
-              onValueChange={setProgressValue}
-              max={100}
-              step={5}
-            />
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Отмена
-            </Button>
-            <Button onClick={handleUpdateProgress}>
-              Сохранить
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <h3 className="font-medium text-lg">Задачи сотрудника: {employeeName}</h3>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Название</TableHead>
+            <TableHead>Проект</TableHead>
+            <TableHead>Статус</TableHead>
+            <TableHead>Даты</TableHead>
+            <TableHead>Прогресс</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {employeeTasks.map((task) => (
+            <TableRow key={task.id}>
+              <TableCell className="font-medium">
+                <div>{task.name}</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {task.description}
+                </div>
+              </TableCell>
+              <TableCell>
+                {task.projectName || "—"}
+              </TableCell>
+              <TableCell>
+                {task.progress === 100 ? (
+                  <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">
+                    Завершено
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                    В работе
+                  </Badge>
+                )}
+              </TableCell>
+              <TableCell>
+                <div className="text-xs">
+                  <div>План: {formatDate(task.startDate)} — {formatDate(task.endDate)}</div>
+                  {task.actualStartDate && (
+                    <div className="mt-1">
+                      Факт: {formatDate(task.actualStartDate)} 
+                      {task.actualEndDate ? ` — ${formatDate(task.actualEndDate)}` : ""}
+                    </div>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="w-full flex items-center space-x-2">
+                  <Progress 
+                    value={task.progress || 0} 
+                    className="h-2 w-24"
+                    indicatorClassName={getProgressColor(task.progress || 0)}
+                  />
+                  <span className="text-xs">{task.progress || 0}%</span>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };

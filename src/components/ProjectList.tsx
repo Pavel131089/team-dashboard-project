@@ -155,15 +155,17 @@ const ProjectList = ({
                                 )}
                               </div>
                             </TableCell>
+
                             <TableCell>
-            <TableCell>
-              {task.assignedToNames && task.assignedToNames.length > 0 
-                ? task.assignedToNames.join(", ") 
-                : (typeof task.assignedTo === 'string' && task.assignedTo 
-                    ? task.assignedTo
-                    : "—")}
-            </TableCell>
+                              {task.assignedToNames && task.assignedToNames.length > 0 
+                                ? task.assignedToNames.join(", ") 
+                                : Array.isArray(task.assignedTo) && task.assignedTo.length > 0
+                                  ? task.assignedTo.join(", ")
+                                  : typeof task.assignedTo === 'string' && task.assignedTo
+                                    ? task.assignedTo
+                                    : "—"}
                             </TableCell>
+
                             <TableCell>
                               <div className="w-full flex items-center space-x-2">
                                 <Progress 

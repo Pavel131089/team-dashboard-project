@@ -8,11 +8,13 @@ export interface Task {
   startDate: string | null;
   endDate: string | null;
 
+
   progress: number;
-  assignedTo: string[] | null; // Массив ID сотрудников для возможности назначения нескольких сотрудников
+  assignedTo: string | string[] | null; // ID сотрудника или массив ID для нескольких исполнителей
   assignedToNames?: string[]; // Имена назначенных сотрудников
   actualStartDate: string | null;
   actualEndDate: string | null;
+
 
 }
 

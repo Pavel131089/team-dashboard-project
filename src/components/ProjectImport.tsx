@@ -1,15 +1,12 @@
 
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { toast } from 'sonner';
 import { Project, Task } from '../types/project';
-
+import Icon from './ui/icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import * as XLSX from 'xlsx';
-
 
 interface ProjectImportProps {
   onImport: (project: Project) => void;
@@ -190,130 +187,6 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     return result;
   };
 
-  // Функция для обработки Excel файлов
-  const processExcelFile = async (file: File): Promise<Task[]> => {
-    try {
-      console.log('Начинаем импорт Excel файла:', file.name);
-      
-      // Чтение файла Excel
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      
-      // Получаем первый лист
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      
-      // Преобразуем лист в JSON
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-      
-      if (jsonData.length < 2) {
-        throw new Error('Файл должен содержать как минимум заголовок и одну строку данных');
-      }
-      
-      // Получаем заголовки
-      const headers = (jsonData[0] as any[]).map(h => 
-        h ? String(h).trim().toLowerCase() : ''
-      );
-      
-      console.log('Заголовки Excel:', headers);
-      
-      // Находим индексы колонок
-      const nameIndex = headers.findIndex(h => 
-        h && ['name', 'название', 'задача', 'наименование', 'работы', 'работа', 'наименованиеработ']
-          .includes(h.replace(/[\s_-]/g, ''))
-      );
-      
-      if (nameIndex === -1) {
-        throw new Error('В файле должна быть колонка с названием работы (наименование работ, название, задача)');
-      }
-      
-      const descriptionIndex = headers.findIndex(h => 
-        h && ['description', 'описание', 'desc', 'коментарий', 'комментарий', 'примечание']
-          .includes(h.replace(/[\s_-]/g, ''))
-      );
-      
-      const estimatedTimeIndex = headers.findIndex(h => 
-        h && ['estimatedtime', 'время', 'тз', 'трудозатраты', 'трудоемкость', 'часы']
-          .includes(h.replace(/[\s_-]/g, ''))
-      );
-      
-      const priceIndex = headers.findIndex(h => 
-        h && ['price', 'стоимость', 'цена', 'сумма']
-          .includes(h.replace(/[\s_-]/g, ''))
-      );
-      
-      console.log(`Индексы колонок: имя=${nameIndex}, описание=${descriptionIndex}, время=${estimatedTimeIndex}, цена=${priceIndex}`);
-      
-      const tasks: Task[] = [];
-      
-      // Обрабатываем данные (начиная со второй строки)
-      for (let i = 1; i < jsonData.length; i++) {
-        const row = jsonData[i] as any[];
-        
-        // Пропускаем пустые строки
-        if (!row || row.length === 0) continue;
-        
-        // Получаем имя задачи
-        const taskName = nameIndex >= 0 && row.length > nameIndex ? String(row[nameIndex] || '') : '';
-        
-        if (!taskName || taskName.trim() === '') {
-          console.log(`Пропускаем строку ${i}, нет имени задачи`);
-          continue;
-        }
-        
-        // Парсинг числовых значений
-        let estimatedTime = 0;
-        if (estimatedTimeIndex >= 0 && row.length > estimatedTimeIndex && row[estimatedTimeIndex] !== undefined) {
-          const timeValue = row[estimatedTimeIndex];
-          if (typeof timeValue === 'number') {
-            estimatedTime = timeValue;
-          } else if (typeof timeValue === 'string') {
-            estimatedTime = parseFloat(timeValue.replace(',', '.')) || 0;
-          }
-        }
-        
-        let price = 0;
-        if (priceIndex >= 0 && row.length > priceIndex && row[priceIndex] !== undefined) {
-          const priceValue = row[priceIndex];
-          if (typeof priceValue === 'number') {
-            price = priceValue;
-          } else if (typeof priceValue === 'string') {
-            price = parseFloat(priceValue.replace(',', '.')) || 0;
-          }
-        }
-        
-        // Создаем задачу
-        const task: Task = {
-          id: crypto.randomUUID(),
-          name: taskName,
-          description: descriptionIndex >= 0 && row.length > descriptionIndex 
-            ? String(row[descriptionIndex] || '') 
-            : '',
-          status: 'TODO',
-          priority: 'MEDIUM',
-          assignedTo: [],
-          progress: 0,
-          estimatedTime,
-          price,
-          startDate: null,
-          endDate: null,
-          actualStartDate: null,
-          actualEndDate: null,
-          comments: [],
-          assignedToNames: []
-        };
-        
-        tasks.push(task);
-        console.log(`Добавлена задача из Excel: ${task.name}`);
-      }
-      
-      console.log(`Всего обработано задач из Excel: ${tasks.length}`);
-      return tasks;
-    } catch (error) {
-      console.error('Ошибка при обработке Excel файла:', error);
-      throw error;
-    }
-  };
-
   const handleImport = async () => {
     if (!file) {
       setError('Выберите файл для импорта');
@@ -341,15 +214,11 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
         console.log(`Получено содержимое файла, длина: ${content.length} символов`);
         tasks = processCSVData(content);
       } else if (['xls', 'xlsx'].includes(fileExt || '')) {
-        console.log('Обрабатываем как Excel файл');
-        try {
-          tasks = await processExcelFile(file);
-        } catch (excelError) {
-          const errorMessage = excelError instanceof Error ? excelError.message : 'Ошибка при обработке Excel файла';
-          throw new Error(errorMessage);
-        }
+        toast.error('Импорт Excel файлов временно недоступен. Используйте CSV формат.');
+        setIsImporting(false);
+        return;
       } else {
-        throw new Error('Неподдерживаемый формат файла. Используйте .csv, .xls или .xlsx');
+        throw new Error('Неподдерживаемый формат файла. Используйте .csv');
       }
 
       if (tasks.length === 0) {
@@ -561,5 +430,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     </Card>
   );
 };
+
+export default ProjectImport;
 
 export default ProjectImport;

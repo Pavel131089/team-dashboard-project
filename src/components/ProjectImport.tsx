@@ -11,9 +11,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import Icon from "@/components/ui/icon";
 
 interface ProjectImportProps {
-  onImportComplete: (projects: Project[]) => void;
+  onImport: (projects: Project[]) => void;
 }
-
 const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
   const [projectName, setProjectName] = useState<string>("");
   const [projectDescription, setProjectDescription] = useState<string>("");
@@ -163,6 +162,7 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
   };
 
 
+
   const handleSaveProject = async () => {
     if (!projectName.trim()) {
       setError("Пожалуйста, введите название проекта");
@@ -210,6 +210,9 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
       // Добавляем новый проект к существующим
       const updatedProjects = [...existingProjects, newProject];
       
+      // Сохраняем обновленные проекты в localStorage
+      localStorage.setItem("projects", JSON.stringify(updatedProjects));
+      
       // Обновляем проекты в родительском компоненте
       onImportComplete(updatedProjects);
       
@@ -230,6 +233,7 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="space-y-6">

@@ -36,33 +36,21 @@ const Dashboard = () => {
     
     try {
       const parsedUser = JSON.parse(userFromStorage);
+      setUser(parsedUser);
+      
       if (!parsedUser.isAuthenticated) {
         navigate("/login");
         return;
-      } else if (parsedUser.role !== "manager") {
-        navigate("/employee");
-        return;
       }
-      setUser(parsedUser);
     } catch (error) {
-      console.error("Ошибка при парсинге данных пользователя:", error);
+      console.error("Ошибка при разборе данных пользователя:", error);
       navigate("/login");
+      return;
     }
-
-    // Загрузка проектов из localStorage
-    const projectsData = localStorage.getItem("projects");
-    if (projectsData) {
-      try {
-        const loadedProjects = JSON.parse(projectsData);
-        setProjects(loadedProjects);
-      } catch (error) {
-        console.error("Ошибка при загрузке проектов:", error);
-        setProjects([]);
-      }
-    }
-
-    // Загрузка пользователей из localStorage
+    
+    // Загрузка пользователей
     const usersData = localStorage.getItem("users");
+    
     if (usersData) {
       try {
         const loadedUsers = JSON.parse(usersData);
@@ -84,6 +72,35 @@ const Dashboard = () => {
       localStorage.setItem("users", JSON.stringify(defaultUsers));
     }
   }, [navigate]);
+
+  useEffect(() => {
+    // Загрузка проектов из localStorage
+    const loadProjects = () => {
+      try {
+        const savedProjects = localStorage.getItem("projects");
+        if (savedProjects) {
+          setProjects(JSON.parse(savedProjects));
+        }
+      } catch (error) {
+        console.error("Ошибка загрузки проектов:", error);
+      }
+    };
+    
+    // Загрузка пользователя из localStorage
+    const loadUser = () => {
+      try {
+        const savedUser = localStorage.getItem("user");
+        if (savedUser) {
+          setUser(JSON.parse(savedUser));
+        }
+      } catch (error) {
+        console.error("Ошибка загрузки пользователя:", error);
+      }
+    };
+    
+    loadProjects();
+    loadUser();
+  }, []);
 
   const handleLogout = () => {
     if (user) {

@@ -20,18 +20,25 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/use-toast";
 import ProjectTaskEditor from "@/components/ui/project-task-editor";
 
+interface User {
+  id: string;
+  username: string;
+}
+
 interface ProjectListProps {
   projects: Project[];
   onProjectsUpdated?: (projects: Project[]) => void;
   userRole?: "manager" | "employee";
   onUpdateProject?: (updatedProject: Project) => void;
+  users?: User[];
 }
 
 const ProjectList = ({ 
   projects, 
   onProjectsUpdated, 
   userRole = "manager",
-  onUpdateProject
+  onUpdateProject,
+  users = []
 }: ProjectListProps) => {
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   
@@ -44,6 +51,21 @@ const ProjectList = ({
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "—";
     return new Date(dateString).toLocaleDateString();
+  };
+
+  const getAssignedUserName = (assignedTo: string | string[] | null | undefined) => {
+    if (!assignedTo) return "—";
+    
+    if (Array.isArray(assignedTo)) {
+      return assignedTo.map(id => {
+        const user = users?.find(u => u.id === id);
+        return user ? user.username : id;
+      }).join(", ");
+    }
+    
+    // Если строка
+    const user = users?.find(u => u.id === assignedTo);
+    return user ? user.username : assignedTo;
   };
 
   const handleProjectUpdate = (updatedProject: Project) => {
@@ -155,17 +177,23 @@ const ProjectList = ({
                                 )}
                               </div>
                             </TableCell>
-
                             <TableCell>
                               {task.assignedToNames ? (
                                 task.assignedToNames.join(", ")
-                              ) : task.assignedTo ? (
-                                Array.isArray(task.assignedTo) ? 
-                                  task.assignedTo.map(id => users?.find(user => user.id === id)?.username || `ID: ${id}`).join(", ") : 
-                                  users?.find(user => user.id === task.assignedTo)?.username || `ID: ${task.assignedTo}`
-                              ) : "—"}
+                              ) : (
+                                getAssignedUserName(task.assignedTo)
+                              )}
                             </TableCell>
-HERE WAS REAL CODE BUT IT HIDDEN TO SAVE TOKENS USAGE, DONT USE IT AS EXAMPLE
+                            <TableCell>
+                              <div className="space-y-1">
+                                <Progress 
+                                  value={task.progress || 0} 
+                                  className={`h-2 ${getProgressColor(task.progress || 0)}`}
+                                />
+                                <span className="text-xs">{task.progress || 0}%</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
                         ))
                       )}
                     </TableBody>

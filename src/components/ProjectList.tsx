@@ -142,7 +142,7 @@ const ProjectList = ({
                                 </span>
                               )}
                             </TableCell>
-                            <TableCell>{task.price || 0}</TableCell>
+                             <TableCell>{task.price || 0}</TableCell>
                             <TableCell>{task.estimatedTime || 0}</TableCell>
                             <TableCell>
                               <div className="text-xs">
@@ -154,6 +154,7 @@ const ProjectList = ({
                                   </div>
                                 )}
                               </div>
+                            </TableCell>
 
                             <TableCell>
                               {task.assignedToNames && task.assignedToNames.length > 0
@@ -162,8 +163,6 @@ const ProjectList = ({
                                     ? "Назначен исполнитель" 
                                     : "—")}
                             </TableCell>
-
-
 
                             <TableCell>
                               <div className="w-full flex items-center space-x-2">

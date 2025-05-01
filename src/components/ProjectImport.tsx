@@ -246,9 +246,11 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     } finally {
       setIsImporting(false);
     }
+
+  const handleImportJson = () => {
+    // Заглушка для будущей реализации
   };
 
-  };
 
   return (
     <Card className="w-full max-w-3xl mx-auto">

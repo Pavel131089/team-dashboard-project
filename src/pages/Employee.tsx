@@ -7,10 +7,16 @@ import { Project, Task, User } from "@/types/project";
 import EmployeeTaskList from "@/components/EmployeeTaskList";
 
 const Employee = () => {
+
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [myTasks, setMyTasks] = useState<{project: Project, task: Task}[]>([]);
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
 
   useEffect(() => {
     // Проверка авторизации
@@ -38,7 +44,6 @@ const Employee = () => {
       const employeeTasks: {project: Project, task: Task}[] = [];
       
       allProjects.forEach(project => {
-
         project.tasks.forEach(task => {
           if (task.assignedTo && (
             Array.isArray(task.assignedTo) 
@@ -57,10 +62,6 @@ const Employee = () => {
     }
   }, [navigate]);
 
-
-  const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
-    const updatedProjects = projects.map(project => {
-      if (project.id === projectId) {
         return {
           ...project,
           tasks: project.tasks.map(task => 

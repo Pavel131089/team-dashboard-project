@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
 
-interface EmployeeTaskListProps {
 
 interface EmployeeTaskListProps {
   tasks: {project: Project; task: Task}[];
@@ -21,6 +20,7 @@ interface EmployeeTaskListProps {
   userNames?: string[]; // Добавлено поле с именами пользователя
   onTaskUpdate: (projectId: string, task: Task) => void;
 }
+
 
 const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps) => {
   const [selectedTask, setSelectedTask] = useState<{project: Project; task: Task} | null>(null);

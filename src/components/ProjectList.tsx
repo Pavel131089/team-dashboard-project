@@ -19,6 +19,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/use-toast";
 import ProjectTaskEditor from "@/components/ui/project-task-editor";
+import { Badge } from "@/components/ui/badge";
 
 interface User {
   id: string;
@@ -53,7 +54,6 @@ const ProjectList = ({
     return new Date(dateString).toLocaleDateString();
   };
 
-
   const getAssignedUserName = (assignedTo: string | string[] | null | undefined) => {
     if (!assignedTo) return "—";
     
@@ -69,6 +69,26 @@ const ProjectList = ({
     return user ? user.username : assignedTo;
   };
 
+  const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
+    const updatedProjects = projects.map(project => {
+      if (project.id === projectId) {
+        const updatedTasks = project.tasks.map(task => 
+          task.id === updatedTask.id ? updatedTask : task
+        );
+        return { ...project, tasks: updatedTasks };
+      }
+      return project;
+    });
+
+    if (onUpdateProject) {
+      const updatedProject = updatedProjects.find(p => p.id === projectId);
+      if (updatedProject) {
+        onUpdateProject(updatedProject);
+      }
+    } else if (onProjectsUpdated) {
+      onProjectsUpdated(updatedProjects);
+    }
+  };
 
   const handleProjectUpdate = (updatedProject: Project) => {
     if (onUpdateProject) {
@@ -117,115 +137,110 @@ const ProjectList = ({
                     <h3 className="font-medium">Задачи проекта</h3>
                     <div className="text-sm text-slate-500">
                       Всего задач: {project.tasks.length}
-                <TableCell>
-                  <div className="font-medium">{task.name}</div>
-                  <div className="text-xs text-slate-500 mt-1">{task.description}</div>
-                  {task.comments && task.comments.length > 0 && (
-                    <div className="mt-2 text-xs bg-gray-50 p-2 rounded border border-gray-200">
-                      <div className="font-medium text-gray-700 mb-1">Комментарии:</div>
-                      <ul className="list-disc pl-4 space-y-1">
-                        {task.comments.map((comment, index) => (
-                          <li key={index} className="text-gray-600">{comment}</li>
-                        ))}
-                      </ul>
                     </div>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {task.progress === 100 ? (
-                    <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">
-                      Завершено
-                    </Badge>
-                  ) : task.assignedTo ? (
-                    <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                      В работе
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">
-                      Ожидает
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {task.price ? `${task.price} ₽` : "—"}
-                </TableCell>
-                <TableCell>
-                  {task.estimatedTime ? `${task.estimatedTime} ч` : "—"}
-                </TableCell>
-                <TableCell>
-                  <div className="text-xs">
-                    <div>План: {formatDate(task.startDate)} — {formatDate(task.endDate)}</div>
-                    {task.actualStartDate && (
-                      <div className="mt-1">
-                        Факт: {formatDate(task.actualStartDate)} 
-                        {task.actualEndDate ? ` — ${formatDate(task.actualEndDate)}` : ""}
-                      </div>
-                    )}
                   </div>
-                </TableCell>
-                <TableCell>
-                  {Array.isArray(task.assignedToNames) && task.assignedToNames.length > 0 ? (
-                    <div className="space-y-1">
-                      {task.assignedToNames.map((name, idx) => (
-                        <Badge key={idx} variant="secondary" className="mr-1">{name}</Badge>
-                      ))}
-                    </div>
-                  ) : task.assignedTo ? (
-                    <div>{typeof task.assignedTo === 'string' ? task.assignedTo : '—'}</div>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="w-full flex flex-col space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Progress 
-                        value={task.progress || 0} 
-                        className="h-2 w-24"
-                        indicatorClassName={
-                          task.progress < 30 ? "bg-red-500" :
-                          task.progress < 70 ? "bg-yellow-500" :
-                          "bg-green-500"
-                        }
-                      />
-                      <span className="text-xs">{task.progress || 0}%</span>
-                    </div>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      step="5"
-                      value={task.progress || 0}
-                      onChange={(e) => {
-                        const updatedTask = {
-                          ...task,
-                          progress: parseInt(e.target.value)
-                        };
-                        if (updatedTask.progress === 100 && !updatedTask.actualEndDate) {
-                          updatedTask.actualEndDate = new Date().toISOString();
-                        }
-                        handleTaskUpdate(project.id, updatedTask);
-                      }}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    />
-                  </div>
-                </TableCell>
-                            </TableCell>
-                            <TableCell>
-                              {getAssignedUserName(task.assignedTo)}
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-1">
+                </div>
+                <div className="p-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Название</TableHead>
+                        <TableHead>Статус</TableHead>
+                        <TableHead>Стоимость</TableHead>
+                        <TableHead>Время</TableHead>
+                        <TableHead>Даты</TableHead>
+                        <TableHead>Исполнитель</TableHead>
+                        <TableHead>Прогресс</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {project.tasks.map((task) => (
+                        <TableRow key={task.id}>
+                          <TableCell>
+                            <div className="font-medium">{task.name}</div>
+                            <div className="text-xs text-slate-500 mt-1">{task.description}</div>
+                            {task.comments && task.comments.length > 0 && (
+                              <div className="mt-2 text-xs bg-gray-50 p-2 rounded border border-gray-200">
+                                <div className="font-medium text-gray-700 mb-1">Комментарии:</div>
+                                <ul className="list-disc pl-4 space-y-1">
+                                  {task.comments.map((comment, index) => (
+                                    <li key={index} className="text-gray-600">{comment}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {task.progress === 100 ? (
+                              <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">
+                                Завершено
+                              </Badge>
+                            ) : task.assignedTo ? (
+                              <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                                В работе
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">
+                                Ожидает
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {task.price ? `${task.price} ₽` : "—"}
+                          </TableCell>
+                          <TableCell>
+                            {task.estimatedTime ? `${task.estimatedTime} ч` : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-xs">
+                              <div>План: {formatDate(task.startDate)} — {formatDate(task.endDate)}</div>
+                              {task.actualStartDate && (
+                                <div className="mt-1">
+                                  Факт: {formatDate(task.actualStartDate)} 
+                                  {task.actualEndDate ? ` — ${formatDate(task.actualEndDate)}` : ""}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {getAssignedUserName(task.assignedTo)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="w-full flex flex-col space-y-2">
+                              <div className="flex items-center space-x-2">
                                 <Progress 
                                   value={task.progress || 0} 
-                                  className={getProgressColor(task.progress || 0)}
+                                  className="h-2 w-24"
+                                  indicatorClassName={
+                                    task.progress < 30 ? "bg-red-500" :
+                                    task.progress < 70 ? "bg-yellow-500" :
+                                    "bg-green-500"
+                                  }
                                 />
                                 <span className="text-xs">{task.progress || 0}%</span>
                               </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
+                              <input 
+                                type="range" 
+                                min="0" 
+                                max="100" 
+                                step="5"
+                                value={task.progress || 0}
+                                onChange={(e) => {
+                                  const updatedTask = {
+                                    ...task,
+                                    progress: parseInt(e.target.value)
+                                  };
+                                  if (updatedTask.progress === 100 && !updatedTask.actualEndDate) {
+                                    updatedTask.actualEndDate = new Date().toISOString();
+                                  }
+                                  handleTaskUpdate(project.id, updatedTask);
+                                }}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                              />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </div>

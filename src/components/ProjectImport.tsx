@@ -7,9 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { toast } from 'sonner';
 import { Project, Task } from '../types/project';
 import Icon from './ui/icon';
-import * as XLSX from 'xlsx';
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
@@ -223,26 +220,8 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
         const content = await file.text();
         console.log(`Получено содержимое файла, длина: ${content.length} символов`);
         tasks = processCSVData(content);
-      } else if (['xls', 'xlsx'].includes(fileExt || '')) {
-        console.log('Обрабатываем как Excel файл');
-        // Импортируем xlsx динамически
-        const XLSX = await import('xlsx');
-        
-        // Чтение файла как ArrayBuffer
-        const data = await file.arrayBuffer();
-        const workbook = XLSX.read(data, { type: 'array' });
-        
-        // Получаем первый лист
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        
-        // Преобразуем в JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        
-        // Преобразуем данные в задачи, аналогично CSV
-        tasks = processExcelData(jsonData);
       } else {
-        throw new Error('Неподдерживаемый формат файла. Используйте .csv, .xls или .xlsx');
+        throw new Error('Неподдерживаемый формат файла. Используйте .csv');
       }
 
       // Создаем проект
@@ -279,7 +258,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
           Импорт проекта
         </CardTitle>
         <CardDescription>
-          Загрузите CSV или Excel файл с задачами для создания нового проекта
+          Загрузите CSV файл с задачами для создания нового проекта
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -297,12 +276,12 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
             />
           </div>
 
-
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="csv">CSV файл</TabsTrigger>
               <TabsTrigger value="excel">Excel файл</TabsTrigger>
             </TabsList>
+            
             <TabsContent value="csv" className="mt-4">
               <div className="border-2 border-dashed rounded-lg p-6 text-center">
                 <input
@@ -365,14 +344,8 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
                   )}
                 </div>
               </div>
-              <div className="mt-3 text-amber-700 text-sm bg-amber-50 p-3 rounded">
-                <Icon name="AlertTriangle" className="w-4 h-4 inline mr-1" />
-                <span className="font-medium">Важно:</span> Импорт Excel файлов временно недоступен. 
-                Пожалуйста, используйте CSV формат.
-              </div>
             </TabsContent>
           </Tabs>
-
 
           {error && (
             <div className="text-red-500 text-sm bg-red-50 p-2 rounded-md">
@@ -386,11 +359,9 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
               Отмена
             </Button>
             <Button 
-
               onClick={handleImport} 
-              disabled={!file || isImporting || (file && ['xls', 'xlsx'].includes(file.name.split('.').pop()?.toLowerCase() || ''))}
+              disabled={!file || isImporting}
             >
-
               {isImporting ? (
                 <>
                   <Icon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />

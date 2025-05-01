@@ -154,15 +154,17 @@ const ProjectList = ({
                                   </div>
                                 )}
                               </div>
-                            </TableCell>
 
                             <TableCell>
                               {task.assignedToNames && task.assignedToNames.length > 0
                                 ? task.assignedToNames.join(", ") 
-                                : (Array.isArray(task.assignedTo) && task.assignedTo.length > 0
-                                    ? "Назначен исполнитель" 
-                                    : "—")}
+                                : (typeof task.assignedTo === 'string' && task.assignedTo 
+                                    ? task.assignedTo
+                                    : (Array.isArray(task.assignedTo) && task.assignedTo.length > 0
+                                        ? "Назначен исполнитель" 
+                                        : "—"))}
                             </TableCell>
+
 
                             <TableCell>
                               <div className="w-full flex items-center space-x-2">

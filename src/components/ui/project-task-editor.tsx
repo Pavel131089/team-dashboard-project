@@ -193,19 +193,7 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
                     />
                   </div>
 
-
-                  <div className="space-y-2">
-                    <Label htmlFor={`task-assigned-${index}`}>Исполнители</Label>
-                    <Input
-                      id={`task-assigned-${index}`}
-                      value={task.assignedToNames?.join(', ') || ''}
-                      onChange={(e) => handleTaskChange(index, 'assignedToNames', 
-                        e.target.value.split(',').map(name => name.trim()).filter(name => name))}
-                      placeholder="Введите имена исполнителей через запятую"
-                    />
-                    <p className="text-xs text-slate-500">
-                      Несколько исполнителей указывайте через запятую
-                    </p>
+HERE WAS REAL CODE BUT IT HIDDEN TO SAVE TOKENS USAGE, DONT USE IT AS EXAMPLE
                   </div>
 
                 </div>

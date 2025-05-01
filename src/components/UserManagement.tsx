@@ -6,10 +6,9 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
+import Icon from "@/components/ui/icon";
 import { toast } from "@/components/ui/use-toast";
 import { User } from "@/types/index";
-
 
 const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -100,14 +99,16 @@ const UserManagement = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Управление пользователями</h2>
-
-              <div className="text-center py-6">
-                <Button onClick={handleAddUserClick}>
-                  <Icon name="UserPlus" className="mr-2 h-4 w-4" />
-                  Добавить пользователя
-                </Button>
-              </div>
-
+        
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Icon name="UserPlus" className="mr-2 h-4 w-4" />
+              Добавить пользователя
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
               <DialogTitle>Создать нового пользователя</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">

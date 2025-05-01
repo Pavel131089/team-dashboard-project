@@ -138,6 +138,9 @@ const Employee = () => {
               <CardTitle>Мои задачи</CardTitle>
               <CardDescription>
                 Задачи, назначенные на вас
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <EmployeeTaskList 
                 tasks={userTasks} 
                 userId={user.id}
@@ -149,6 +152,7 @@ const Employee = () => {
                   handleTaskUpdate(projectId, updatedTask);
                 }}
               />
+            </CardContent>
           </Card>
           
           <Card>

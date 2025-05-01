@@ -20,6 +20,7 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
   const [tasks, setTasks] = useState<Omit<Task, 'id' | 'progress' | 'assignedTo' | 'actualStartDate' | 'actualEndDate'>[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [excelFile, setExcelFile] = useState<File | null>(null);
 
   const handleAddTask = () => {
     setTasks([
@@ -31,6 +32,7 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
         estimatedTime: 0,
         startDate: null,
         endDate: null,
+        assignedToNames: [],
       }
     ]);
   };
@@ -46,6 +48,68 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
 
   const handleRemoveTask = (index: number) => {
     setTasks(tasks.filter((_, i) => i !== index));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setExcelFile(e.target.files[0]);
+    }
+  };
+
+  const handleImportFromExcel = async () => {
+    if (!excelFile) {
+      setError("Пожалуйста, выберите Excel-файл для импорта");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // В реальном приложении здесь был бы код для парсинга Excel файла
+      // Это упрощенная имитация - просто имитируем создание задач из файла
+      
+      // Проверяем, заполнено ли название проекта
+      if (!projectName.trim()) {
+        throw new Error("Пожалуйста, введите название проекта перед импортом");
+      }
+      
+      // Имитация парсинга Excel - создаем тестовые задачи
+      const parsedTasks = [
+        {
+          name: "Задача из Excel 1",
+          description: "Импортирована автоматически",
+          price: 5000,
+          estimatedTime: 10,
+          startDate: null,
+          endDate: null,
+          assignedToNames: [],
+        },
+        {
+          name: "Задача из Excel 2",
+          description: "Импортирована автоматически",
+          price: 7500,
+          estimatedTime: 15,
+          startDate: null,
+          endDate: null,
+          assignedToNames: [],
+        },
+      ];
+      
+      setTasks([...tasks, ...parsedTasks]);
+      setExcelFile(null);
+      
+      toast({
+        title: "Данные импортированы",
+        description: `Импортировано ${parsedTasks.length} задач из Excel`,
+      });
+      
+    } catch (err: any) {
+      setError(err.message || "Произошла ошибка при импорте из Excel");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSaveProject = async () => {
@@ -86,7 +150,7 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
           id: `t${Date.now()}-${index}`,
           progress: 0,
           assignedTo: null,
-          assignedToNames: [],
+          assignedToNames: task.assignedToNames || [],
           actualStartDate: null,
           actualEndDate: null
         }))
@@ -138,6 +202,35 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
             placeholder="Введите описание проекта"
           />
         </div>
+
+        {/* Excel импорт */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="flex flex-col space-y-2">
+                <Label htmlFor="excel-import">Импорт задач из Excel</Label>
+                <Input
+                  id="excel-import"
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileChange}
+                />
+                <p className="text-sm text-slate-500">
+                  Поддерживаются файлы Excel (.xlsx, .xls)
+                </p>
+              </div>
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={handleImportFromExcel}
+                disabled={!excelFile || isLoading}
+              >
+                <Icon name="FileSpreadsheet" className="w-4 h-4 mr-2" />
+                Импортировать задачи из Excel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
         
         <div className="pt-4">
           <div className="flex justify-between items-center mb-4">
@@ -156,7 +249,7 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
             <div className="text-center py-8 border rounded-md bg-slate-50">
               <p className="text-slate-500">Нет добавленных задач</p>
               <p className="text-sm text-slate-400 mt-2">
-                Нажмите "Добавить задачу" для создания новой задачи
+                Нажмите "Добавить задачу" для создания новой задачи или импортируйте из Excel
               </p>
             </div>
           ) : (

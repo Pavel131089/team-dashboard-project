@@ -2,10 +2,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Input } from './ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { toast } from 'sonner';
 import { Project, Task } from '../types/project';
+import Icon from './ui/icon';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+
 import Icon from './ui/icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 

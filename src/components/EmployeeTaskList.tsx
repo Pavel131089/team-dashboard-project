@@ -21,10 +21,9 @@ interface EmployeeTaskListProps {
   onTaskUpdate?: (projectId: string, task: Task) => void;
 }
 
-
+const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps) => {
   const [taskToDelete, setTaskToDelete] = useState<{projectId: string, taskId: string} | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
 
   // Фильтрация задач, назначенных этому сотруднику
   const employeeTasks = tasks.map(item => {

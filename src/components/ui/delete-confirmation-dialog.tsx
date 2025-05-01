@@ -1,5 +1,5 @@
-
-import { 
+import * as React from 'react';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -8,57 +8,52 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import Icon from "@/components/ui/icon";
+} from '@/components/ui/alert-dialog';
+import Icon from '@/components/ui/icon';
 
 interface DeleteConfirmationDialogProps {
-  title: string;
-  description: string;
-  onConfirm: () => void;
   isOpen: boolean;
   onClose: () => void;
-  triggerElement?: React.ReactNode;
+  onConfirm: () => void;
+  title: string;
+  description: string;
 }
 
-}
-
-const DeleteConfirmationDialog = ({
-  title,
-  description,
-  onConfirm,
+const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
   isOpen,
   onClose,
-  triggerElement
-}: DeleteConfirmationDialogProps) => {
+  onConfirm,
+  title,
+  description,
+}) => {
   return (
-    <>
-      {triggerElement && (
-        <AlertDialogTrigger asChild>
-          {triggerElement}
-        </AlertDialogTrigger>
-      )}
-      <AlertDialog open={isOpen} onOpenChange={onClose}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {description}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={onClose}>Отмена</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={onConfirm}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              Удалить
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center text-red-600">
+            <Icon name="AlertTriangle" className="mr-2 h-5 w-5" />
+            {title}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {description}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onClose}>
+            Отмена
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            Удалить
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 

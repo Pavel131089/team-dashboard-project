@@ -206,7 +206,7 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
                       Несколько исполнителей указывайте через запятую
                     </p>
                   </div>
-
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -243,3 +243,4 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
 };
 
 export default ProjectTaskEditor;
+

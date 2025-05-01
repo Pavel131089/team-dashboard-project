@@ -156,21 +156,26 @@ const ProjectList = ({
                               </div>
                             </TableCell>
 
-
                             <TableCell>
-                              {/* Получаем имя пользователя из массива users по ID */}
-                              {task.assignedTo ? (
+                              {task.assignedToNames ? (
+                                task.assignedToNames.join(", ")
+                              ) : task.assignedTo ? (
                                 Array.isArray(task.assignedTo) ? 
-                                  task.assignedTo.map(id => users.find(user => user.id === id)?.username || id).join(", ") : 
-                                  users.find(user => user.id === task.assignedTo)?.username || task.assignedTo
+                                  task.assignedTo.map(id => users?.find(user => user.id === id)?.username || `ID: ${id}`).join(", ") : 
+                                  users?.find(user => user.id === task.assignedTo)?.username || `ID: ${task.assignedTo}`
                               ) : "—"}
                             </TableCell>
-
-                            </TableCell>
-
-                            </TableCell>
-
                             <TableCell>
+                              <div className="w-full flex items-center space-x-2">
+                                <Progress 
+                                  value={task.progress || 0} 
+                                  className="h-2 w-24"
+                                  indicatorClassName={getProgressColor(task.progress || 0)}
+                                />
+                                <span className="text-xs">{task.progress || 0}%</span>
+                              </div>
+                            </TableCell>
+
                               <div className="w-full flex items-center space-x-2">
                                 <Progress 
                                   value={task.progress || 0} 

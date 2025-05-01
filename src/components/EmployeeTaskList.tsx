@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Task } from "@/types/project";
 import {
@@ -13,33 +12,37 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 interface EmployeeTaskListProps {
-  tasks: Task[];
+  tasks: {project: any, task: Task}[] | Task[];
   userId: string;
   onTaskUpdate?: (projectId: string, task: Task) => void;
 }
 
 const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps) => {
   // Фильтрация задач, назначенных этому сотруднику
-  const employeeTasks = tasks.map(item => item.task || item).filter(task => {
+  const employeeTasks = tasks.map(item => {
+    if ('task' in item) {
+      return {
+        task: item.task,
+        project: item.project
+      };
+    }
+    return {
+      task: item,
+      project: null
+    };
+  }).filter(({ task }) => {
     if (Array.isArray(task.assignedTo)) {
       return task.assignedTo.includes(userId);
     }
     return task.assignedTo === userId;
   });
 
-  const getProjectName = (task: Task) => {
+  const getProjectName = (task: Task, taskItem: any) => {
     if (task.projectName) return task.projectName;
     
-    // Если задача передана как часть объекта с проектом
-    if ('project' in (tasks.find(t => 
-      (t.task && t.task.id === task.id) || 
-      (t.id === task.id)
-    ) || {})) {
-      const taskWithProject = tasks.find(t => 
-        (t.task && t.task.id === task.id) || 
-        (t.id === task.id)
-      );
-      return taskWithProject.project?.name || "—";
+    // Если задача пришла с проектом в объекте
+    if (taskItem.project) {
+      return taskItem.project.name || "—";
     }
     
     return "—";
@@ -78,6 +81,8 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
           </TableRow>
         </TableHeader>
         <TableBody>
+          {employeeTasks.map(({ task, project }) => (
+            <TableRow key={task.id}>
               <TableCell className="font-medium">
                 <div>{task.name || "—"}</div>
                 <div className="text-xs text-slate-500 mt-1">
@@ -94,9 +99,8 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
                   </div>
                 )}
               </TableCell>
-              </TableCell>
               <TableCell>
-                {getProjectName(task)}
+                {getProjectName(task, { project })}
               </TableCell>
               <TableCell>
                 {task.progress === 100 ? (

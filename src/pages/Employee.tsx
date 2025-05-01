@@ -233,7 +233,7 @@ const AvailableTasks = ({
   return (
     <div className="space-y-4">
       {availableTasks.map(({ project, task }) => (
-          <div 
+        <div 
           key={task.id} 
           className="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
         >
@@ -256,7 +256,6 @@ const AvailableTasks = ({
                   </ul>
                 </div>
               )}
-              <div className="mt-2 flex flex-wrap gap-2 text-xs">
               <div className="mt-2 flex flex-wrap gap-2 text-xs">
                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
                   Цена: {task.price} ₽

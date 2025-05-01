@@ -3,24 +3,18 @@ export interface Task {
   id: string;
   name: string;
   description: string;
+  status: "TODO" | "IN_PROGRESS" | "DONE";
+  priority: "LOW" | "MEDIUM" | "HIGH";
   price: number;
   estimatedTime: number;
   startDate: string | null;
   endDate: string | null;
-
-
   progress: number;
-
-  assignedTo: string | string[] | null; // ID сотрудника или массив ID для нескольких исполнителей
-  assignedToNames?: string[]; // Имена назначенных сотрудников
+  assignedTo: string[] | null;
+  assignedToNames?: string[];
   actualStartDate: string | null;
   actualEndDate: string | null;
-  comments?: string[]; // Комментарии к задаче
-  assignedToNames?: string[]; // Имена назначенных сотрудников
-  actualStartDate: string | null;
-  actualEndDate: string | null;
-
-
+  comments?: string[];
 }
 
 export interface Project {

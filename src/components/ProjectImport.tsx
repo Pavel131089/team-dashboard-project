@@ -104,8 +104,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
           endDate: null,
           actualStartDate: null,
           actualEndDate: null,
-          comments: [],
-          assignedToNames: []
+          comments: []
         };
         
         tasks.push(task);

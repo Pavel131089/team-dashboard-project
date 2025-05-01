@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Task } from "@/types/project";
 import {
   Table,
@@ -76,6 +75,13 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
             <TableHead>Название</TableHead>
             <TableHead>Проект</TableHead>
             <TableHead>Статус</TableHead>
+            <TableHead>Даты</TableHead>
+            <TableHead>Прогресс</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {employeeTasks.map(({ task, project }, index) => (
+            <TableRow key={task.id || index}>
               <TableCell className="font-medium">
                 <div>{task.name || "—"}</div>
                 <div className="text-xs text-slate-500 mt-1">
@@ -143,6 +149,7 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
                   />
                 </div>
               </TableCell>
+            </TableRow>
           ))}
         </TableBody>
       </Table>

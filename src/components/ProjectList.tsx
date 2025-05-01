@@ -126,11 +126,11 @@ const ProjectList = ({ projects, onProjectsUpdated, userRole }: ProjectListProps
                           </TableCell>
 
 
-                            <TableCell>
-                              {task.assignedToNames?.length ? 
-                                task.assignedToNames.join(', ') : 
-                                (task.assignedTo && task.assignedTo.length > 0 ? task.assignedTo.join(', ') : "—")}
-                            </TableCell>
+                          <TableCell>
+                            {task.assignedToNames?.length ? 
+                              task.assignedToNames.join(', ') : 
+                              (task.assignedTo ? (Array.isArray(task.assignedTo) ? task.assignedTo.join(', ') : task.assignedTo) : "—")}
+                          </TableCell>
 
 
                           <TableCell>

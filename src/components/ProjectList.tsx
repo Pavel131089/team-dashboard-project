@@ -20,6 +20,8 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/use-toast";
 import ProjectTaskEditor from "@/components/ui/project-task-editor";
 import { Badge } from "@/components/ui/badge";
+import DeleteConfirmationDialog from "@/components/ui/delete-confirmation-dialog";
+import Icon from "@/components/ui/icon";
 
 interface User {
   id: string;
@@ -31,6 +33,7 @@ interface ProjectListProps {
   onProjectsUpdated?: (projects: Project[]) => void;
   userRole?: "manager" | "employee";
   onUpdateProject?: (updatedProject: Project) => void;
+  onDeleteProject?: (projectId: string) => void;
   users?: User[];
 }
 
@@ -39,25 +42,80 @@ const ProjectList = ({
   onProjectsUpdated, 
   userRole = "manager",
   onUpdateProject,
+  onDeleteProject,
   users = []
 }: ProjectListProps) => {
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<{projectId: string, taskId: string} | null>(null);
+  const [isDeleteProjectDialogOpen, setIsDeleteProjectDialogOpen] = useState(false);
+  const [isDeleteTaskDialogOpen, setIsDeleteTaskDialogOpen] = useState(false);
 
   const getProgressColor = (progress: number) => {
     if (progress < 30) return "bg-red-500";
     if (progress < 70) return "bg-yellow-500";
     return "bg-green-500";
+
+  const handleDeleteProjectClick = (projectId: string) => {
+    setProjectToDelete(projectId);
+    setIsDeleteProjectDialogOpen(true);
+  };
+
+  const handleDeleteTaskClick = (projectId: string, taskId: string) => {
+    setTaskToDelete({ projectId, taskId });
+    setIsDeleteTaskDialogOpen(true);
   };
   
-  const handleDeleteProject = (projectId: string) => {
-    const updatedProjects = projects.filter(p => p.id !== projectId);
-    if (onProjectsUpdated) {
-      onProjectsUpdated(updatedProjects);
+  const confirmDeleteProject = () => {
+    if (projectToDelete) {
+      if (onDeleteProject) {
+        onDeleteProject(projectToDelete);
+      } else {
+        const updatedProjects = projects.filter(p => p.id !== projectToDelete);
+        if (onProjectsUpdated) {
+          onProjectsUpdated(updatedProjects);
+        }
+      }
+      
       toast({
         title: "Проект удален",
         description: "Проект и все его задачи были успешно удалены"
       });
+      setIsDeleteProjectDialogOpen(false);
+      setProjectToDelete(null);
     }
+  };
+
+  
+  const confirmDeleteTask = () => {
+    if (taskToDelete) {
+      const { projectId, taskId } = taskToDelete;
+      const updatedProjects = projects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            tasks: project.tasks.filter(task => task.id !== taskId)
+          };
+        }
+        return project;
+      });
+      
+      if (onUpdateProject) {
+        const updatedProject = updatedProjects.find(p => p.id === projectId);
+        if (updatedProject) {
+          onUpdateProject(updatedProject);
+        }
+      } else if (onProjectsUpdated) {
+        onProjectsUpdated(updatedProjects);
+      }
+      
+      toast({
+        title: "Задача удалена",
+        description: "Задача была успешно удалена из проекта"
+      });
+    }
+    setIsDeleteTaskDialogOpen(false);
+    setTaskToDelete(null);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -146,8 +204,21 @@ const ProjectList = ({
                 <div className="px-4 py-2 bg-slate-50 border-t border-b">
                   <div className="flex justify-between items-center">
                     <h3 className="font-medium">Задачи проекта</h3>
-                    <div className="text-sm text-slate-500">
-                      Всего задач: {project.tasks.length}
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm text-slate-500">
+                        Всего задач: {project.tasks.length}
+                      </div>
+                      {userRole === "manager" && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleDeleteProjectClick(project.id)}
+                        >
+                          <Icon name="Trash2" size={16} className="mr-1" />
+                          Удалить проект
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -162,6 +233,7 @@ const ProjectList = ({
                         <TableHead>Даты</TableHead>
                         <TableHead>Исполнитель</TableHead>
                         <TableHead>Прогресс</TableHead>
+                        {userRole === "manager" && <TableHead>Действия</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -250,6 +322,18 @@ const ProjectList = ({
                               />
                             </div>
                           </TableCell>
+                          {userRole === "manager" && (
+                            <TableCell>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteTaskClick(project.id, task.id)}
+                              >
+                                <Icon name="Trash2" size={16} />
+                              </Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -266,6 +350,24 @@ const ProjectList = ({
           </Accordion>
         </div>
       ))}
+
+      {/* Диалог подтверждения удаления проекта */}
+      <DeleteConfirmationDialog
+        isOpen={isDeleteProjectDialogOpen}
+        onClose={() => setIsDeleteProjectDialogOpen(false)}
+        onConfirm={confirmDeleteProject}
+        title="Удалить проект"
+        description="Вы уверены, что хотите удалить проект? Это действие нельзя отменить. Все задачи, связанные с этим проектом, также будут удалены."
+      />
+
+      {/* Диалог подтверждения удаления задачи */}
+      <DeleteConfirmationDialog
+        isOpen={isDeleteTaskDialogOpen}
+        onClose={() => setIsDeleteTaskDialogOpen(false)}
+        onConfirm={confirmDeleteTask}
+        title="Удалить задачу"
+        description="Вы уверены, что хотите удалить задачу? Это действие нельзя отменить."
+      />
     </div>
   );
 };

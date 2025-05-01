@@ -101,7 +101,6 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     }
 
     return tasks;
-  };
 
   const handleImport = async () => {
     if (!file) {
@@ -131,6 +130,30 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
       if (tasks.length === 0) {
         throw new Error('Не удалось импортировать задачи из файла');
       }
+
+      // Создаем проект
+      const newProject: Project = {
+        id: crypto.randomUUID(),
+        name: projectName,
+        description: `Импортировано из ${file.name}`,
+        tasks: tasks,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Вызываем callback
+      onImport(newProject);
+      toast.success(`Проект "${projectName}" успешно создан с ${tasks.length} задачами`);
+      resetForm();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Произошла ошибка при импорте файла';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
 
       // Создаем проект
       const newProject: Project = {

@@ -364,9 +364,11 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
               Отмена
             </Button>
             <Button 
+
               onClick={handleImport} 
               disabled={!file || isImporting || (file && ['xls', 'xlsx'].includes(file.name.split('.').pop()?.toLowerCase() || ''))}
             >
+
               {isImporting ? (
                 <>
                   <Icon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />

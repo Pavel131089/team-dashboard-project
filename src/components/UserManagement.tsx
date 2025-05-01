@@ -100,12 +100,14 @@ const UserManagement = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Управление пользователями</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>Создать нового пользователя</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
+
+              <div className="text-center py-6">
+                <Button onClick={handleAddUserClick}>
+                  <Icon name="UserPlus" className="mr-2 h-4 w-4" />
+                  Добавить пользователя
+                </Button>
+              </div>
+
               <DialogTitle>Создать нового пользователя</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">

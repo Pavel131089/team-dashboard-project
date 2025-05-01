@@ -7,11 +7,13 @@ export interface Task {
   estimatedTime: number;
   startDate: string | null;
   endDate: string | null;
+
   progress: number;
-  assignedTo: string | null;
-  assignedToName?: string;
+  assignedTo: string[] | null; // Массив ID сотрудников для возможности назначения нескольких сотрудников
+  assignedToNames?: string[]; // Имена назначенных сотрудников
   actualStartDate: string | null;
   actualEndDate: string | null;
+
 }
 
 export interface Project {

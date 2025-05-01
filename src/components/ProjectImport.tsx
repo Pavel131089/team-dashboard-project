@@ -6,30 +6,64 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Project, Task } from "@/types/project";
 import { toast } from "@/components/ui/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Plus, X, Save } from "lucide-react";
+import Icon from "@/components/ui/icon";
 
 interface ProjectImportProps {
   onImportComplete: (projects: Project[]) => void;
 }
 
 const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
-  const [file, setFile] = useState<File | null>(null);
+  const [projectName, setProjectName] = useState<string>("");
+  const [projectDescription, setProjectDescription] = useState<string>("");
+  const [tasks, setTasks] = useState<Omit<Task, 'id' | 'progress' | 'assignedTo' | 'actualStartDate' | 'actualEndDate'>[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null;
-    setFile(selectedFile);
-    setError(null);
+  const handleAddTask = () => {
+    setTasks([
+      ...tasks,
+      {
+        name: "",
+        description: "",
+        price: 0,
+        estimatedTime: 0,
+        startDate: null,
+        endDate: null,
+      }
+    ]);
   };
 
-  const handleImport = async () => {
-    if (!file) {
-      setError("Пожалуйста, выберите файл для импорта");
+  const handleTaskChange = (index: number, field: keyof Omit<Task, 'id' | 'progress' | 'assignedTo' | 'actualStartDate' | 'actualEndDate'>, value: any) => {
+    const updatedTasks = [...tasks];
+    updatedTasks[index] = {
+      ...updatedTasks[index],
+      [field]: value
+    };
+    setTasks(updatedTasks);
+  };
+
+  const handleRemoveTask = (index: number) => {
+    setTasks(tasks.filter((_, i) => i !== index));
+  };
+
+  const handleSaveProject = async () => {
+    if (!projectName.trim()) {
+      setError("Пожалуйста, введите название проекта");
       return;
     }
     
-    if (!['.csv', '.xlsx', '.xls'].some(ext => file.name.toLowerCase().endsWith(ext))) {
-      setError("Пожалуйста, загрузите файл в формате CSV или Excel");
+    if (tasks.length === 0) {
+      setError("Добавьте хотя бы одну задачу к проекту");
+      return;
+    }
+
+    // Проверка заполнения всех задач
+    const invalidTasks = tasks.filter(task => !task.name.trim());
+    if (invalidTasks.length > 0) {
+      setError("Пожалуйста, заполните название для всех задач");
       return;
     }
     
@@ -37,85 +71,46 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
     setError(null);
     
     try {
-      // В реальном приложении здесь бы был код для парсинга файла
-      // Для демонстрации создадим тестовые данные
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Имитация загрузки
+      // Загрузим существующие проекты, чтобы добавить новый
+      const existingProjectsStr = localStorage.getItem("projects");
+      const existingProjects: Project[] = existingProjectsStr ? JSON.parse(existingProjectsStr) : [];
       
-      const mockProjects: Project[] = [
-        {
-          id: "p1",
-          name: "Разработка веб-сайта",
-          description: "Корпоративный веб-сайт для компании",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          tasks: [
-            {
-              id: "t1",
-              name: "Дизайн главной страницы",
-              description: "Создание макета главной страницы сайта",
-              price: 15000,
-              estimatedTime: 20,
-              startDate: new Date().toISOString(),
-              endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-              progress: 0,
-              assignedTo: null,
-              actualStartDate: null,
-              actualEndDate: null
-            },
-            {
-              id: "t2",
-              name: "Вёрстка главной страницы",
-              description: "HTML/CSS вёрстка по макету",
-              price: 10000,
-              estimatedTime: 15,
-              startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-              endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-              progress: 0,
-              assignedTo: null,
-              actualStartDate: null,
-              actualEndDate: null
-            }
-          ]
-        },
-        {
-          id: "p2",
-          name: "Мобильное приложение",
-          description: "Мобильное приложение для Android и iOS",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          tasks: [
-            {
-              id: "t3",
-              name: "Дизайн интерфейса",
-              description: "Создание UI/UX для мобильного приложения",
-              price: 25000,
-              estimatedTime: 30,
-              startDate: new Date().toISOString(),
-              endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-              progress: 0,
-              assignedTo: null,
-              actualStartDate: null,
-              actualEndDate: null
-            }
-          ]
-        }
-      ];
+      // Создаем новый проект с уникальным ID
+      const newProject: Project = {
+        id: `p${Date.now()}`,
+        name: projectName,
+        description: projectDescription,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        tasks: tasks.map((task, index) => ({
+          ...task,
+          id: `t${Date.now()}-${index}`,
+          progress: 0,
+          assignedTo: null,
+          assignedToNames: [],
+          actualStartDate: null,
+          actualEndDate: null
+        }))
+      };
+      
+      // Добавляем новый проект к существующим
+      const updatedProjects = [...existingProjects, newProject];
       
       // Обновляем проекты в родительском компоненте
-      onImportComplete(mockProjects);
+      onImportComplete(updatedProjects);
       
       toast({
-        title: "Импорт успешно завершен",
-        description: `Загружено проектов: ${mockProjects.length}, задач: ${mockProjects.reduce((acc, project) => acc + project.tasks.length, 0)}`,
+        title: "Проект успешно создан",
+        description: `Добавлен проект "${projectName}" с ${tasks.length} задачами`,
       });
       
-      // Сбрасываем состояние
-      setFile(null);
-      const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-      if (fileInput) fileInput.value = '';
+      // Сбрасываем форму
+      setProjectName("");
+      setProjectDescription("");
+      setTasks([]);
       
     } catch (err) {
-      setError("Произошла ошибка при импорте файла");
+      setError("Произошла ошибка при создании проекта");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -124,18 +119,111 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="file-upload">Выберите файл для импорта</Label>
-        <Input
-          id="file-upload"
-          type="file"
-          accept=".csv,.xlsx,.xls"
-          onChange={handleFileChange}
-          disabled={isLoading}
-        />
-        <p className="text-xs text-slate-500">
-          Поддерживаемые форматы: CSV, Excel (.xlsx, .xls)
-        </p>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="project-name">Название проекта</Label>
+          <Input
+            id="project-name"
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
+            placeholder="Введите название проекта"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="project-description">Описание проекта</Label>
+          <Textarea
+            id="project-description"
+            value={projectDescription}
+            onChange={(e) => setProjectDescription(e.target.value)}
+            placeholder="Введите описание проекта"
+          />
+        </div>
+        
+        <div className="pt-4">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-medium">Задачи проекта</h3>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleAddTask}
+            >
+              <Icon name="Plus" className="w-4 h-4 mr-2" />
+              Добавить задачу
+            </Button>
+          </div>
+          
+          {tasks.length === 0 ? (
+            <div className="text-center py-8 border rounded-md bg-slate-50">
+              <p className="text-slate-500">Нет добавленных задач</p>
+              <p className="text-sm text-slate-400 mt-2">
+                Нажмите "Добавить задачу" для создания новой задачи
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {tasks.map((task, index) => (
+                <Card key={index} className="relative">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2"
+                    onClick={() => handleRemoveTask(index)}
+                  >
+                    <Icon name="X" className="w-4 h-4" />
+                  </Button>
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor={`task-name-${index}`}>Наименование работ</Label>
+                        <Input
+                          id={`task-name-${index}`}
+                          value={task.name}
+                          onChange={(e) => handleTaskChange(index, 'name', e.target.value)}
+                          placeholder="Введите название задачи"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor={`task-description-${index}`}>Комментарий</Label>
+                        <Input
+                          id={`task-description-${index}`}
+                          value={task.description}
+                          onChange={(e) => handleTaskChange(index, 'description', e.target.value)}
+                          placeholder="Введите описание задачи"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor={`task-time-${index}`}>Т/З (часы)</Label>
+                        <Input
+                          id={`task-time-${index}`}
+                          type="number"
+                          min="0"
+                          value={task.estimatedTime || ""}
+                          onChange={(e) => handleTaskChange(index, 'estimatedTime', parseInt(e.target.value) || 0)}
+                          placeholder="Введите время в часах"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor={`task-price-${index}`}>Стоимость (₽)</Label>
+                        <Input
+                          id={`task-price-${index}`}
+                          type="number"
+                          min="0"
+                          value={task.price || ""}
+                          onChange={(e) => handleTaskChange(index, 'price', parseInt(e.target.value) || 0)}
+                          placeholder="Введите стоимость в рублях"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       
       {error && (
@@ -144,33 +232,20 @@ const ProjectImport = ({ onImportComplete }: ProjectImportProps) => {
         </Alert>
       )}
       
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-slate-500">
-          {file ? `Выбран файл: ${file.name}` : "Файл не выбран"}
-        </div>
+      <div className="flex justify-end">
         <Button 
-          onClick={handleImport} 
-          disabled={!file || isLoading}
+          onClick={handleSaveProject} 
+          disabled={isLoading}
         >
-          {isLoading ? "Импорт..." : "Импортировать"}
+          {isLoading ? (
+            "Сохранение..."
+          ) : (
+            <>
+              <Icon name="Save" className="w-4 h-4 mr-2" />
+              Создать проект
+            </>
+          )}
         </Button>
-      </div>
-      
-      <div className="border-t pt-4 mt-4">
-        <h3 className="font-medium mb-2">Инструкция по формату файла:</h3>
-        <p className="text-sm text-slate-700 mb-2">
-          Файл должен содержать следующие колонки:
-        </p>
-        <ul className="text-sm text-slate-700 list-disc pl-5 space-y-1">
-          <li>Название проекта</li>
-          <li>Описание проекта</li>
-          <li>Название задачи</li>
-          <li>Описание задачи</li>
-          <li>Цена (в рублях)</li>
-          <li>Оценка времени (в часах)</li>
-          <li>Дата начала</li>
-          <li>Дата окончания</li>
-        </ul>
       </div>
     </div>
   );

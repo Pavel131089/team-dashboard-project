@@ -124,9 +124,13 @@ const ProjectList = ({ projects, onProjectsUpdated, userRole }: ProjectListProps
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
-                            {task.assignedToName || (task.assignedTo ? "Сотрудник" : "—")}
-                          </TableCell>
+
+                            <TableCell>
+                              {task.assignedToNames?.length ? 
+                                task.assignedToNames.join(', ') : 
+                                (task.assignedTo ? "Назначен" : "—")}
+                            </TableCell>
+
                           <TableCell>
                             <div className="w-full flex items-center space-x-2">
                               <Progress 

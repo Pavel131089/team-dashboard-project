@@ -35,51 +35,57 @@ const Dashboard = () => {
     }
 
     // Загрузка проектов из localStorage
-    const savedProjects = JSON.parse(localStorage.getItem("projects") || "[]");
-    setProjects(savedProjects);
 
-    // Загрузка пользователей из localStorage
-    const savedUsers = JSON.parse(localStorage.getItem("users") || "[]");
-    setUsers(savedUsers);
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    navigate("/login");
-  };
-
-  const handleAddProject = () => {
-    if (!newProject.name || !newProject.description) {
-      toast.error("Заполните название и описание проекта");
-      return;
+  useEffect(() => {
+    // Загрузка проектов из localStorage
+    const projectsData = localStorage.getItem("projects");
+    if (projectsData) {
+      try {
+        const loadedProjects = JSON.parse(projectsData);
+        setProjects(loadedProjects);
+      } catch (error) {
+        console.error("Error loading projects:", error);
+      }
     }
 
-    const projectToAdd: Project = {
-      id: crypto.randomUUID(),
-      name: newProject.name,
-      description: newProject.description,
-      tasks: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // Загрузка пользователя из localStorage
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const loadedUser = JSON.parse(userData);
+        setUser(loadedUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    } else {
+      // Создаем дефолтного пользователя, если не существует
+      const defaultUser: User = {
+        id: "user1",
+        username: "manager",
+        role: "manager",
+        isAuthenticated: true
+      };
+      setUser(defaultUser);
+      localStorage.setItem("user", JSON.stringify(defaultUser));
+    }
+  }, []);
 
-    const updatedProjects = [...projects, projectToAdd];
+  // Обработчик обновления проектов
+  const handleProjectsUpdated = (updatedProjects: Project[]) => {
     setProjects(updatedProjects);
     localStorage.setItem("projects", JSON.stringify(updatedProjects));
-
-    setNewProject({
-      name: "",
-      description: "",
-      tasks: [],
-    });
-
-    setIsDialogOpen(false);
-    toast.success("Проект добавлен");
   };
 
-  const handleAddTask = (projectId: string, task: Task) => {
-    const updatedProjects = projects.map(project => {
-      if (project.id === projectId) {
+  // Обработчик обновления пользователей
+  const handleUsersUpdated = (updatedUsers: any) => {
+    // Обновляем текущего пользователя, если он изменился
+    const currentUser = updatedUsers.find((u: any) => u.id === user?.id);
+    if (currentUser) {
+      setUser(currentUser);
+      localStorage.setItem("user", JSON.stringify(currentUser));
+    }
+  };
+
         return {
           ...project,
           tasks: [...project.tasks, { ...task, id: crypto.randomUUID() }],

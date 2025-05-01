@@ -60,19 +60,21 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
             task.assignedTo && task.assignedTo.includes(selectedEmployee)
           )
         })).filter(project => project.tasks.length > 0);
-      }
-      
+
       // Форматируем данные для CSV
-      const headers = "Project,Task,Description,Price,Time,Progress,Assigned To\n";
+      const headers = "Проект;Задача;Описание;Стоимость;Время;Прогресс;Исполнитель;Дата начала;Дата окончания\n";
       const rows = dataToExport.flatMap(project => 
-        project.tasks.map(task => 
-          `"${project.name}","${task.name}","${task.description}",${task.price},${task.estimatedTime},${task.progress}%,"${task.assignedToNames?.join(', ') || ''}"`
-        )
+        project.tasks.map(task => {
+          const assignedTo = task.assignedToNames?.join(', ') || 
+                             (Array.isArray(task.assignedTo) ? task.assignedTo.join(', ') : 
+                              (task.assignedTo || ''));
+          
+          return `"${project.name}";"${task.name}";"${task.description}";${task.price};${task.estimatedTime};${task.progress}%;"${assignedTo}";"${formatDate(task.startDate)}";"${formatDate(task.endDate)}"`;
+        })
       ).join('\n');
       
-      const csvContent = `data:text/csv;charset=utf-8,${headers}${rows}`;
-      const encodedUri = encodeURI(csvContent);
-      
+      const csvContent = `data:text/csv;charset=utf-8,${encodeURIComponent(headers + rows)}`;
+
       // Создаем ссылку для скачивания
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);

@@ -433,4 +433,3 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
 
 export default ProjectImport;
 
-export default ProjectImport;

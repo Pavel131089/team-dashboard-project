@@ -24,11 +24,10 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
   const [progressValue, setProgressValue] = useState<number[]>([0]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+
   const handleUpdateProgress = () => {
     if (!selectedTask) return;
     
-    const newProgress = progressValue[0];
-
     const newProgress = progressValue[0];
 
     const updatedTask: Task = {
@@ -36,6 +35,9 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
       progress: newProgress,
       actualEndDate: newProgress === 100 ? new Date().toISOString() : selectedTask.task.actualEndDate
     };
+
+    onTaskUpdate(selectedTask.project.id, updatedTask);
+
 
 
     

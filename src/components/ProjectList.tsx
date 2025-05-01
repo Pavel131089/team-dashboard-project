@@ -177,12 +177,15 @@ const ProjectList = ({
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell>
-                              {task.assignedToNames && task.assignedToNames.length > 0 
-                                ? task.assignedToNames.join(", ") 
-                                : task.assignedTo 
-                                  ? getAssignedUserName(task.assignedTo)
-                                  : "—"}
+
+<TableCell>
+  {task.assignedToNames && task.assignedToNames.length > 0 
+    ? task.assignedToNames.join(", ") 
+    : task.assignedTo 
+      ? getAssignedUserName(task.assignedTo)
+      : "—"}
+</TableCell>
+
                             </TableCell>
                             <TableCell>
                               <div className="space-y-1">

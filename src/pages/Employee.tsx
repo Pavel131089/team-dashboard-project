@@ -18,53 +18,74 @@ const Employee = () => {
     if (!userStr) {
       navigate("/login");
       return;
-    }
-    
-    const userData = JSON.parse(userStr) as User;
-    if (!userData.isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-    
-    setUser(userData);
-    
-    // Загрузка проектов
-    const projectsStr = localStorage.getItem("projects");
-    if (projectsStr) {
-      const projectsData = JSON.parse(projectsStr) as Project[];
-      setProjects(projectsData);
-      
-      // Фильтрация задач, назначенных на текущего пользователя
-      const tasksForUser: {project: Project, task: Task}[] = [];
-      
-      projectsData.forEach(project => {
-        project.tasks.forEach(task => {
-          if (task.assignedTo && (
-            typeof task.assignedTo === 'string' ? 
-            task.assignedTo === userData.id : 
-            task.assignedTo.includes(userData.id)
-          )) {
-            tasksForUser.push({
-              project,
-              task
-            });
-          }
-        });
-      });
-      
-      setMyTasks(tasksForUser);
-    }
-  }, [navigate]);
 
-  // Обработчик обновления задачи
+const Employee = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [userTasks, setUserTasks] = useState<{project: Project; task: Task}[]>([]);
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    const userFromStorage = localStorage.getItem('user');
+    const projectsFromStorage = localStorage.getItem('projects');
+    
+    if (userFromStorage) {
+      try {
+        const parsedUser = JSON.parse(userFromStorage);
+        setUser(parsedUser);
+        setUserName(parsedUser.username || "");
+      } catch (error) {
+        console.error("Failed to parse user data:", error);
+      }
+    }
+    
+    if (projectsFromStorage) {
+      try {
+        const parsedProjects: Project[] = JSON.parse(projectsFromStorage);
+        setProjects(parsedProjects);
+      } catch (error) {
+        console.error("Failed to parse projects data:", error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user || !projects.length) return;
+
+    // Находим задачи, назначенные на текущего пользователя
+    const tasks: {project: Project; task: Task}[] = [];
+    
+    projects.forEach(project => {
+      project.tasks.forEach(task => {
+        // Проверяем назначен ли этот пользователь на задачу:
+        // 1. По ID в массиве assignedTo
+        // 2. По имени пользователя в массиве assignedToNames
+        const assignedById = Array.isArray(task.assignedTo) && task.assignedTo.includes(user.id);
+        const assignedByName = Array.isArray(task.assignedToNames) && task.assignedToNames.includes(userName);
+        
+        if (assignedById || assignedByName) {
+          tasks.push({project, task});
+        }
+      });
+    });
+    
+    setUserTasks(tasks);
+  }, [user, projects, userName]);
+
   const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
-    // Если задача не назначена текущему пользователю, не обновляем её
-    if (user && updatedTask.assignedTo && (
-      typeof updatedTask.assignedTo === 'string' ? 
-      updatedTask.assignedTo !== user.id : 
-      !updatedTask.assignedTo.includes(user.id)
-    )) {
-      return;
+    const projectIndex = projects.findIndex(p => p.id === projectId);
+    if (projectIndex === -1) return;
+    
+    const taskIndex = projects[projectIndex].tasks.findIndex(t => t.id === updatedTask.id);
+    if (taskIndex === -1) return;
+    
+    const updatedProjects = [...projects];
+    updatedProjects[projectIndex].tasks[taskIndex] = updatedTask;
+    
+    setProjects(updatedProjects);
+    localStorage.setItem('projects', JSON.stringify(updatedProjects));
+  };
+
     }
     
     // Если задача завершена на 100%, устанавливаем actualEndDate

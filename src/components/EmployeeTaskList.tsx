@@ -14,8 +14,11 @@ import {
 import { toast } from "@/components/ui/use-toast";
 
 interface EmployeeTaskListProps {
+
+interface EmployeeTaskListProps {
   tasks: {project: Project; task: Task}[];
   userId: string;
+  userNames?: string[]; // Добавлено поле с именами пользователя
   onTaskUpdate: (projectId: string, task: Task) => void;
 }
 

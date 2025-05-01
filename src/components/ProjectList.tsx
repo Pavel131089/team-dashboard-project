@@ -159,10 +159,11 @@ const ProjectList = ({
                             <TableCell>
                               {task.assignedToNames && task.assignedToNames.length > 0
                                 ? task.assignedToNames.join(", ") 
-                                : (Array.isArray(task.assignedTo) 
+                                : (Array.isArray(task.assignedTo) && task.assignedTo.length > 0
                                     ? task.assignedTo.join(", ") 
-                                    : task.assignedTo || "—")}
+                                    : "—")}
                             </TableCell>
+
 
                             <TableCell>
                               <div className="w-full flex items-center space-x-2">

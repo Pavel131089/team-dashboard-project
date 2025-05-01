@@ -26,27 +26,37 @@ const Dashboard = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [user, setUser] = useState<User | null>(null);
 
+
+const Dashboard = () => {
+  const [activeTab, setActiveTab] = useState("projects");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+
   useEffect(() => {
-    const userFromStorage = localStorage.getItem("user");
-    
-    if (!userFromStorage) {
-      navigate("/login");
-      return;
-    }
-    
-    try {
-      const parsedUser = JSON.parse(userFromStorage);
-      setUser(parsedUser);
-      
-      if (!parsedUser.isAuthenticated) {
-        navigate("/login");
-        return;
+    // Загрузка данных пользователя из localStorage
+    const userFromStorage = localStorage.getItem('user');
+    if (userFromStorage) {
+      try {
+        const parsedUser = JSON.parse(userFromStorage);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error("Failed to parse user data:", error);
       }
-    } catch (error) {
-      console.error("Ошибка при разборе данных пользователя:", error);
-      navigate("/login");
-      return;
     }
+  }, []);
+
+  useEffect(() => {
+    // Загрузка проектов из localStorage
+    const projectsFromStorage = localStorage.getItem('projects');
+    if (projectsFromStorage) {
+      try {
+        setProjects(JSON.parse(projectsFromStorage));
+      } catch (error) {
+        console.error("Failed to parse projects data:", error);
+      }
+    }
+  }, []);
+
     
     // Загрузка пользователей
     const usersData = localStorage.getItem("users");

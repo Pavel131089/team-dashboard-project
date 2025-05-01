@@ -202,8 +202,11 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
                         e.target.value.split(',').map(name => name.trim()).filter(name => name))}
                       placeholder="Введите имена исполнителей через запятую"
                     />
+                    <p className="text-xs text-slate-500">
+                      Несколько исполнителей указывайте через запятую
+                    </p>
                   </div>
-                </div>
+
               </CardContent>
             </Card>
           ))}

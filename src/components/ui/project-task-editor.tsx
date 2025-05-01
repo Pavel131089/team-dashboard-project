@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
+import Icon from "@/components/ui/icon";
 
 interface ProjectTaskEditorProps {
   project: Project;
@@ -26,6 +26,7 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
   });
 
   const [assigneeInput, setAssigneeInput] = useState("");
+  const [showAddTask, setShowAddTask] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -66,6 +67,8 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
       ...newTask as Task,
       assignedToNames,
       assignedTo: assignedToNames.length > 0 ? assignedToNames : "",
+      actualStartDate: null,
+      actualEndDate: null,
     };
 
     const updatedProject: Project = {
@@ -94,6 +97,30 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
     });
   };
 
+  // Функция для обновления задачи
+  const handleTaskUpdate = (taskId: string, updates: Partial<Task>) => {
+    const updatedTasks = project.tasks.map(task => {
+      if (task.id === taskId) {
+        return { ...task, ...updates };
+      }
+      return task;
+    });
+    
+    const updatedProject = { ...project, tasks: updatedTasks };
+    onProjectUpdate(updatedProject);
+  };
+  
+  // Функция для удаления задачи
+  const handleTaskDelete = (taskId: string) => {
+    const updatedTasks = project.tasks.filter(task => task.id !== taskId);
+    const updatedProject = { ...project, tasks: updatedTasks };
+    onProjectUpdate(updatedProject);
+    toast({
+      title: "Задача удалена",
+      description: "Задача была успешно удалена из проекта"
+    });
+  };
+
   return (
     <div className="p-4 border-t">
       <h3 className="font-medium mb-4">Добавить задачу</h3>
@@ -110,30 +137,11 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
         </div>
         
         <div>
-
-  const handleTaskUpdate = (taskId: string, updates: Partial<Task>) => {
-    const updatedTasks = project.tasks.map(task => {
-      if (task.id === taskId) {
-        return { ...task, ...updates };
-      }
-      return task;
-    });
-    
-    const updatedProject = { ...project, tasks: updatedTasks };
-    onProjectUpdate(updatedProject);
-  };
-  
-  const handleTaskDelete = (taskId: string) => {
-    const updatedTasks = project.tasks.filter(task => task.id !== taskId);
-    const updatedProject = { ...project, tasks: updatedTasks };
-    onProjectUpdate(updatedProject);
-    setShowAddTask(false);
-    toast({
-      title: "Задача удалена",
-      description: "Задача была успешно удалена из проекта"
-    });
-  };
-
+          <Label htmlFor="description">Описание</Label>
+          <Textarea
+            id="description"
+            name="description"
+            value={newTask.description}
             onChange={handleInputChange}
             placeholder="Описание задачи"
             rows={3}
@@ -151,15 +159,15 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
             placeholder="0"
           />
         </div>
+        
         <div>
-          <Label htmlFor="price">Цена (₽)</Label>
+          <Label htmlFor="assignedToNames">Исполнители (через запятую)</Label>
           <Input
-            id="price"
-            name="price"
-            type="number"
-            value={newTask.price === 0 ? "" : newTask.price}
+            id="assignedToNames"
+            name="assignedToNames"
+            value={assigneeInput}
             onChange={handleInputChange}
-            placeholder="0"
+            placeholder="Иванов И.И., Петров П.П."
           />
         </div>
         

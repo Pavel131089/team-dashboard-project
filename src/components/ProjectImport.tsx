@@ -327,11 +327,17 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
 
                 <div className="space-y-2">
                   <Icon name="FileSpreadsheet" className="mx-auto h-12 w-12 text-gray-400" />
+
                   <div className="text-sm">
                     <label
-HERE WAS REAL CODE BUT IT HIDDEN TO SAVE TOKENS USAGE, DONT USE IT AS EXAMPLE
+                      htmlFor="excelFileUpload"
+                      className="relative cursor-pointer text-primary underline"
+                    >
+                      <span>Выберите Excel файл</span>
+                    </label>{' '}
                     или перетащите его сюда
                   </div>
+
                   <p className="text-xs text-gray-500">*.xls, *.xlsx файлы</p>
 
                   {file && (file.name.toLowerCase().endsWith('.xls') || file.name.toLowerCase().endsWith('.xlsx')) && (

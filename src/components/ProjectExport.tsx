@@ -21,6 +21,15 @@ interface ProjectExportProps {
 
 type ExportType = "all" | "employee" | "project";
 
+const formatDate = (date: string | undefined): string => {
+  if (!date) return "";
+  try {
+    return new Date(date).toLocaleDateString("ru-RU");
+  } catch (e) {
+    return date;
+  }
+};
+
 const ProjectExport = ({ projects }: ProjectExportProps) => {
   const [exportType, setExportType] = useState<ExportType>("all");
   const [selectedProject, setSelectedProject] = useState<string>("");
@@ -33,20 +42,23 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
   projects.forEach(project => {
     project.tasks.forEach(task => {
       if (task.assignedTo) {
-        employees.add(task.assignedTo);
+        if (Array.isArray(task.assignedTo)) {
+          task.assignedTo.forEach(emp => employees.add(emp));
+        } else {
+          employees.add(task.assignedTo);
+        }
       }
     });
   });
   
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
 
-
   const handleExport = async () => {
     setIsLoading(true);
     
     try {
       // Получение данных для экспорта
-      let dataToExport = [];
+      let dataToExport: Project[] = [];
       
       if (exportType === "all") {
         dataToExport = projects;
@@ -56,20 +68,50 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
         // Фильтруем задачи по сотруднику
         dataToExport = projects.map(project => ({
           ...project,
-          tasks: project.tasks.filter(task => 
-            task.assignedTo && task.assignedTo.includes(selectedEmployee)
-          )
+          tasks: project.tasks.filter(task => {
+            if (Array.isArray(task.assignedTo)) {
+              return task.assignedTo.includes(selectedEmployee);
+            }
+            return task.assignedTo && task.assignedTo === selectedEmployee;
+          })
         })).filter(project => project.tasks.length > 0);
+      }
+
+      // Применяем фильтр по датам, если указаны
+      if (dateFrom || dateTo) {
+        dataToExport = dataToExport.map(project => ({
+          ...project,
+          tasks: project.tasks.filter(task => {
+            const taskStartDate = task.startDate ? new Date(task.startDate) : null;
+            const taskEndDate = task.endDate ? new Date(task.endDate) : null;
+            const filterDateFrom = dateFrom ? new Date(dateFrom) : null;
+            const filterDateTo = dateTo ? new Date(dateTo) : null;
+            
+            if (filterDateFrom && taskStartDate && taskStartDate < filterDateFrom) {
+              return false;
+            }
+            if (filterDateTo && taskEndDate && taskEndDate > filterDateTo) {
+              return false;
+            }
+            return true;
+          })
+        })).filter(project => project.tasks.length > 0);
+      }
 
       // Форматируем данные для CSV
       const headers = "Проект;Задача;Описание;Стоимость;Время;Прогресс;Исполнитель;Дата начала;Дата окончания\n";
       const rows = dataToExport.flatMap(project => 
         project.tasks.map(task => {
-          const assignedTo = task.assignedToNames?.join(', ') || 
-                             (Array.isArray(task.assignedTo) ? task.assignedTo.join(', ') : 
-                              (task.assignedTo || ''));
+          let assignedTo = "";
+          if (Array.isArray(task.assignedTo)) {
+            assignedTo = task.assignedTo.join(", ");
+          } else if (task.assignedToNames) {
+            assignedTo = task.assignedToNames.join(", ");
+          } else if (task.assignedTo) {
+            assignedTo = task.assignedTo.toString();
+          }
           
-          return `"${project.name}";"${task.name}";"${task.description}";${task.price};${task.estimatedTime};${task.progress}%;"${assignedTo}";"${formatDate(task.startDate)}";"${formatDate(task.endDate)}"`;
+          return `"${project.name}";"${task.name}";"${task.description || ""}";"${task.price || 0}";"${task.estimatedTime || 0}";"${task.progress || 0}%";"${assignedTo}";"${formatDate(task.startDate)}";"${formatDate(task.endDate)}"`;
         })
       ).join('\n');
       
@@ -77,7 +119,7 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
 
       // Создаем ссылку для скачивания
       const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
+      link.setAttribute("href", csvContent);
       link.setAttribute("download", `report-${new Date().toISOString().split('T')[0]}.csv`);
       document.body.appendChild(link);
       link.click();
@@ -97,7 +139,6 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
       setIsLoading(false);
     }
   };
-
 
   const isExportDisabled = () => {
     if (isLoading) return true;
@@ -209,7 +250,7 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
       <Card className="p-4 bg-slate-50">
         <h3 className="font-medium mb-2">Информация об отчетах:</h3>
         <p className="text-sm text-slate-700">
-          Отчеты экспортируются в формате Excel (.xlsx) и содержат детальную информацию о проектах,
+          Отчеты экспортируются в формате CSV и содержат детальную информацию о проектах,
           задачах, назначенных исполнителях, сроках выполнения и текущем прогрессе.
         </p>
       </Card>

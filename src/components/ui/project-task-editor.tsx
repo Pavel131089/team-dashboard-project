@@ -192,10 +192,19 @@ const ProjectTaskEditor = ({ project, onProjectUpdate }: ProjectTaskEditorProps)
                       placeholder="Введите стоимость в рублях"
                     />
                   </div>
-
-HERE WAS REAL CODE BUT IT HIDDEN TO SAVE TOKENS USAGE, DONT USE IT AS EXAMPLE
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor={`task-assignedToNames-${index}`}>Исполнители</Label>
+                    <Input
+                      id={`task-assignedToNames-${index}`}
+                      value={task.assignedToNames?.join(', ') || ''}
+                      onChange={(e) => {
+                        const names = e.target.value.split(',').map(name => name.trim()).filter(Boolean);
+                        handleTaskChange(index, 'assignedToNames', names);
+                      }}
+                      placeholder="Введите имена через запятую"
+                    />
                   </div>
-
                 </div>
               </CardContent>
             </Card>
@@ -233,4 +242,3 @@ HERE WAS REAL CODE BUT IT HIDDEN TO SAVE TOKENS USAGE, DONT USE IT AS EXAMPLE
 };
 
 export default ProjectTaskEditor;
-

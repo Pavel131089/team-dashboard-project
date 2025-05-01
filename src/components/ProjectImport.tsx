@@ -277,6 +277,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
             />
           </div>
 
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="csv">CSV файл</TabsTrigger>
@@ -315,48 +316,43 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
               </div>
             </TabsContent>
 
-              <TabsContent value="excel" className="mt-4">
-                <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                  <input
-                    type="file"
-                    id="excelFileUpload"
-                    onChange={handleFileChange}
-                    accept=".xls,.xlsx"
-                    className="hidden"
-                  />
-                  <div className="space-y-2">
-                    <Icon name="FileSpreadsheet" className="mx-auto h-12 w-12 text-gray-400" />
-                    <div className="text-sm">
-                      <label
-                        htmlFor="excelFileUpload"
-                        className="relative cursor-pointer text-primary underline"
-                      >
-                        Выберите Excel файл
-                      </label>
-                      {' '}или перетащите его сюда
-                    </div>
-                    <p className="text-xs text-gray-500">*.xls, *.xlsx файлы</p>
-                    {file && (file.name.toLowerCase().endsWith('.xls') || file.name.toLowerCase().endsWith('.xlsx')) && (
-                      <div className="mt-2 text-sm text-gray-500 flex justify-center items-center">
-                        <Icon name="Check" className="w-4 h-4 mr-1 text-green-500" />
-                        {file.name}
-                      </div>
-                    )}
+            <TabsContent value="excel" className="mt-4">
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <input
+                  type="file"
+                  id="excelFileUpload"
+                  onChange={handleFileChange}
+                  accept=".xls,.xlsx"
+                  className="hidden"
+                />
+                <div className="space-y-2">
+                  <Icon name="FileSpreadsheet" className="mx-auto h-12 w-12 text-gray-400" />
+                  <div className="text-sm">
+                    <label
+                      htmlFor="excelFileUpload"
+                      className="relative cursor-pointer text-primary underline"
+                    >
+                      Выберите Excel файл
+                    </label>
+                    {' '}или перетащите его сюда
                   </div>
+                  <p className="text-xs text-gray-500">*.xls, *.xlsx файлы</p>
+                  {file && (file.name.toLowerCase().endsWith('.xls') || file.name.toLowerCase().endsWith('.xlsx')) && (
+                    <div className="mt-2 text-sm text-gray-500 flex justify-center items-center">
+                      <Icon name="Check" className="w-4 h-4 mr-1 text-green-500" />
+                      {file.name}
+                    </div>
+                  )}
                 </div>
-                <div className="mt-3 text-amber-700 text-sm bg-amber-50 p-3 rounded">
-                  <Icon name="AlertTriangle" className="w-4 h-4 inline mr-1" />
-                  <span className="font-medium">Важно:</span> Импорт Excel файлов временно недоступен. 
-                  Пожалуйста, используйте CSV формат.
-                </div>
-              </TabsContent>
-
+              </div>
+              <div className="mt-3 text-amber-700 text-sm bg-amber-50 p-3 rounded">
                 <Icon name="AlertTriangle" className="w-4 h-4 inline mr-1" />
                 <span className="font-medium">Важно:</span> Импорт Excel файлов временно недоступен. 
                 Пожалуйста, используйте CSV формат.
               </div>
             </TabsContent>
           </Tabs>
+
 
           {error && (
             <div className="text-red-500 text-sm bg-red-50 p-2 rounded-md">

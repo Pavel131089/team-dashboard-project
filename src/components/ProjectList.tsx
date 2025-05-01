@@ -165,27 +165,7 @@ const ProjectList = ({
                                   users?.find(user => user.id === task.assignedTo)?.username || `ID: ${task.assignedTo}`
                               ) : "—"}
                             </TableCell>
-                            <TableCell>
-                              <div className="w-full flex items-center space-x-2">
-                                <Progress 
-                                  value={task.progress || 0} 
-                                  className="h-2 w-24"
-                                  indicatorClassName={getProgressColor(task.progress || 0)}
-                                />
-                                <span className="text-xs">{task.progress || 0}%</span>
-                              </div>
-                            </TableCell>
-
-                              <div className="w-full flex items-center space-x-2">
-                                <Progress 
-                                  value={task.progress || 0} 
-                                  className="h-2 w-24"
-                                  indicatorClassName={getProgressColor(task.progress || 0)}
-                                />
-                                <span className="text-xs">{task.progress || 0}%</span>
-                              </div>
-                            </TableCell>
-                          </TableRow>
+HERE WAS REAL CODE BUT IT HIDDEN TO SAVE TOKENS USAGE, DONT USE IT AS EXAMPLE
                         ))
                       )}
                     </TableBody>

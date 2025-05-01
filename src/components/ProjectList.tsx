@@ -18,14 +18,22 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/use-toast";
+import ProjectTaskEditor from "@/components/ui/project-task-editor";
 
 interface ProjectListProps {
   projects: Project[];
-  onProjectsUpdated: (projects: Project[]) => void;
-  userRole: "manager" | "employee";
+  onProjectsUpdated?: (projects: Project[]) => void;
+  userRole?: "manager" | "employee";
+  onUpdateProject?: (updatedProject: Project) => void;
 }
 
-const ProjectList = ({ projects, onProjectsUpdated, userRole }: ProjectListProps) => {
+const ProjectList = ({ 
+  projects, 
+  onProjectsUpdated, 
+  userRole = "manager",
+  onUpdateProject
+}: ProjectListProps) => {
+  const [expandedProject, setExpandedProject] = useState<string | null>(null);
   
   const getProgressColor = (progress: number) => {
     if (progress < 30) return "bg-red-500";
@@ -38,12 +46,23 @@ const ProjectList = ({ projects, onProjectsUpdated, userRole }: ProjectListProps
     return new Date(dateString).toLocaleDateString();
   };
 
+  const handleProjectUpdate = (updatedProject: Project) => {
+    if (onUpdateProject) {
+      onUpdateProject(updatedProject);
+    } else if (onProjectsUpdated) {
+      const updatedProjects = projects.map(p => 
+        p.id === updatedProject.id ? updatedProject : p
+      );
+      onProjectsUpdated(updatedProjects);
+    }
+  };
+
   if (projects.length === 0) {
     return (
       <div className="text-center py-8">
         <p className="text-slate-500">Проекты отсутствуют</p>
         <p className="text-slate-400 text-sm mt-2">
-          Импортируйте проекты через вкладку "Импорт данных"
+          Создайте новый проект или импортируйте существующие через вкладку "Импорт данных"
         </p>
       </div>
     );
@@ -53,7 +72,12 @@ const ProjectList = ({ projects, onProjectsUpdated, userRole }: ProjectListProps
     <div className="space-y-6">
       {projects.map((project) => (
         <div key={project.id} className="border rounded-lg overflow-hidden">
-          <Accordion type="single" collapsible>
+          <Accordion 
+            type="single" 
+            collapsible
+            value={expandedProject === project.id ? project.id : undefined}
+            onValueChange={(value) => setExpandedProject(value || null)}
+          >
             <AccordionItem value={project.id}>
               <AccordionTrigger className="px-4 py-3 hover:bg-slate-50">
                 <div className="flex-1 text-left">
@@ -86,68 +110,82 @@ const ProjectList = ({ projects, onProjectsUpdated, userRole }: ProjectListProps
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {project.tasks.map((task) => (
-                        <TableRow key={task.id}>
-                          <TableCell className="font-medium">
-                            <div>{task.name}</div>
-                            <div className="text-xs text-slate-500 mt-1">
-                              {task.description}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {task.assignedTo ? (
-                              task.progress === 100 ? (
-                                <span className="inline-block px-2 py-1 text-xs rounded bg-green-100 text-green-800">
-                                  Завершено
-                                </span>
-                              ) : (
-                                <span className="inline-block px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
-                                  В работе
-                                </span>
-                              )
-                            ) : (
-                              <span className="inline-block px-2 py-1 text-xs rounded bg-slate-100 text-slate-800">
-                                Не начато
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>{task.price}</TableCell>
-                          <TableCell>{task.estimatedTime}</TableCell>
-                          <TableCell>
-                            <div className="text-xs">
-                              <div>План: {formatDate(task.startDate)} — {formatDate(task.endDate)}</div>
-                              {task.actualStartDate && (
-                                <div className="mt-1">
-                                  Факт: {formatDate(task.actualStartDate)} 
-                                  {task.actualEndDate ? ` — ${formatDate(task.actualEndDate)}` : ""}
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-
-
-                          <TableCell>
-                            {task.assignedToNames?.length ? 
-                              task.assignedToNames.join(', ') : 
-                              (task.assignedTo ? (Array.isArray(task.assignedTo) ? task.assignedTo.join(', ') : task.assignedTo) : "—")}
-                          </TableCell>
-
-
-                          <TableCell>
-                            <div className="w-full flex items-center space-x-2">
-                              <Progress 
-                                value={task.progress} 
-                                className="h-2 w-24"
-                                indicatorClassName={getProgressColor(task.progress)}
-                              />
-                              <span className="text-xs">{task.progress}%</span>
-                            </div>
+                      {project.tasks.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-4 text-slate-500">
+                            Нет задач в проекте. Добавьте задачи ниже.
                           </TableCell>
                         </TableRow>
-                      ))}
+                      ) : (
+                        project.tasks.map((task) => (
+                          <TableRow key={task.id}>
+                            <TableCell className="font-medium">
+                              <div>{task.name}</div>
+                              <div className="text-xs text-slate-500 mt-1">
+                                {task.description}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {task.assignedTo ? (
+                                task.progress === 100 ? (
+                                  <span className="inline-block px-2 py-1 text-xs rounded bg-green-100 text-green-800">
+                                    Завершено
+                                  </span>
+                                ) : (
+                                  <span className="inline-block px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
+                                    В работе
+                                  </span>
+                                )
+                              ) : (
+                                <span className="inline-block px-2 py-1 text-xs rounded bg-slate-100 text-slate-800">
+                                  Не начато
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>{task.price || 0}</TableCell>
+                            <TableCell>{task.estimatedTime || 0}</TableCell>
+                            <TableCell>
+                              <div className="text-xs">
+                                <div>План: {formatDate(task.startDate)} — {formatDate(task.endDate)}</div>
+                                {task.actualStartDate && (
+                                  <div className="mt-1">
+                                    Факт: {formatDate(task.actualStartDate)} 
+                                    {task.actualEndDate ? ` — ${formatDate(task.actualEndDate)}` : ""}
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+
+                            <TableCell>
+                              {task.assignedToNames && task.assignedToNames.length > 0
+                                ? task.assignedToNames.join(", ") 
+                                : (Array.isArray(task.assignedTo) 
+                                    ? task.assignedTo.join(", ") 
+                                    : task.assignedTo || "—")}
+                            </TableCell>
+
+                            <TableCell>
+                              <div className="w-full flex items-center space-x-2">
+                                <Progress 
+                                  value={task.progress || 0} 
+                                  className="h-2 w-24"
+                                  indicatorClassName={getProgressColor(task.progress || 0)}
+                                />
+                                <span className="text-xs">{task.progress || 0}%</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </div>
+                {userRole === "manager" && (
+                  <ProjectTaskEditor 
+                    project={project} 
+                    onProjectUpdate={handleProjectUpdate} 
+                  />
+                )}
               </AccordionContent>
             </AccordionItem>
           </Accordion>

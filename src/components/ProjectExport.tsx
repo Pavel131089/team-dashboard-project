@@ -53,7 +53,7 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
   
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
 
-  const handleExport = async () => {
+  const handleExport = () => {
     setIsLoading(true);
     
     try {
@@ -61,9 +61,12 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
       let dataToExport: Project[] = [];
       
       if (exportType === "all") {
-        dataToExport = projects;
+        dataToExport = [...projects];
       } else if (exportType === "project" && selectedProject) {
-        dataToExport = projects.filter(p => p.id === selectedProject);
+        const found = projects.find(p => p.id === selectedProject);
+        if (found) {
+          dataToExport = [found];
+        }
       } else if (exportType === "employee" && selectedEmployee) {
         // Фильтруем задачи по сотруднику
         dataToExport = projects.map(project => ({
@@ -72,7 +75,7 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
             if (Array.isArray(task.assignedTo)) {
               return task.assignedTo.includes(selectedEmployee);
             }
-            return task.assignedTo && task.assignedTo === selectedEmployee;
+            return task.assignedTo === selectedEmployee;
           })
         })).filter(project => project.tasks.length > 0);
       }
@@ -98,20 +101,26 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
         })).filter(project => project.tasks.length > 0);
       }
 
-      // Форматируем данные для CSV
+
+      // Форматируем данные для CSV - используем точку с запятой для Excel
       const headers = "Проект;Задача;Описание;Стоимость;Время;Прогресс;Исполнитель;Дата начала;Дата окончания\n";
+      
       const rows = dataToExport.flatMap(project => 
         project.tasks.map(task => {
+          const projectName = project.name.replace(/"/g, '""');
+          const taskName = task.name.replace(/"/g, '""');
+          const taskDesc = (task.description || "").replace(/"/g, '""');
+          
           let assignedTo = "";
           if (Array.isArray(task.assignedTo)) {
             assignedTo = task.assignedTo.join(", ");
-          } else if (task.assignedToNames) {
+          } else if (task.assignedToNames && task.assignedToNames.length > 0) {
             assignedTo = task.assignedToNames.join(", ");
           } else if (task.assignedTo) {
-            assignedTo = task.assignedTo.toString();
+            assignedTo = String(task.assignedTo);
           }
           
-          return `"${project.name}";"${task.name}";"${task.description || ""}";"${task.price || 0}";"${task.estimatedTime || 0}";"${task.progress || 0}%";"${assignedTo}";"${formatDate(task.startDate)}";"${formatDate(task.endDate)}"`;
+          return `"${projectName}";"${taskName}";"${taskDesc}";"${task.price || 0}";"${task.estimatedTime || 0}";"${task.progress || 0}%";"${assignedTo}";"${formatDate(task.startDate)}";"${formatDate(task.endDate)}"`;
         })
       ).join('\n');
       
@@ -120,7 +129,7 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
       // Создаем ссылку для скачивания
       const link = document.createElement("a");
       link.setAttribute("href", csvContent);
-      link.setAttribute("download", `report-${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute("download", `project-report-${new Date().toISOString().slice(0, 10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -130,6 +139,7 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
         description: "Отчет успешно скачан",
       });
     } catch (error) {
+      console.error("Ошибка при экспорте:", error);
       toast({
         title: "Ошибка экспорта",
         description: "Не удалось экспортировать отчет",
@@ -252,6 +262,7 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
         <p className="text-sm text-slate-700">
           Отчеты экспортируются в формате CSV и содержат детальную информацию о проектах,
           задачах, назначенных исполнителях, сроках выполнения и текущем прогрессе.
+          Файл можно открыть в Excel или другом табличном редакторе.
         </p>
       </Card>
     </div>

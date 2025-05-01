@@ -9,21 +9,9 @@ import { toast } from "@/components/ui/use-toast";
 const Employee = () => {
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [myTasks, setMyTasks] = useState<{project: Project, task: Task}[]>([]);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Проверка авторизации
-    const userStr = localStorage.getItem("user");
-    if (!userStr) {
-      navigate("/login");
-      return;
-
-const Employee = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [userTasks, setUserTasks] = useState<{project: Project; task: Task}[]>([]);
   const [userName, setUserName] = useState<string>("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const userFromStorage = localStorage.getItem('user');
@@ -37,6 +25,9 @@ const Employee = () => {
       } catch (error) {
         console.error("Failed to parse user data:", error);
       }
+    } else {
+      navigate("/login");
+      return;
     }
     
     if (projectsFromStorage) {
@@ -47,7 +38,7 @@ const Employee = () => {
         console.error("Failed to parse projects data:", error);
       }
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (!user || !projects.length) return;
@@ -62,8 +53,9 @@ const Employee = () => {
         // 2. По имени пользователя в массиве assignedToNames
         const assignedById = Array.isArray(task.assignedTo) && task.assignedTo.includes(user.id);
         const assignedByName = Array.isArray(task.assignedToNames) && task.assignedToNames.includes(userName);
+        const assignedBySingleId = task.assignedTo === user.id;
         
-        if (assignedById || assignedByName) {
+        if (assignedById || assignedByName || assignedBySingleId) {
           tasks.push({project, task});
         }
       });
@@ -73,21 +65,6 @@ const Employee = () => {
   }, [user, projects, userName]);
 
   const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
-    const projectIndex = projects.findIndex(p => p.id === projectId);
-    if (projectIndex === -1) return;
-    
-    const taskIndex = projects[projectIndex].tasks.findIndex(t => t.id === updatedTask.id);
-    if (taskIndex === -1) return;
-    
-    const updatedProjects = [...projects];
-    updatedProjects[projectIndex].tasks[taskIndex] = updatedTask;
-    
-    setProjects(updatedProjects);
-    localStorage.setItem('projects', JSON.stringify(updatedProjects));
-  };
-
-    }
-    
     // Если задача завершена на 100%, устанавливаем actualEndDate
     if (updatedTask.progress === 100 && !updatedTask.actualEndDate) {
       updatedTask.actualEndDate = new Date().toISOString();
@@ -110,7 +87,7 @@ const Employee = () => {
     localStorage.setItem("projects", JSON.stringify(updatedProjects));
     
     // Обновляем список задач сотрудника
-    const updatedMyTasks = myTasks.map(item => {
+    const updatedUserTasks = userTasks.map(item => {
       if (item.project.id === projectId && item.task.id === updatedTask.id) {
         return {
           project: updatedProjects.find(p => p.id === projectId)!,
@@ -120,7 +97,7 @@ const Employee = () => {
       return item;
     });
     
-    setMyTasks(updatedMyTasks);
+    setUserTasks(updatedUserTasks);
     
     toast({
       title: "Задача обновлена",
@@ -165,7 +142,7 @@ const Employee = () => {
             </CardHeader>
             <CardContent>
               <EmployeeTaskList 
-                tasks={myTasks} 
+                tasks={userTasks} 
                 userId={user.id}
                 onTaskUpdate={handleTaskUpdate}
               />
@@ -208,7 +185,11 @@ const AvailableTasks = ({
   projects.forEach(project => {
     project.tasks.forEach(task => {
       // Показываем задачи без исполнителей или задачи, которые можно взять нескольким исполнителям
-      if (!task.assignedTo || (Array.isArray(task.assignedTo) && !task.assignedTo.includes(userId))) {
+      const isAssigned = Array.isArray(task.assignedTo) 
+        ? task.assignedTo.includes(userId)
+        : task.assignedTo === userId;
+        
+      if (!task.assignedTo || !isAssigned) {
         availableTasks.push({
           project,
           task

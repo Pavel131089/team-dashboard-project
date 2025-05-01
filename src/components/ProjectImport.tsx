@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { toast } from 'sonner';
 import { Project, Task } from '../types/project';
 import Icon from './ui/icon';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 interface ProjectImportProps {
   onImport: (project: Project) => void;
@@ -17,6 +18,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
   const [isImporting, setIsImporting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<string>('csv');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -64,7 +66,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
       
       // Проверяем наличие обязательного заголовка "Наименование работ"
       const nameIndex = headers.findIndex(h => 
-        ['name', 'название', 'задача', 'наименование работ', 'наименование', 'работы', 'работа', 'наименование работ', 'наименование_работ']
+        ['name', 'название', 'задача', 'наименование', 'работы', 'работа', 'наименованиеработ', 'наименование_работ', 'наименованиеработ']
           .includes(h.replace(/[\s_-]/g, ''))
       );
       
@@ -83,7 +85,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
       console.log(`Индекс колонки с описанием: ${descriptionIndex}`);
       
       const estimatedTimeIndex = headers.findIndex(h => 
-        ['estimatedtime', 'время', 'т/з', 'трудозатраты', 'трудоемкость', 'часы', 'тз']
+        ['estimatedtime', 'время', 'тз', 'трудозатраты', 'трудоемкость', 'часы']
           .includes(h.replace(/[\s_-]/g, ''))
       );
       
@@ -185,6 +187,45 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
     return result;
   };
 
+  // Функция для обработки XLS/XLSX файлов
+  const processExcelFile = async (file: File): Promise<Task[]> => {
+    try {
+      // Для обработки Excel файлов потребуется дополнительная библиотека
+      // Например, xlsx или exceljs
+      // Для этого примера просто сообщаем пользователю, что нужно установить эти библиотеки
+      
+      console.log('Начинаем импорт Excel файла:', file.name);
+      
+      throw new Error('Для поддержки Excel файлов необходимо установить библиотеку xlsx. Обратитесь к разработчику.');
+      
+      // После установки библиотеки xlsx можно будет реализовать так:
+      /*
+      const XLSX = await import('xlsx');
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      
+      if (jsonData.length < 2) {
+        throw new Error('Файл должен содержать как минимум заголовок и одну строку данных');
+      }
+      
+      // Обработка заголовков
+      const headers = (jsonData[0] as string[]).map(h => h.trim().toLowerCase());
+      
+      // Проверка и обработка данных, аналогично CSV
+      // ...
+      
+      // Возвращаем массив задач
+      return tasks;
+      */
+    } catch (error) {
+      console.error('Ошибка при обработке Excel файла:', error);
+      throw error;
+    }
+  };
+
   const handleImport = async () => {
     if (!file) {
       setError('Выберите файл для импорта');
@@ -201,21 +242,30 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
 
     try {
       console.log(`Импортируем файл ${file.name}, размер: ${file.size} байт`);
-      const content = await file.text();
-      console.log(`Получено содержимое файла, длина: ${content.length} символов`);
       
       let tasks: Task[] = [];
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
 
       // Определяем формат файла по расширению
-      if (file.name.toLowerCase().endsWith('.csv')) {
+      if (fileExt === 'csv') {
         console.log('Обрабатываем как CSV файл');
+        const content = await file.text();
+        console.log(`Получено содержимое файла, длина: ${content.length} символов`);
         tasks = processCSVData(content);
+      } else if (['xls', 'xlsx'].includes(fileExt || '')) {
+        console.log('Обрабатываем как Excel файл');
+        try {
+          tasks = await processExcelFile(file);
+        } catch (excelError) {
+          const errorMessage = excelError instanceof Error ? excelError.message : 'Ошибка при обработке Excel файла';
+          throw new Error(errorMessage);
+        }
       } else {
-        throw new Error('Неподдерживаемый формат файла. Используйте .csv');
+        throw new Error('Неподдерживаемый формат файла. Используйте .csv, .xls или .xlsx');
       }
 
       if (tasks.length === 0) {
-        throw new Error('Не удалось импортировать задачи из файла. Проверьте формат CSV.');
+        throw new Error('Не удалось импортировать задачи из файла. Проверьте формат файла и структуру данных.');
       }
 
       // Создаем проект
@@ -252,7 +302,7 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
           Импорт проекта
         </CardTitle>
         <CardDescription>
-          Загрузите CSV файл с задачами для создания нового проекта
+          Загрузите CSV или Excel файл с задачами для создания нового проекта
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -270,36 +320,80 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
             />
           </div>
 
-          <div className="border-2 border-dashed rounded-lg p-6 text-center">
-            <input
-              type="file"
-              id="fileUpload"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept=".csv"
-              className="hidden"
-            />
-            <div className="space-y-2">
-              <Icon name="FileText" className="mx-auto h-12 w-12 text-gray-400" />
-              <div className="text-sm">
-                <label
-                  htmlFor="fileUpload"
-                  className="relative cursor-pointer text-primary underline"
-                >
-                  <span>Выберите файл</span>
-                </label>{' '}
-                или перетащите его сюда
-              </div>
-              <p className="text-xs text-gray-500">CSV файлы</p>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="csv">CSV файл</TabsTrigger>
+              <TabsTrigger value="excel">Excel файл</TabsTrigger>
+            </TabsList>
+            <TabsContent value="csv" className="mt-4">
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <input
+                  type="file"
+                  id="fileUpload"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept=".csv"
+                  className="hidden"
+                />
+                <div className="space-y-2">
+                  <Icon name="FileText" className="mx-auto h-12 w-12 text-gray-400" />
+                  <div className="text-sm">
+                    <label
+                      htmlFor="fileUpload"
+                      className="relative cursor-pointer text-primary underline"
+                    >
+                      <span>Выберите CSV файл</span>
+                    </label>{' '}
+                    или перетащите его сюда
+                  </div>
+                  <p className="text-xs text-gray-500">*.csv файлы</p>
 
-              {file && (
-                <div className="mt-2 text-sm text-gray-500 flex justify-center items-center">
-                  <Icon name="Check" className="w-4 h-4 mr-1 text-green-500" />
-                  {file.name}
+                  {file && file.name.toLowerCase().endsWith('.csv') && (
+                    <div className="mt-2 text-sm text-gray-500 flex justify-center items-center">
+                      <Icon name="Check" className="w-4 h-4 mr-1 text-green-500" />
+                      {file.name}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="excel" className="mt-4">
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <input
+                  type="file"
+                  id="excelFileUpload"
+                  onChange={handleFileChange}
+                  accept=".xls,.xlsx"
+                  className="hidden"
+                />
+                <div className="space-y-2">
+                  <Icon name="FileSpreadsheet" className="mx-auto h-12 w-12 text-gray-400" />
+                  <div className="text-sm">
+                    <label
+                      htmlFor="excelFileUpload"
+                      className="relative cursor-pointer text-primary underline"
+                    >
+                      <span>Выберите Excel файл</span>
+                    </label>{' '}
+                    или перетащите его сюда
+                  </div>
+                  <p className="text-xs text-gray-500">*.xls, *.xlsx файлы</p>
+
+                  {file && (file.name.toLowerCase().endsWith('.xls') || file.name.toLowerCase().endsWith('.xlsx')) && (
+                    <div className="mt-2 text-sm text-gray-500 flex justify-center items-center">
+                      <Icon name="Check" className="w-4 h-4 mr-1 text-green-500" />
+                      {file.name}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-3 text-amber-700 text-sm bg-amber-50 p-3 rounded">
+                <Icon name="AlertTriangle" className="w-4 h-4 inline mr-1" />
+                <span className="font-medium">Важно:</span> Для поддержки Excel файлов потребуется установить дополнительную библиотеку. 
+                Обратитесь к разработчику для активации этой функции.
+              </div>
+            </TabsContent>
+          </Tabs>
 
           {error && (
             <div className="text-red-500 text-sm bg-red-50 p-2 rounded-md">
@@ -363,6 +457,15 @@ const ProjectImport: React.FC<ProjectImportProps> = ({ onImport }) => {
               <li>При сохранении выбирайте формат "CSV (разделители - запятые)"</li>
               <li>Избегайте специальных символов в заголовках</li>
               <li>Если используете Excel, проверьте региональные настройки (разделитель должен быть запятой)</li>
+            </ul>
+            
+            <p className="mt-4 font-semibold mb-2">Формат Excel файла (XLSX):</p>
+            <p>Структура Excel файла должна содержать те же колонки, что и CSV:</p>
+            <ul className="list-disc pl-5 space-y-1 mt-1">
+              <li>Первый лист (Sheet1) будет использован для импорта</li>
+              <li>Первая строка должна содержать заголовки колонок</li>
+              <li>Обязательна колонка "Наименование работ" или её аналог</li>
+              <li>Дополнительные колонки: Комментарий, Т/З, Стоимость</li>
             </ul>
           </div>
         </div>

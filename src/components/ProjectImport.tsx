@@ -3,9 +3,14 @@ import React, { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+
 import { toast } from 'sonner';
 import { Project, Task } from '../types/project';
 import Icon from './ui/icon';
+import * as XLSX from 'xlsx';
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 interface ProjectImportProps {

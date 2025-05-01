@@ -10,7 +10,12 @@ export interface Task {
 
 
   progress: number;
+
   assignedTo: string | string[] | null; // ID сотрудника или массив ID для нескольких исполнителей
+  assignedToNames?: string[]; // Имена назначенных сотрудников
+  actualStartDate: string | null;
+  actualEndDate: string | null;
+  comments?: string[]; // Комментарии к задаче
   assignedToNames?: string[]; // Имена назначенных сотрудников
   actualStartDate: string | null;
   actualEndDate: string | null;

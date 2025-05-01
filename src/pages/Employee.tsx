@@ -233,7 +233,7 @@ const AvailableTasks = ({
   return (
     <div className="space-y-4">
       {availableTasks.map(({ project, task }) => (
-        <div 
+          <div 
           key={task.id} 
           className="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow"
         >
@@ -246,6 +246,17 @@ const AvailableTasks = ({
               <p className="text-sm text-slate-700 mt-2">
                 {task.description}
               </p>
+              {task.comments && task.comments.length > 0 && (
+                <div className="mt-2 text-sm bg-gray-50 p-2 rounded border border-gray-200">
+                  <div className="font-medium text-gray-700 mb-1">Комментарии:</div>
+                  <ul className="list-disc pl-4 space-y-1">
+                    {task.comments.map((comment, index) => (
+                      <li key={index} className="text-gray-600">{comment}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="mt-2 flex flex-wrap gap-2 text-xs">
               <div className="mt-2 flex flex-wrap gap-2 text-xs">
                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
                   Цена: {task.price} ₽

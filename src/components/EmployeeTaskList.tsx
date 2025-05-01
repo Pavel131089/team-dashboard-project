@@ -78,13 +78,22 @@ const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps
           </TableRow>
         </TableHeader>
         <TableBody>
-          {employeeTasks.map((task) => (
-            <TableRow key={task.id}>
               <TableCell className="font-medium">
                 <div>{task.name || "—"}</div>
                 <div className="text-xs text-slate-500 mt-1">
                   {task.description || "—"}
                 </div>
+                {task.comments && task.comments.length > 0 && (
+                  <div className="mt-2 text-xs bg-gray-50 p-2 rounded border border-gray-200">
+                    <div className="font-medium text-gray-700 mb-1">Комментарии:</div>
+                    <ul className="list-disc pl-4 space-y-1">
+                      {task.comments.map((comment, index) => (
+                        <li key={index} className="text-gray-600">{comment}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </TableCell>
               </TableCell>
               <TableCell>
                 {getProjectName(task)}

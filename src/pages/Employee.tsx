@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { Project, Task, User } from "@/types/project";
 import { toast } from "@/components/ui/use-toast";
 import EmployeeLayout from "@/components/employee/EmployeeLayout";
-import EmployeeTaskList from "@/components/EmployeeTaskList";
-import AvailableTasksSection from "@/components/employee/AvailableTasksSection";
+import EmployeeTasksCard from "@/components/employee/EmployeeTasksCard";
+import AvailableTasksCard from "@/components/employee/AvailableTasksCard";
 import { useUserTasks } from "@/hooks/useUserTasks";
 
 const Employee = () => {

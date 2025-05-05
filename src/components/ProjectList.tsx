@@ -106,6 +106,7 @@ const ProjectList = ({
     return new Date(dateString).toLocaleDateString();
   };
 
+// ... keep existing code 
   const getAssignedUserName = (assignedTo: string | string[] | null | undefined) => {
     if (!assignedTo) return "—";
     
@@ -120,7 +121,7 @@ const ProjectList = ({
     
     return findUserById(assignedTo);
   };
-
+// ... keep existing code 
   const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
     const updatedProjects = projects.map(project => {
       if (project.id === projectId) {

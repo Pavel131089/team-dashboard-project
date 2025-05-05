@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Project, Task, User } from "@/types/project";
@@ -19,6 +18,11 @@ const Employee = () => {
 
   // Загрузка данных пользователя и проектов при первом рендере
   useEffect(() => {
+    loadUserAndProjects();
+  }, [navigate]);
+
+  // Функция загрузки пользователя и проектов
+  const loadUserAndProjects = () => {
     const userFromStorage = localStorage.getItem('user');
     const projectsFromStorage = localStorage.getItem('projects');
     
@@ -27,6 +31,12 @@ const Employee = () => {
         const parsedUser = JSON.parse(userFromStorage);
         setUser(parsedUser);
         setUserName(parsedUser.username || "");
+        
+        // Если пользователь руководитель, перенаправляем на страницу руководителя
+        if (parsedUser.role === 'manager') {
+          navigate('/dashboard');
+          return;
+        }
       } catch (error) {
         console.error("Failed to parse user data:", error);
         navigate("/login");
@@ -39,13 +49,18 @@ const Employee = () => {
     
     if (projectsFromStorage) {
       try {
-        const parsedProjects: Project[] = JSON.parse(projectsFromStorage);
-        setProjects(parsedProjects);
+        const parsedProjects = JSON.parse(projectsFromStorage);
+        setProjects(parsedProjects || []);
       } catch (error) {
         console.error("Failed to parse projects data:", error);
+        setProjects([]); // Устанавливаем пустой массив в случае ошибки
       }
+    } else {
+      // Если проектов нет, создаем пустой массив в localStorage
+      localStorage.setItem('projects', JSON.stringify([]));
+      setProjects([]);
     }
-  }, [navigate]);
+  };
 
   const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
     // Проверяем, не пытаемся ли "удалить" задачу (флаг _deleted)

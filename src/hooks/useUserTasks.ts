@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react");
 import { Project, Task, User } from "@/types/project";
 
 export function useUserTasks(
@@ -9,7 +9,13 @@ export function useUserTasks(
   const [userTasks, setUserTasks] = useState<{project: Project; task: Task}[]>([]);
 
   useEffect(() => {
-    if (!user || !projects.length) return;
+    if (!user) return;
+    
+    // Проверка на пустые проекты
+    if (!projects || projects.length === 0) {
+      setUserTasks([]);
+      return;
+    }
     
     // Находим задачи, назначенные на текущего пользователя
     const tasks: {project: Project; task: Task}[] = [];

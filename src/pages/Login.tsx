@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +14,20 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("employee");
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    const userFromStorage = localStorage.getItem('user');
+    if (userFromStorage) {
+      try {
+        const parsedUser = JSON.parse(userFromStorage);
+        if (parsedUser.isAuthenticated) {
+          navigate(parsedUser.role === "manager" ? "/dashboard" : "/employee");
+        }
+      } catch (error) {
+        console.error("Failed to parse user data:", error);
+      }
+    }
+  }, [navigate]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,13 +41,10 @@ const Login = () => {
       return;
     }
 
-    // Получаем список пользователей из localStorage
     const usersStr = localStorage.getItem("users");
     let users = usersStr ? JSON.parse(usersStr) : [];
     
-    // Для демо-режима: если пользователей нет, разрешаем любой вход
     if (users.length === 0) {
-      // Создаем первого пользователя с указанными данными
       const newUser = {
         id: Math.random().toString(36).substring(2),
         name: username,
@@ -45,7 +55,10 @@ const Login = () => {
       
       localStorage.setItem("users", JSON.stringify([newUser]));
       
-      // Авторизуем пользователя
+      if (!localStorage.getItem("projects")) {
+        localStorage.setItem("projects", JSON.stringify([]));
+      }
+      
       localStorage.setItem("user", JSON.stringify({
         username,
         role,
@@ -53,7 +66,6 @@ const Login = () => {
         isAuthenticated: true
       }));
       
-      // Перенаправляем на соответствующую страницу
       if (role === "manager") {
         navigate("/dashboard");
       } else {
@@ -67,7 +79,6 @@ const Login = () => {
       return;
     }
     
-    // Найдем пользователя по имени пользователя (email)
     const user = users.find((u: any) => u.email === username);
     
     if (!user || user.password !== password) {
@@ -79,7 +90,6 @@ const Login = () => {
       return;
     }
     
-    // Проверяем соответствие роли
     if (user.role !== role) {
       toast({
         title: "Ошибка",
@@ -89,7 +99,6 @@ const Login = () => {
       return;
     }
     
-    // Авторизуем пользователя
     localStorage.setItem("user", JSON.stringify({
       username: user.name,
       role: user.role,

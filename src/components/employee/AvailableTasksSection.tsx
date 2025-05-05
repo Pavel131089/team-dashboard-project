@@ -19,6 +19,15 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
   
+  // Проверка на пустые проекты
+  if (!projects || projects.length === 0) {
+    return (
+      <div className="text-center py-4 text-slate-500">
+        Нет доступных проектов. Руководитель должен добавить проекты.
+      </div>
+    );
+  }
+  
   const availableTasks = collectAvailableTasks(projects, userId);
   
   const handleAssignTask = (projectId: string, taskId: string) => {

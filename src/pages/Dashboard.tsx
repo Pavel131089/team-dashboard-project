@@ -19,6 +19,11 @@ const Dashboard = () => {
 
   // Загрузка данных при первом рендере
   useEffect(() => {
+    loadUserAndProjects();
+  }, [navigate]);
+
+  // Функция загрузки пользователя и проектов
+  const loadUserAndProjects = () => {
     // Загрузка пользователя из localStorage
     const userFromStorage = localStorage.getItem('user');
     if (userFromStorage) {
@@ -33,9 +38,11 @@ const Dashboard = () => {
       } catch (error) {
         console.error("Failed to parse user data:", error);
         navigate('/login');
+        return;
       }
     } else {
       navigate('/login');
+      return;
     }
 
     // Загрузка проектов из localStorage
@@ -46,9 +53,14 @@ const Dashboard = () => {
         setProjects(parsedProjects);
       } catch (error) {
         console.error("Failed to parse projects data:", error);
+        setProjects([]); // Устанавливаем пустой массив в случае ошибки
       }
+    } else {
+      // Если проектов нет, создаем пустой массив в localStorage
+      localStorage.setItem('projects', JSON.stringify([]));
+      setProjects([]);
     }
-  }, [navigate]);
+  };
 
   const handleImportProjects = (importedProject: Project) => {
     // Обрабатываем как одиночный проект, а не как массив

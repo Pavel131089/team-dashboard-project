@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState } from "react");
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,11 +10,10 @@ import { toast } from "@/components/ui/use-toast";
 type UserRole = "manager" | "employee";
 
 const Login = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState(""");
+  const [password, setPassword] = useState(""");
   const [role, setRole] = useState<UserRole>("employee");
   const navigate = useNavigate();
-
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,39 +27,49 @@ const Login = () => {
       return;
     }
 
-    // Проверка учетных данных
+    // Получаем список пользователей из localStorage
     const usersStr = localStorage.getItem("users");
-    const users = usersStr ? JSON.parse(usersStr) : [];
+    let users = usersStr ? JSON.parse(usersStr) : [];
+    
+    // Для демо-режима: если пользователей нет, разрешаем любой вход
+    if (users.length === 0) {
+      // Создаем первого пользователя с указанными данными
+      const newUser = {
+        id: Math.random().toString(36).substring(2),
+        name: username,
+        email: username,
+        password: password,
+        role: role
+      };
+      
+      localStorage.setItem("users", JSON.stringify([newUser]));
+      
+      // Авторизуем пользователя
+      localStorage.setItem("user", JSON.stringify({
+        username,
+        role,
+        id: newUser.id,
+        isAuthenticated: true
+      }));
+      
+      // Перенаправляем на соответствующую страницу
+      if (role === "manager") {
+        navigate("/dashboard");
+      } else {
+        navigate("/employee");
+      }
+      
+      toast({
+        title: "Успешный вход",
+        description: `Добро пожаловать в систему, ${username}!`,
+      });
+      return;
+    }
     
     // Найдем пользователя по имени пользователя (email)
     const user = users.find((u: any) => u.email === username);
     
     if (!user || user.password !== password) {
-      // Если это первый вход и нет пользователей, создаем администратора
-      if (users.length === 0 && role === "manager") {
-        // Создаем первого руководителя
-        const newUser = {
-          id: Math.random().toString(36).substring(2),
-          name: username,
-          email: username,
-          password: password,
-          role: "manager"
-        };
-        
-        localStorage.setItem("users", JSON.stringify([newUser]));
-        
-        // Авторизуем пользователя
-        localStorage.setItem("user", JSON.stringify({ 
-          username, 
-          role,
-          id: newUser.id,
-          isAuthenticated: true
-        }));
-        
-        navigate("/dashboard");
-        return;
-      }
-      
       toast({
         title: "Ошибка",
         description: "Неверный логин или пароль",
@@ -81,8 +89,8 @@ const Login = () => {
     }
     
     // Авторизуем пользователя
-    localStorage.setItem("user", JSON.stringify({ 
-      username: user.name, 
+    localStorage.setItem("user", JSON.stringify({
+      username: user.name,
       role: user.role,
       id: user.id,
       isAuthenticated: true
@@ -99,7 +107,6 @@ const Login = () => {
       description: `Добро пожаловать в систему, ${user.name}!`,
     });
   };
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100">

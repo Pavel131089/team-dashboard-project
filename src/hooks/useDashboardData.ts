@@ -52,20 +52,32 @@ export const useDashboardData = (navigate: NavigateFunction) => {
 
   // Функция загрузки проектов
   const loadProjects = () => {
-    const projectsFromStorage = localStorage.getItem('projects');
-    if (projectsFromStorage) {
-      try {
+    try {
+      const projectsFromStorage = localStorage.getItem('projects');
+      if (projectsFromStorage) {
         const parsedProjects = JSON.parse(projectsFromStorage);
-        setProjects(parsedProjects || []);
-      } catch (error) {
-        console.error("Failed to parse projects data:", error);
-        setProjects([]); // Устанавливаем пустой массив в случае ошибки
+        
+        // Добавляем проверку на корректность данных
+        if (Array.isArray(parsedProjects)) {
+          console.log("Загружено проектов:", parsedProjects.length);
+          setProjects(parsedProjects);
+        } else {
+          console.error("Данные проектов не являются массивом:", parsedProjects);
+          setProjects([]);
+          // Инициализируем хранилище с пустым массивом
+          localStorage.setItem('projects', JSON.stringify([]));
+        }
+      } else {
+        // Если проектов нет, создаем пустой массив в localStorage
+        console.log("Проекты не найдены в хранилище, создаем пустой массив");
         localStorage.setItem('projects', JSON.stringify([]));
+        setProjects([]);
       }
-    } else {
-      // Если проектов нет, создаем пустой массив в localStorage
-      localStorage.setItem('projects', JSON.stringify([]));
+    } catch (error) {
+      console.error("Произошла ошибка при загрузке проектов:", error);
+      // В случае ошибки устанавливаем пустой массив
       setProjects([]);
+      localStorage.setItem('projects', JSON.stringify([]));
     }
   };
 
@@ -81,10 +93,18 @@ export const useDashboardData = (navigate: NavigateFunction) => {
 
   // Обработчик импорта проектов
   const handleImportProject = (importedProject: Project) => {
+    // Проверяем существующие проекты перед добавлением
     const updatedProjects = [...projects, importedProject];
     setProjects(updatedProjects);
-    localStorage.setItem("projects", JSON.stringify(updatedProjects));
-    toast.success(`Проект "${importedProject.name}" успешно импортирован`);
+    
+    // Сохраняем обновленный массив в localStorage
+    try {
+      localStorage.setItem("projects", JSON.stringify(updatedProjects));
+      toast.success(`Проект "${importedProject.name}" успешно импортирован`);
+    } catch (error) {
+      console.error("Ошибка при сохранении проектов:", error);
+      toast.error("Не удалось сохранить проект. Проверьте хранилище браузера.");
+    }
   };
 
   // Обработчик обновления проекта

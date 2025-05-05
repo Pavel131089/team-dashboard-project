@@ -1,3 +1,4 @@
+]/storageUtils.js"]
 
 /**
  * Утилиты для работы с localStorage
@@ -62,5 +63,76 @@ export const initializeProjectsStorage = () => {
 export const saveLoginMessage = (message) => {
   if (message) {
     sessionStorage.setItem('auth_message', message);
+  }
+};
+
+/**
+ * Тестирует доступность localStorage
+ */
+export const testStorageAvailability = () => {
+  try {
+    const test = 'test';
+    localStorage.setItem(test, test);
+    const result = localStorage.getItem(test);
+    localStorage.removeItem(test);
+    return result === test;
+  } catch (e) {
+    console.error('LocalStorage не доступен:', e);
+    return false;
+  }
+};
+
+/**
+ * Создает тестовый проект для проверки
+ */
+export const createSampleProject = () => {
+  const testProject = {
+    id: crypto.randomUUID(),
+    name: 'Тестовый проект',
+    description: 'Проект для проверки работы приложения',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    tasks: [
+      {
+        id: crypto.randomUUID(),
+        name: 'Тестовая задача',
+        description: 'Описание тестовой задачи',
+        price: 5000,
+        estimatedTime: 8,
+        progress: 50,
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        assignedTo: null
+      }
+    ]
+  };
+  
+  try {
+    // Получаем существующие проекты
+    const existingProjects = getProjectsFromStorage();
+    
+    // Добавляем тестовый проект
+    const updatedProjects = [...existingProjects, testProject];
+    
+    // Сохраняем обновленный список
+    localStorage.setItem('projects', JSON.stringify(updatedProjects));
+    
+    return true;
+  } catch (error) {
+    console.error('Ошибка при создании тестового проекта:', error);
+    return false;
+  }
+};
+
+/**
+ * Сбрасывает все данные проектов
+ */
+export const resetProjectsStorage = () => {
+  try {
+    localStorage.setItem('projects', JSON.stringify([]));
+    return true;
+  } catch (error) {
+    console.error('Ошибка при сбросе данных проектов:', error);
+    return false;
   }
 };

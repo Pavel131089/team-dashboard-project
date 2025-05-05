@@ -1,4 +1,5 @@
-import { useState } from "react");
+
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,8 +11,8 @@ import { toast } from "@/components/ui/use-toast";
 type UserRole = "manager" | "employee";
 
 const Login = () => {
-  const [username, setUsername] = useState(""");
-  const [password, setPassword] = useState(""");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("employee");
   const navigate = useNavigate();
 

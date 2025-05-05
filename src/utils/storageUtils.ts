@@ -1,3 +1,4 @@
+
 /**
  * Модуль утилит для работы с локальным хранилищем браузера.
  * Предоставляет функции для безопасного сохранения, получения и управления данными.
@@ -14,7 +15,7 @@ const STORAGE_KEYS = {
 /**
  * Базовые операции с локальным хранилищем
  */
-export const StorageCore = {
+const StorageCore = {
   /**
    * Проверяет доступность localStorage
    * @returns {boolean} True если хранилище доступно, иначе false
@@ -81,7 +82,7 @@ export const StorageCore = {
 /**
  * Утилиты для работы с JSON данными в хранилище
  */
-export const JsonStorage = {
+const JsonStorage = {
   /**
    * Получает и парсит JSON данные из localStorage
    * @param {string} key - Ключ для чтения
@@ -133,7 +134,7 @@ export const JsonStorage = {
 /**
  * Управление проектами в хранилище
  */
-export const ProjectStorage = {
+const ProjectStorage = {
   /**
    * Получает все проекты из хранилища
    * @returns {Array} Массив проектов или пустой массив
@@ -197,7 +198,7 @@ export const ProjectStorage = {
 /**
  * Управление задачами в проектах
  */
-export const TaskStorage = {
+const TaskStorage = {
   /**
    * Обновляет задачу в проекте
    * @param {string} projectId - ID проекта
@@ -271,7 +272,7 @@ export const TaskStorage = {
 /**
  * Инициализация и диагностика хранилища
  */
-export const StorageInit = {
+const StorageInit = {
   /**
    * Инициализирует хранилище проектов, если оно пустое
    * @returns {boolean} Результат операции
@@ -345,7 +346,7 @@ export const StorageInit = {
 /**
  * Сервис для управления сессиями пользователей
  */
-export const SessionStorage = {
+const SessionStorage = {
   /**
    * Сохраняет сообщение об ошибке аутентификации
    * @param {string} message - Сообщение для сохранения
@@ -393,94 +394,75 @@ export const SessionStorage = {
 };
 
 /**
- * Основной экспортируемый объект утилит хранилища
+ * Создает тестовый проект для отладки
+ * @returns {boolean} Результат операции
  */
-const storageUtils = {
-  core: StorageCore,
-  json: JsonStorage,
-  projects: ProjectStorage,
-  tasks: TaskStorage,
-  init: StorageInit,
-  session: SessionStorage,
+export function createSampleProject(): boolean {
+  return StorageInit.createSampleProject();
+}
+
+/**
+ * Получает проекты из хранилища
+ * @returns {Array} Массив проектов
+ */
+export function getProjectsFromStorage(): any[] {
+  return ProjectStorage.getProjects();
+}
+
+/**
+ * Сохраняет проекты в хранилище
+ * @param {Array} projects - Проекты для сохранения
+ * @returns {boolean} Результат операции
+ */
+export function saveProjectsToStorage(projects: any[]): boolean {
+  return ProjectStorage.saveProjects(projects);
+}
+
+/**
+ * Инициализирует хранилище с начальными данными
+ */
+export function initializeProjectsStorage(): void {
+  StorageInit.initializeProjectsStorage();
+  StorageInit.validateProjectsStorage();
+}
+
+/**
+ * Тестирует доступность localStorage
+ * @returns {boolean} True если хранилище доступно
+ */
+export function testStorageAvailability(): boolean {
+  return StorageCore.isAvailable();
+}
+
+/**
+ * Сбрасывает все данные проектов
+ * @returns {boolean} Результат операции
+ */
+export function resetProjectsStorage(): boolean {
+  return JsonStorage.setItem(STORAGE_KEYS.PROJECTS, []);
+}
+
+// Основной экспортируемый объект
+export default {
+  getProjectsFromStorage,
+  saveProjectsToStorage,
+  initializeProjectsStorage,
+  createSampleProject,
+  testStorageAvailability,
+  resetProjectsStorage,
   
-  /**
-   * Получает проекты из хранилища
-   * @returns {Array} Массив проектов
-   */
-  getProjectsFromStorage() {
-    return ProjectStorage.getProjects();
-  },
-
-  /**
-   * Сохраняет проекты в хранилище
-   * @param {Array} projects - Проекты для сохранения
-   * @returns {boolean} Результат операции
-   */
-  saveProjectsToStorage(projects: any[]) {
-    return ProjectStorage.saveProjects(projects);
-  },
-
-  /**
-   * Инициализирует хранилище с начальными данными
-   */
-  initializeProjectsStorage() {
-    StorageInit.initializeProjectsStorage();
-    StorageInit.validateProjectsStorage();
-  },
-
-  /**
-   * Удаляет информацию о пользователе из хранилища
-   */
+  // Внутренние методы для доступа через объект
   removeUserFromStorage() {
-    StorageCore.removeItem(STORAGE_KEYS.SESSION);
+    return StorageCore.removeItem(STORAGE_KEYS.SESSION);
   },
-
-  /**
-   * Сохраняет сообщение для страницы входа
-   * @param {string} message - Сообщение
-   */
+  
   saveLoginMessage(message: string | null) {
     if (message) {
       SessionStorage.saveAuthMessage(message);
     }
   },
-
-  /**
-   * Получает сообщение об ошибке аутентификации
-   * @returns {string|null} Сообщение или null
-   */
+  
   getAuthErrorMessage() {
     return SessionStorage.getAuthErrorMessage();
   },
-
-  /**
-   * Тестирует доступность localStorage
-   * @returns {boolean} True если хранилище доступно
-   */
-  testStorageAvailability() {
-    return StorageCore.isAvailable();
-  },
-
-  /**
-   * Сбрасывает все данные проектов
-   * @returns {boolean} Результат операции
-   */
-  resetProjectsStorage() {
-    return JsonStorage.setItem(STORAGE_KEYS.PROJECTS, []);
-  },
-
-  /**
-   * Создает тестовый проект для отладки
-   * @returns {boolean} Результат операции
-   */
-  createSampleProject() {
-    return StorageInit.createSampleProject();
-  }
 };
-export { StorageCore, JsonStorage, ProjectStorage, TaskStorage, StorageInit, SessionStorage, createSampleProject };
-
-export function createSampleProject(): boolean {
-  return StorageInit.createSampleProject();
-}
-
-export default storageUtils;

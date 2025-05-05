@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react");
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,18 +16,36 @@ const Login = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
+    // Проверяем активную сессию пользователя при загрузке компонента
+    checkExistingSession();
+  }, [navigate]);
+
+  // Функция для проверки существующей сессии
+  const checkExistingSession = () => {
     const userFromStorage = localStorage.getItem('user');
     if (userFromStorage) {
       try {
         const parsedUser = JSON.parse(userFromStorage);
         if (parsedUser.isAuthenticated) {
-          navigate(parsedUser.role === "manager" ? "/dashboard" : "/employee");
+          // Перенаправляем пользователя в зависимости от его роли
+          redirectBasedOnRole(parsedUser.role);
         }
       } catch (error) {
         console.error("Failed to parse user data:", error);
+        // Если возникне ошибка, удаляем повреждённые данные
+        localStorage.removeItem('user');
       }
     }
-  }, [navigate]);
+  };
+
+  // Функция перенаправления в зависимости от роли
+  const redirectBasedOnRole = (userRole: string) => {
+    if (userRole === "manager") {
+      navigate("/dashboard");
+    } else {
+      navigate("/employee");
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,40 +63,12 @@ const Login = () => {
     let users = usersStr ? JSON.parse(usersStr) : [];
     
     if (users.length === 0) {
-      const newUser = {
-        id: Math.random().toString(36).substring(2),
-        name: username,
-        email: username,
-        password: password,
-        role: role
-      };
-      
-      localStorage.setItem("users", JSON.stringify([newUser]));
-      
-      if (!localStorage.getItem("projects")) {
-        localStorage.setItem("projects", JSON.stringify([]));
-      }
-      
-      localStorage.setItem("user", JSON.stringify({
-        username,
-        role,
-        id: newUser.id,
-        isAuthenticated: true
-      }));
-      
-      if (role === "manager") {
-        navigate("/dashboard");
-      } else {
-        navigate("/employee");
-      }
-      
-      toast({
-        title: "Успешный вход",
-        description: `Добро пожаловать в систему, ${username}!`,
-      });
+      // Создаўм первого пользователя, если пользователей ещё нет
+      createFirstUser();
       return;
     }
     
+    // Поиск существующего пользователя
     const user = users.find((u: any) => u.email === username);
     
     if (!user || user.password !== password) {
@@ -99,23 +89,49 @@ const Login = () => {
       return;
     }
     
-    localStorage.setItem("user", JSON.stringify({
+    // Успешная авторизация
+    saveUserSession(user);
+  };
+
+  // Создание первого пользователя
+  const createFirstUser = () => {
+    const newUser = {
+      id: Math.random().toString(36).substring(2),
+      name: username,
+      email: username,
+      password: password,
+      role: role
+    };
+    
+    localStorage.setItem("users", JSON.stringify([newUser]));
+    
+    if (!localStorage.getItem("projects")) {
+      localStorage.setItem("projects", JSON.stringify([]));
+    }
+    
+    saveUserSession(newUser);
+  };
+
+  // Сохранение данных сессии пользователя
+  const saveUserSession = (user: any) => {
+    const sessionData = {
       username: user.name,
       role: user.role,
       id: user.id,
-      isAuthenticated: true
-    }));
+      isAuthenticated: true,
+      // Добавляем время входа для отслеживания сессии
+      loginTime: new Date().toISOString()
+    };
     
-    if (role === "manager") {
-      navigate("/dashboard");
-    } else {
-      navigate("/employee");
-    }
+    localStorage.setItem("user", JSON.stringify(sessionData));
     
     toast({
       title: "Успешный вход",
       description: `Добро пожаловать в систему, ${user.name}!`,
     });
+    
+    // Перенаправляем пользователя в зависимости от его роли
+    redirectBasedOnRole(user.role);
   };
 
   return (

@@ -11,6 +11,7 @@ const Employee = () => {
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [userName, setUserName] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   
   // Получаем задачи пользователя
@@ -23,12 +24,20 @@ const Employee = () => {
 
   // Функция загрузки пользователя и проектов
   const loadUserAndProjects = () => {
-    const userFromStorage = localStorage.getItem('user');
-    const projectsFromStorage = localStorage.getItem('projects');
+    setIsLoading(true);
     
+    // Загрузка пользователя из localStorage
+    const userFromStorage = localStorage.getItem('user');
     if (userFromStorage) {
       try {
         const parsedUser = JSON.parse(userFromStorage);
+        
+        // Проверяем, что пользователь аутентифицирован
+        if (!parsedUser.isAuthenticated) {
+          redirectToLogin("Сессия истекла. Пожалуйста, войдите снова.");
+          return;
+        }
+        
         setUser(parsedUser);
         setUserName(parsedUser.username || "");
         
@@ -39,14 +48,22 @@ const Employee = () => {
         }
       } catch (error) {
         console.error("Failed to parse user data:", error);
-        navigate("/login");
+        redirectToLogin("Проблема с данными сессии. Пожалуйста, войдите снова.");
         return;
       }
     } else {
-      navigate("/login");
+      redirectToLogin();
       return;
     }
     
+    // Загрузка проектов
+    loadProjects();
+    setIsLoading(false);
+  };
+  
+  // Функция загрузки проектов
+  const loadProjects = () => {
+    const projectsFromStorage = localStorage.getItem('projects');
     if (projectsFromStorage) {
       try {
         const parsedProjects = JSON.parse(projectsFromStorage);
@@ -54,12 +71,23 @@ const Employee = () => {
       } catch (error) {
         console.error("Failed to parse projects data:", error);
         setProjects([]); // Устанавливаем пустой массив в случае ошибки
+        localStorage.setItem('projects', JSON.stringify([]));
       }
     } else {
       // Если проектов нет, создаем пустой массив в localStorage
       localStorage.setItem('projects', JSON.stringify([]));
       setProjects([]);
     }
+  };
+  
+  // Вспомогательная функция для перенаправления на страницу входа
+  const redirectToLogin = (message?: string) => {
+    if (message) {
+      // Устанавливаем сообщение для отображения на странице входа
+      sessionStorage.setItem('auth_message', message);
+    }
+    localStorage.removeItem('user');
+    navigate('/login');
   };
 
   const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
@@ -164,8 +192,17 @@ const Employee = () => {
     navigate("/login");
   };
 
-  if (!user) {
+  if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Загрузка...</div>;
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-red-600">Ошибка аутентификации</p>
+        <Button onClick={() => navigate('/login')}>Вернуться на страницу входа</Button>
+      </div>
+    );
   }
 
   return (

@@ -1,13 +1,12 @@
-import { useState, useEffect } from "react");
-import { Project, Task, User } from "@/types/project";
-
+import { useState, useEffect } from "react";                                                                                                                                             
+import { Project, Task, User } from "@/types/project";                                                                                                                                                     
 export function useUserTasks(
   user: User | null, 
   projects: Project[], 
   userName: string
 ) {
   const [userTasks, setUserTasks] = useState<{project: Project; task: Task}[]>([]);
-
+  
   useEffect(() => {
     if (!user) return;
     
@@ -38,6 +37,6 @@ export function useUserTasks(
     
     setUserTasks(tasks);
   }, [user, projects, userName]);
-
+  
   return { userTasks, setUserTasks };
 }

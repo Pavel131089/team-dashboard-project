@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
+import { UserService } from "@/services/userService";
+import { StorageService } from "@/services/storageService";
 
 // Типы
 export type UserRole = "manager" | "employee";
@@ -12,7 +14,7 @@ export interface LoginFormData {
   role: UserRole;
 }
 
-interface User {
+export interface User {
   id: string;
   name: string;
   email: string;
@@ -60,20 +62,16 @@ export function useAuth() {
    */
   const checkExistingSession = () => {
     try {
-      const userFromStorage = localStorage.getItem('user');
-      if (userFromStorage) {
-        const parsedUser = JSON.parse(userFromStorage);
-        if (parsedUser.isAuthenticated) {
-          redirectBasedOnRole(parsedUser.role);
-          return true;
-        }
+      const session = AuthSessionManager.getCurrentSession();
+      if (session && session.isAuthenticated) {
+        redirectBasedOnRole(session.role);
+        return true;
       }
       
       // Проверяем сообщение об ошибке из sessionStorage
-      const authMessage = sessionStorage.getItem('auth_message');
+      const authMessage = AuthSessionManager.getAuthErrorMessage();
       if (authMessage) {
         setError(authMessage);
-        sessionStorage.removeItem('auth_message');
       }
       
       return false;
@@ -98,11 +96,11 @@ export function useAuth() {
     }
 
     // Поиск пользователя
-    const user = findUserForLogin();
+    const user = AuthenticationManager.findUserForLogin(formData);
     
     if (user) {
       // Аутентификация пользователя
-      authenticateUser(user);
+      AuthenticationManager.authenticateUser(user);
       redirectBasedOnRole(user.role);
     } else {
       setError("Неверный логин или пароль");
@@ -110,11 +108,51 @@ export function useAuth() {
   };
 
   /**
-   * Поиск пользователя по данным формы
+   * Инициализирует дефолтных пользователей в системе
    */
-  const findUserForLogin = (): User | null => {
+  const initializeDefaultUsers = () => {
+    UserService.initializeDefaultUsers();
+  };
+
+  /**
+   * Проверяет аутентификацию пользователя
+   */
+  const checkUserAuth = () => {
+    return AuthSessionManager.getCurrentUser();
+  };
+
+  /**
+   * Выход из системы
+   */
+  const logout = () => {
+    AuthSessionManager.logout();
+    navigate("/login");
+  };
+
+  return {
+    formData,
+    error,
+    setError,
+    handleInputChange,
+    handleRoleChange,
+    handleSubmit,
+    checkExistingSession,
+    initializeDefaultUsers,
+    checkUserAuth,
+    logout
+  };
+}
+
+/**
+ * Класс для управления аутентификацией пользователей
+ */
+const AuthenticationManager = {
+  /**
+   * Находит пользователя по учетным данным
+   */
+  findUserForLogin(formData: LoginFormData): User | null {
     // Получаем дефолтных пользователей
-    const defaultUsers = getDefaultUsers();
+    const defaultUsers = UserService.getDefaultUsers();
     
     // Проверяем дефолтных пользователей
     const defaultUserMatch = defaultUsers.find(
@@ -125,14 +163,14 @@ export function useAuth() {
     
     if (defaultUserMatch) {
       // Проверяем наличие дефолтного пользователя в хранилище
-      const storageUsers = getUsersFromStorage();
+      const storageUsers = UserService.getUsersFromStorage();
       let existingUser = storageUsers.find(u => u.email === formData.username);
       
       if (!existingUser) {
         // Создаем нового пользователя на основе дефолтного
-        const newUser = createUserWithId(defaultUserMatch);
+        const newUser = UserService.createUserWithId(defaultUserMatch);
         storageUsers.push(newUser);
-        localStorage.setItem("users", JSON.stringify(storageUsers));
+        UserService.saveUsersToStorage(storageUsers);
         return newUser;
       }
       
@@ -140,7 +178,7 @@ export function useAuth() {
     }
     
     // Поиск в пользователях из хранилища
-    const storageUsers = getUsersFromStorage();
+    const storageUsers = UserService.getUsersFromStorage();
     const user = storageUsers.find(
       u => (u.email === formData.username || u.name === formData.username) && 
            u.password === formData.password &&
@@ -148,41 +186,12 @@ export function useAuth() {
     );
     
     return user || null;
-  };
-
-  /**
-   * Получает дефолтных пользователей для демо-доступа
-   */
-  const getDefaultUsers = () => [
-    { name: "Менеджер", email: "manager", password: "manager123", role: "manager" as UserRole },
-    { name: "Сотрудник", email: "employee", password: "employee123", role: "employee" as UserRole }
-  ];
-
-  /**
-   * Создаёт пользователя с уникальным ID
-   */
-  const createUserWithId = (user: any): User => ({
-    ...user,
-    id: crypto.randomUUID()
-  });
-
-  /**
-   * Получает пользователей из хранилища
-   */
-  const getUsersFromStorage = (): User[] => {
-    try {
-      const usersStr = localStorage.getItem("users");
-      return usersStr ? JSON.parse(usersStr) : [];
-    } catch (error) {
-      console.error("Ошибка при получении пользователей:", error);
-      return [];
-    }
-  };
+  },
 
   /**
    * Аутентифицирует пользователя и сохраняет сессию
    */
-  const authenticateUser = (user: User) => {
+  authenticateUser(user: User): void {
     const sessionData = {
       username: user.name,
       role: user.role,
@@ -194,46 +203,64 @@ export function useAuth() {
     localStorage.setItem("user", JSON.stringify(sessionData));
     
     // Инициализируем хранилище проектов, если оно не существует
-    if (!localStorage.getItem("projects")) {
-      localStorage.setItem("projects", JSON.stringify([]));
-    }
+    StorageService.initializeStorage("projects", []);
     
     toast({
       title: "Успешный вход",
       description: `Добро пожаловать в систему, ${user.name}!`,
     });
-  };
+  }
+};
+
+/**
+ * Класс для управления сессией пользователя
+ */
+const AuthSessionManager = {
+  /**
+   * Получает текущую сессию
+   */
+  getCurrentSession() {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return null;
+    
+    try {
+      return JSON.parse(userStr);
+    } catch (e) {
+      console.error("Ошибка при парсинге сессии:", e);
+      return null;
+    }
+  },
 
   /**
-   * Инициализирует дефолтных пользователей в системе
+   * Получает текущего пользователя
    */
-  const initializeDefaultUsers = () => {
-    try {
-      const defaultUsersList = getDefaultUsers();
-      const usersStr = localStorage.getItem("users");
-      let users = usersStr ? JSON.parse(usersStr) : [];
-      
-      // Если пользователей нет, создаем дефолтных
-      if (!users || users.length === 0) {
-        const initialUsers = defaultUsersList.map(createUserWithId);
-        localStorage.setItem("users", JSON.stringify(initialUsers));
-      }
-    } catch (error) {
-      console.error("Ошибка при инициализации пользователей:", error);
-      // Сбрасываем данные пользователей если произошла ошибка
-      const initialUsers = getDefaultUsers().map(createUserWithId);
-      localStorage.setItem("users", JSON.stringify(initialUsers));
-    }
-  };
+  getCurrentUser() {
+    const session = this.getCurrentSession();
+    if (!session) return null;
+    
+    return {
+      id: session.id,
+      username: session.username,
+      role: session.role,
+      isAuthenticated: session.isAuthenticated
+    };
+  },
 
-  return {
-    formData,
-    error,
-    setError,
-    handleInputChange,
-    handleRoleChange,
-    handleSubmit,
-    checkExistingSession,
-    initializeDefaultUsers
-  };
-}
+  /**
+   * Выход из системы
+   */
+  logout() {
+    localStorage.removeItem('user');
+  },
+
+  /**
+   * Получает сообщение об ошибке аутентификации
+   */
+  getAuthErrorMessage() {
+    const message = sessionStorage.getItem('auth_message');
+    if (message) {
+      sessionStorage.removeItem('auth_message');
+    }
+    return message;
+  }
+};

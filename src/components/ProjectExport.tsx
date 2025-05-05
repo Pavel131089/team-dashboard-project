@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -102,7 +101,7 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
       }
 
 
-      // Форматируем данные для CSV - используем точку с запятой для Excel
+      // Форматируем данные для CSV - добавляем BOM для корректной кодировки в Excel
       const headers = "Проект;Задача;Описание;Стоимость;Время;Прогресс;Исполнитель;Дата начала;Дата окончания\n";
       
       const rows = dataToExport.flatMap(project => 
@@ -120,11 +119,13 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
             assignedTo = String(task.assignedTo);
           }
           
-          return `"${projectName}";"${taskName}";"${taskDesc}";"${task.price || 0}";"${task.estimatedTime || 0}";"${task.progress || 0}%";"${assignedTo}";"${formatDate(task.startDate)}";"${formatDate(task.endDate)}"`;
+          return `"${projectName}";"${taskName}";"${taskDesc}";"${task.price || 0}";"${task.estimatedTime || 0}";"${task.progress || 0}%;"${assignedTo}";"${formatDate(task.startDate)}";"${formatDate(task.endDate)}"`;
         })
       ).join('\n');
       
-      const csvContent = `data:text/csv;charset=utf-8,${encodeURIComponent(headers + rows)}`;
+      // Добавляем BOM (Byte Order Mark) для корректного отображения кириллицы в Excel
+      const BOM = "\ufeff";
+      const csvContent = `data:text/csv;charset=utf-8,${encodeURIComponent(BOM + headers + rows)}`;
 
       // Создаем ссылку для скачивания
       const link = document.createElement("a");

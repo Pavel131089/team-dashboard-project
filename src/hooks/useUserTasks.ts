@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Project, Task, User } from "@/types/project";
 
@@ -20,6 +19,7 @@ export function useUserTasks(
         // Проверяем назначен ли этот пользователь на задачу:
         // 1. По ID в массиве assignedTo
         // 2. По имени пользователя в массиве assignedToNames
+        // 3. По прямому равенству assignedTo === user.id
         const assignedById = Array.isArray(task.assignedTo) && task.assignedTo.includes(user.id);
         const assignedByName = Array.isArray(task.assignedToNames) && task.assignedToNames.includes(userName);
         const assignedBySingleId = task.assignedTo === user.id;

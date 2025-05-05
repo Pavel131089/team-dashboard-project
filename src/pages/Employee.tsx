@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react");
 import { useNavigate } from "react-router-dom";
 import { Project, Task, User } from "@/types/project";
 import { toast } from "@/components/ui/use-toast";
@@ -14,6 +13,7 @@ const Employee = () => {
   const [userName, setUserName] = useState<string>("");
   const navigate = useNavigate();
   
+  // Получаем задачи пользователя
   const { userTasks, setUserTasks } = useUserTasks(user, projects, userName);
 
   // Загрузка данных пользователя и проектов при первом рендере
@@ -28,6 +28,8 @@ const Employee = () => {
         setUserName(parsedUser.username || "");
       } catch (error) {
         console.error("Failed to parse user data:", error);
+        navigate("/login");
+        return;
       }
     } else {
       navigate("/login");
@@ -45,6 +47,61 @@ const Employee = () => {
   }, [navigate]);
 
   const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
+    // Проверяем, не пытаемся ли "удалить" задачу (флаг _deleted)
+    if (updatedTask._deleted) {
+      // Удаляем задачу из списка задач пользователя
+      const updatedUserTasks = userTasks.filter(
+        item => !(item.project.id === projectId && item.task.id === updatedTask.id)
+      );
+      setUserTasks(updatedUserTasks);
+      
+      // Обновляем проект, удаляя пользователя из списка исполнителей задачи
+      const project = projects.find(p => p.id === projectId);
+      if (project && user) {
+        const task = project.tasks.find(t => t.id === updatedTask.id);
+        if (task) {
+          let newAssignedTo = task.assignedTo;
+          
+          if (Array.isArray(newAssignedTo)) {
+            newAssignedTo = newAssignedTo.filter(id => id !== user.id);
+            // Если остался только 1 исполнитель, преобразуем массив в строку
+            if (newAssignedTo.length === 1) {
+              newAssignedTo = newAssignedTo[0];
+            } else if (newAssignedTo.length === 0) {
+              newAssignedTo = null;
+            }
+          } else {
+            newAssignedTo = null;
+          }
+          
+          const taskWithoutUser = {
+            ...task,
+            assignedTo: newAssignedTo
+          };
+          
+          // Обновляем проект
+          const updatedProjects = projects.map(p => {
+            if (p.id === projectId) {
+              return {
+                ...p,
+                tasks: p.tasks.map(t => t.id === updatedTask.id ? taskWithoutUser : t)
+              };
+            }
+            return p;
+          });
+          
+          setProjects(updatedProjects);
+          localStorage.setItem("projects", JSON.stringify(updatedProjects));
+          
+          toast({
+            title: "Задача удалена",
+            description: "Задача была успешно удалена из вашего списка",
+          });
+          return;
+        }
+      }
+    }
+    
     // Если задача завершена на 100%, устанавливаем actualEndDate
     if (updatedTask.progress === 100 && !updatedTask.actualEndDate) {
       updatedTask.actualEndDate = new Date().toISOString();

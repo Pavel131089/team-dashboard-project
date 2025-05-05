@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Project, Task } from "@/types/project";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,12 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
     
     if (task.assignedTo) {
       if (Array.isArray(task.assignedTo)) {
-        updatedAssignedTo = [...task.assignedTo, userId];
+        // Проверяем, не включен ли уже пользователь в список
+        if (!task.assignedTo.includes(userId)) {
+          updatedAssignedTo = [...task.assignedTo, userId];
+        } else {
+          updatedAssignedTo = task.assignedTo;
+        }
       } else if (task.assignedTo !== userId) {
         updatedAssignedTo = [task.assignedTo, userId];
       }
@@ -108,12 +112,19 @@ const collectAvailableTasks = (projects: Project[], userId: string) => {
   
   projects.forEach(project => {
     project.tasks.forEach(task => {
-      // Показываем задачи без исполнителей или задачи, которые можно взять нескольким исполнителям
-      const isAssigned = Array.isArray(task.assignedTo)
-        ? task.assignedTo.includes(userId)
-        : task.assignedTo === userId;
-        
-      if (!task.assignedTo || !isAssigned) {
+      // Проверяем, что задача не назначена текущему пользователю
+      let isAssigned = false;
+      
+      if (task.assignedTo) {
+        if (Array.isArray(task.assignedTo)) {
+          isAssigned = task.assignedTo.includes(userId);
+        } else {
+          isAssigned = task.assignedTo === userId;
+        }
+      }
+      
+      // Добавляем задачу в доступные, если она не назначена текущему пользователю
+      if (!isAssigned) {
         availableTasks.push({
           project,
           task

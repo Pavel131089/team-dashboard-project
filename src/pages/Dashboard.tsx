@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react");
 import { useNavigate } from "react-router-dom";
 import { Project, Task, User } from "@/types/project";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -173,11 +172,12 @@ const Dashboard = () => {
     toast.success("Пользователь удален");
   };
 
-  const handleImportProjects = (importedProjects: Project[]) => {
-    const updatedProjects = [...projects, ...importedProjects];
+  const handleImportProjects = (importedProject: Project) => {
+    // Обрабатываем как одиночный проект, а не как массив
+    const updatedProjects = [...projects, importedProject];
     setProjects(updatedProjects);
     localStorage.setItem("projects", JSON.stringify(updatedProjects));
-    toast.success(`Импортировано ${importedProjects.length} проектов`);
+    toast.success(`Проект "${importedProject.name}" успешно импортирован`);
   };
 
   const handleUpdateTask = (projectId: string, updatedTask: Task) => {
@@ -327,4 +327,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

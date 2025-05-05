@@ -186,6 +186,9 @@ const AvailableTasks = ({
   userId: string,
   onTaskUpdate: (projectId: string, task: Task) => void 
 }) => {
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState(""));
+  
   const availableTasks: {project: Project, task: Task}[] = [];
   
   projects.forEach(project => {
@@ -227,6 +230,35 @@ const AvailableTasks = ({
     
     onTaskUpdate(projectId, updatedTask);
   };
+
+  const handleAddComment = (projectId: string, taskId: string) => {
+    if (!newComment.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Комментарий не может быть пустым",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const project = projects.find(p => p.id === projectId)!;
+    const task = project.tasks.find(t => t.id === taskId)!;
+    
+    const comments = task.comments || [];
+    const updatedTask = {
+      ...task,
+      comments: [...comments, newComment]
+    };
+    
+    onTaskUpdate(projectId, updatedTask);
+    setNewComment("");
+    setEditingTaskId(null);
+    
+    toast({
+      title: "Комментарий добавлен",
+      description: "Ваш комментарий был успешно добавлен к задаче",
+    });
+  };
   
   if (availableTasks.length === 0) {
     return (
@@ -262,6 +294,48 @@ const AvailableTasks = ({
                   </ul>
                 </div>
               )}
+
+                {/* Форма добавления комментария */}
+                {editingTaskId === task.id ? (
+                  <div className="mt-2 space-y-2">
+                    <Textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Введите комментарий..."
+                      className="text-xs"
+                      rows={2}
+                    />
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleAddComment(project.id, task.id)}
+                      >
+                        Сохранить
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          setEditingTaskId(null);
+                          setNewComment("");
+                        }}
+                      >
+                        Отмена
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 h-7 text-xs"
+                    onClick={() => setEditingTaskId(task.id)}
+                  >
+                    <Icon name="MessageSquarePlus" className="h-3.5 w-3.5 mr-1" />
+                    Добавить комментарий
+                  </Button>
+                )}
+                
               <div className="mt-2 flex flex-wrap gap-2 text-xs">
                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
                   Цена: {task.price} ₽

@@ -2,6 +2,9 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
 import { Task } from "@/types/project";
+import { useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/use-toast";
 import TaskStatusBadge from "./TaskStatusBadge";
 import TaskDates from "./TaskDates";
 import TaskProgress from "./TaskProgress";
@@ -33,10 +36,40 @@ const getProjectName = (task: Task, project: any) => {
  * Компонент строки задачи для таблицы
  */
 const TaskRow = ({ task, project, onDeleteTask, onTaskUpdate }: TaskRowProps) => {
+  const [showAddComment, setShowAddComment] = useState(false);
+  const [newComment, setNewComment] = useState("");
+
   const handleProgressChange = (projectId: string, progress: number) => {
     if (onTaskUpdate && project) {
       const updatedTask = {...task, progress};
       onTaskUpdate(projectId, updatedTask);
+    }
+  };
+
+  const handleAddComment = () => {
+    if (!newComment.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Комментарий не может быть пустым",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (onTaskUpdate && project) {
+      const comments = task.comments || [];
+      const updatedTask = { 
+        ...task, 
+        comments: [...comments, newComment]
+      };
+      onTaskUpdate(project.id, updatedTask);
+      setNewComment("");
+      setShowAddComment(false);
+      
+      toast({
+        title: "Комментарий добавлен",
+        description: "Ваш комментарий был успешно добавлен к задаче",
+      });
     }
   };
 
@@ -48,6 +81,47 @@ const TaskRow = ({ task, project, onDeleteTask, onTaskUpdate }: TaskRowProps) =>
           {task.description || "—"}
         </div>
         <TaskComments comments={task.comments} />
+        
+        {/* Форма добавления комментария */}
+        {showAddComment ? (
+          <div className="mt-2 space-y-2">
+            <Textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Введите комментарий..."
+              className="text-xs"
+              rows={2}
+            />
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                onClick={handleAddComment}
+              >
+                Сохранить
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => {
+                  setShowAddComment(false);
+                  setNewComment("");
+                }}
+              >
+                Отмена
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2 h-7 text-xs"
+            onClick={() => setShowAddComment(true)}
+          >
+            <Icon name="MessageSquarePlus" className="h-3.5 w-3.5 mr-1" />
+            Добавить комментарий
+          </Button>
+        )}
       </TableCell>
       <TableCell>
         {getProjectName(task, project)}

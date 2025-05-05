@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Project, Task } from "@/types/project";
 import {
   Table,
@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 interface ProjectTasksTableProps {
   project: Project;
@@ -30,6 +32,30 @@ const ProjectTasksTable: React.FC<ProjectTasksTableProps> = ({
   onTaskUpdate,
   onDeleteTask
 }) => {
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState("");
+
+  const handleAddComment = (taskId: string) => {
+    if (!newComment.trim()) {
+      toast("Комментарий не может быть пустым");
+      return;
+    }
+
+    const task = project.tasks.find(t => t.id === taskId);
+    if (task) {
+      const comments = task.comments || [];
+      const updatedTask = {
+        ...task,
+        comments: [...comments, newComment]
+      };
+      onTaskUpdate(project.id, updatedTask);
+      setNewComment("");
+      setEditingTaskId(null);
+      
+      toast("Комментарий успешно добавлен");
+    }
+  };
+
   return (
     <div className="p-4">
       <Table>
@@ -61,6 +87,47 @@ const ProjectTasksTable: React.FC<ProjectTasksTableProps> = ({
                     </ul>
                   </div>
                 )}
+
+                {/* Форма добавления комментария */}
+                {editingTaskId === task.id ? (
+                  <div className="mt-2 space-y-2">
+                    <Textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Введите комментарий..."
+                      className="text-xs"
+                      rows={2}
+                    />
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleAddComment(task.id)}
+                      >
+                        Сохранить
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          setEditingTaskId(null);
+                          setNewComment("");
+                        }}
+                      >
+                        Отмена
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 h-7 text-xs"
+                    onClick={() => setEditingTaskId(task.id)}
+                  >
+                    <Icon name="MessageSquarePlus" className="h-3.5 w-3.5 mr-1" />
+                    Добавить комментарий
+                  </Button>
+                ))}
               </TableCell>
               <TableCell>
                 {task.progress === 100 ? (

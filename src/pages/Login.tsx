@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import Icon from "@/components/ui/icon";
 
 type UserRole = "manager" | "employee";
 
@@ -14,12 +15,44 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("employee");
+  const [error, setError] = useState<string | null>(null);
+  const [defaultUsers, setDefaultUsers] = useState<Array<{name: string, email: string, password: string, role: UserRole}>>([]);
   const navigate = useNavigate();
   
   useEffect(() => {
     // Проверяем активную сессию пользователя при загрузке компонента
     checkExistingSession();
-  }, [navigate]);
+    
+    // Создаем дефолтных пользователей для демо-доступа
+    initializeDefaultUsers();
+  }, []);
+
+  // Функция для инициализации дефолтных пользователей
+  const initializeDefaultUsers = () => {
+    const defaultUsersList = [
+      { name: "Менеджер", email: "manager", password: "manager123", role: "manager" as UserRole },
+      { name: "Сотрудник", email: "employee", password: "employee123", role: "employee" as UserRole }
+    ];
+    
+    setDefaultUsers(defaultUsersList);
+    
+    // Проверяем существующих пользователей в системе
+    const usersStr = localStorage.getItem("users");
+    let users = usersStr ? JSON.parse(usersStr) : [];
+    
+    // Если пользователей нет, создаем дефолтных
+    if (!users || users.length === 0) {
+      const initialUsers = defaultUsersList.map(user => ({
+        id: crypto.randomUUID(),
+        name: user.name,
+        email: user.email,
+        password: user.password,
+        role: user.role
+      }));
+      
+      localStorage.setItem("users", JSON.stringify(initialUsers));
+    }
+  };
 
   // Функция для проверки существующей сессии
   const checkExistingSession = () => {
@@ -37,6 +70,13 @@ const Login = () => {
         localStorage.removeItem('user');
       }
     }
+    
+    // Проверяем сообщение об ошибке из sessionStorage (если было перенаправление)
+    const authMessage = sessionStorage.getItem('auth_message');
+    if (authMessage) {
+      setError(authMessage);
+      sessionStorage.removeItem('auth_message');
+    }
   };
 
   // Функция перенаправления в зависимости от роли
@@ -50,43 +90,63 @@ const Login = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (!username.trim() || !password.trim()) {
-      toast({
-        title: "Ошибка",
-        description: "Пожалуйста, заполните все поля",
-        variant: "destructive",
-      });
+      setError("Пожалуйста, заполните все поля");
       return;
     }
 
+    // Проверяем, есть ли пользователь среди дефолтных
+    const isDefaultUser = defaultUsers.some(
+      user => user.email === username && user.password === password && user.role === role
+    );
+    
+    // Если это дефолтный пользователь, создаём его в localStorage если нужно
+    if (isDefaultUser) {
+      const defaultUser = defaultUsers.find(
+        user => user.email === username && user.password === password
+      );
+      
+      const usersStr = localStorage.getItem("users");
+      let users = usersStr ? JSON.parse(usersStr) : [];
+      
+      // Проверяем, существует ли такой пользователь в списке
+      const existingUser = users.find((u: any) => u.email === username);
+      
+      if (!existingUser) {
+        // Добавляем дефолтного пользователя в список
+        const newUser = {
+          id: crypto.randomUUID(),
+          name: defaultUser?.name || username,
+          email: username,
+          password: password,
+          role: role
+        };
+        
+        users.push(newUser);
+        localStorage.setItem("users", JSON.stringify(users));
+        
+        // Успешная авторизация
+        saveUserSession(newUser);
+        return;
+      }
+    }
+    
+    // Проверяем пользователей в localStorage
     const usersStr = localStorage.getItem("users");
     let users = usersStr ? JSON.parse(usersStr) : [];
     
-    if (users.length === 0) {
-      // Создаем первого пользователя, если пользователей ещё нет
-      createFirstUser();
-      return;
-    }
-    
     // Поиск существующего пользователя
-    const user = users.find((u: any) => u.email === username);
+    const user = users.find((u: any) => u.email === username || u.name === username);
     
     if (!user || user.password !== password) {
-      toast({
-        title: "Ошибка",
-        description: "Неверный логин или пароль",
-        variant: "destructive",
-      });
+      setError("Неверный логин или пароль");
       return;
     }
     
     if (user.role !== role) {
-      toast({
-        title: "Ошибка",
-        description: "Указана неверная роль для данного пользователя",
-        variant: "destructive",
-      });
+      setError(`Указана неверная роль для пользователя ${user.name}`);
       return;
     }
     
@@ -97,7 +157,7 @@ const Login = () => {
   // Создание первого пользователя
   const createFirstUser = () => {
     const newUser = {
-      id: Math.random().toString(36).substring(2),
+      id: crypto.randomUUID(),
       name: username,
       email: username,
       password: password,
@@ -146,6 +206,14 @@ const Login = () => {
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <Icon name="AlertTriangle" className="h-4 w-4" />
+                <AlertTitle>Ошибка</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="username">Имя пользователя</Label>
               <Input
@@ -181,6 +249,14 @@ const Login = () => {
                   <Label htmlFor="employee">Сотрудник</Label>
                 </div>
               </RadioGroup>
+            </div>
+            
+            <div className="pt-2 text-sm text-slate-500">
+              <p>Для демо-доступа используйте:</p>
+              <ul className="list-disc pl-5 mt-1 space-y-1">
+                <li>Руководитель: <span className="font-medium">manager / manager123</span></li>
+                <li>Сотрудник: <span className="font-medium">employee / employee123</span></li>
+              </ul>
             </div>
           </CardContent>
           <CardFooter>

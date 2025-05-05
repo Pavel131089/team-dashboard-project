@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
@@ -14,6 +13,10 @@ const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({
   userName, 
   onLogout 
 }) => {
+  // ... keep existing code
+  // Получаем отображаемое имя пользователя
+  const displayName = userName || "Сотрудник";
+  // ... keep existing code
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white shadow-sm">
@@ -22,7 +25,7 @@ const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({
           <div className="flex items-center gap-4">
             <span className="text-sm text-slate-600 flex items-center">
               <Icon name="User" className="mr-2 h-4 w-4" />
-              {userName} (Сотрудник)
+              {displayName} (Сотрудник)
             </span>
             <Button variant="outline" size="sm" onClick={onLogout}>
               <Icon name="LogOut" className="mr-2 h-4 w-4" />

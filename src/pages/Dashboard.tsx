@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react");
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardTabs from "@/components/dashboard/DashboardTabs";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import authService from "@/services/authService";
 
 /**
  * Компонент Dashboard - главная страница руководителя
@@ -24,6 +25,12 @@ const Dashboard: React.FC = () => {
     handleLogout,
   } = useDashboardData(navigate);
 
+  // Функция выхода из системы с использованием сервиса авторизации
+  const logout = () => {
+    authService.logout();
+    navigate("/login");
+  };
+  
   useEffect(() => {
     // Логируем состояние проектов для отладки
     console.log("Текущее состояние проектов:", projects);
@@ -66,7 +73,7 @@ const Dashboard: React.FC = () => {
       {/* Шапка страницы с именем пользователя и кнопкой выхода */}
       <DashboardHeader
         username={user.username || ""}
-        onLogout={handleLogout}
+        onLogout={logout}
       />
 
       {/* Основное содержимое с вкладками */}

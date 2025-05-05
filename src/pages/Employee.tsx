@@ -1,8 +1,8 @@
-
 import { useNavigate } from "react-router-dom";
 import { useEmployeeData } from "@/hooks/useEmployeeData";
 import EmployeeStatusIndicator from "@/components/employee/EmployeeStatusIndicator";
 import EmployeeContent from "@/components/employee/EmployeeContent";
+import authService from "@/services/authService";
 
 /**
  * Страница сотрудника
@@ -11,6 +11,12 @@ import EmployeeContent from "@/components/employee/EmployeeContent";
 const Employee = () => {
   const navigate = useNavigate();
   
+  // Функция выхода из системы с использованием сервиса авторизации
+  const logout = () => {
+    authService.logout();
+    navigate("/login");
+  };
+  
   // Получаем все данные и обработчики из хука
   const {
     user,
@@ -18,7 +24,6 @@ const Employee = () => {
     userTasks,
     isLoading,
     handleTaskUpdate,
-    handleLogout
   } = useEmployeeData(navigate);
 
   // Отображаем индикатор загрузки или ошибку, если нет данных пользователя
@@ -38,7 +43,7 @@ const Employee = () => {
       projects={projects}
       userTasks={userTasks}
       onTaskUpdate={handleTaskUpdate}
-      onLogout={handleLogout}
+      onLogout={logout}
     />
   );
 };

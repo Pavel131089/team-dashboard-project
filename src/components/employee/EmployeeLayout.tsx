@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import Icon from "@/components/ui/icon";
 
 interface EmployeeLayoutProps {
   children: React.ReactNode;
@@ -19,10 +20,12 @@ const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <h1 className="text-xl font-bold">Личный кабинет сотрудника</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-600">
+            <span className="text-sm text-slate-600 flex items-center">
+              <Icon name="User" className="mr-2 h-4 w-4" />
               {userName} (Сотрудник)
             </span>
-            <Button variant="outline" onClick={onLogout}>
+            <Button variant="outline" size="sm" onClick={onLogout}>
+              <Icon name="LogOut" className="mr-2 h-4 w-4" />
               Выйти
             </Button>
           </div>
@@ -31,6 +34,11 @@ const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({
       <main className="container mx-auto px-4 py-6">
         {children}
       </main>
+      <footer className="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div className="container mx-auto px-4 text-center text-sm text-slate-500">
+          &copy; {new Date().getFullYear()} Система управления проектами
+        </div>
+      </footer>
     </div>
   );
 };

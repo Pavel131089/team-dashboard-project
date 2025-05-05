@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Project, Task } from "@/types/project";
 import {
@@ -127,7 +128,7 @@ const ProjectTasksTable: React.FC<ProjectTasksTableProps> = ({
                     <Icon name="MessageSquarePlus" className="h-3.5 w-3.5 mr-1" />
                     Добавить комментарий
                   </Button>
-                ))}
+                )}
               </TableCell>
               <TableCell>
                 {task.progress === 100 ? (
@@ -145,7 +146,7 @@ const ProjectTasksTable: React.FC<ProjectTasksTableProps> = ({
                 )}
               </TableCell>
               <TableCell>
-                {task.price ? `${task.price} ¢` : "—"}
+                {task.price ? `${task.price} ₽` : "—"}
               </TableCell>
               <TableCell>
                 {task.estimatedTime ? `${task.estimatedTime} ч` : "—"}

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Project, Task } from "@/types/project";
 import {
@@ -110,16 +109,16 @@ const ProjectList = ({
   const getAssignedUserName = (assignedTo: string | string[] | null | undefined) => {
     if (!assignedTo) return "—";
     
+    const findUserById = (id: string) => {
+      const user = users?.find(u => u.id === id);
+      return user ? user.username : id;
+    };
+
     if (Array.isArray(assignedTo)) {
-      return assignedTo.map(id => {
-        const user = users?.find(u => u.id === id);
-        return user ? user.username : id;
-      }).join(", ");
+      return assignedTo.map(id => findUserById(id)).join(", ");
     }
     
-    // Если строка
-    const user = users?.find(u => u.id === assignedTo);
-    return user ? user.username : assignedTo;
+    return findUserById(assignedTo);
   };
 
   const handleTaskUpdate = (projectId: string, updatedTask: Task) => {

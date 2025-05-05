@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Project, Task } from "@/types/project";
 import {
@@ -79,7 +78,7 @@ const ProjectTasksTable: React.FC<ProjectTasksTableProps> = ({
                 )}
               </TableCell>
               <TableCell>
-                {task.price ? `${task.price} ₽` : "—"}
+                {task.price ? `${task.price} ¢` : "—"}
               </TableCell>
               <TableCell>
                 {task.estimatedTime ? `${task.estimatedTime} ч` : "—"}
@@ -89,7 +88,7 @@ const ProjectTasksTable: React.FC<ProjectTasksTableProps> = ({
                   <div>План: {formatDate(task.startDate)} — {formatDate(task.endDate)}</div>
                   {task.actualStartDate && (
                     <div className="mt-1">
-                      Факт: {formatDate(task.actualStartDate)} 
+                      Факт: {formatDate(task.actualStartDate)}
                       {task.actualEndDate ? ` — ${formatDate(task.actualEndDate)}` : ""}
                     </div>
                   )}
@@ -101,8 +100,8 @@ const ProjectTasksTable: React.FC<ProjectTasksTableProps> = ({
               <TableCell>
                 <div className="w-full flex flex-col space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Progress 
-                      value={task.progress || 0} 
+                    <Progress
+                      value={task.progress || 0}
                       className="h-2 w-24"
                       indicatorClassName={
                         task.progress < 30 ? "bg-red-500" :
@@ -112,10 +111,10 @@ const ProjectTasksTable: React.FC<ProjectTasksTableProps> = ({
                     />
                     <span className="text-xs">{task.progress || 0}%</span>
                   </div>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
                     step="5"
                     value={task.progress || 0}
                     onChange={(e) => {
@@ -134,9 +133,9 @@ const ProjectTasksTable: React.FC<ProjectTasksTableProps> = ({
               </TableCell>
               {userRole === "manager" && (
                 <TableCell>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="text-red-500 hover:text-red-700 hover:bg-red-50"
                     onClick={() => onDeleteTask(project.id, task.id)}
                   >

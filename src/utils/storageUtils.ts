@@ -1,4 +1,3 @@
-
 /**
  * Модуль утилит для работы с локальным хранилищем браузера.
  * Предоставляет функции для безопасного сохранения, получения и управления данными.
@@ -468,7 +467,20 @@ const storageUtils = {
    */
   resetProjectsStorage() {
     return JsonStorage.setItem(STORAGE_KEYS.PROJECTS, []);
+  },
+
+  /**
+   * Создает тестовый проект для отладки
+   * @returns {boolean} Результат операции
+   */
+  createSampleProject() {
+    return StorageInit.createSampleProject();
   }
 };
+export { StorageCore, JsonStorage, ProjectStorage, TaskStorage, StorageInit, SessionStorage, createSampleProject };
+
+export function createSampleProject(): boolean {
+  return StorageInit.createSampleProject();
+}
 
 export default storageUtils;

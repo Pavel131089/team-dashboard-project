@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react");
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardTabs from "@/components/dashboard/DashboardTabs";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import authService from "@/services/authService";
+import StorageDiagnostics from "@/components/dashboard/StorageDiagnostics";
 
 /**
  * Компонент Dashboard - главная страница руководителя
@@ -22,7 +24,6 @@ const Dashboard: React.FC = () => {
     handleImportProject,
     handleUpdateProject,
     handleDeleteProject,
-    handleLogout,
   } = useDashboardData(navigate);
 
   // Функция выхода из системы с использованием сервиса авторизации
@@ -87,6 +88,11 @@ const Dashboard: React.FC = () => {
           onDeleteProject={handleDeleteProject}
         />
       </main>
+      
+      {/* Диагностический компонент для отладки хранилища */}
+      <StorageDiagnostics onReloadProjects={() => {
+        window.location.reload();
+      }} />
     </div>
   );
 };

@@ -2,10 +2,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
-import { UserService } from "@/services/userService";
-import { StorageService } from "@/services/storageService";
+import { authService } from "@/services/auth/authService";
+import { sessionService } from "@/services/auth/sessionService";
+import { userService } from "@/services/auth/userService";
+import { storageUtils } from "@/utils/storage";
 
-// Типы
+// Типы данных
 export type UserRole = "manager" | "employee";
 
 export interface LoginFormData {
@@ -14,25 +16,27 @@ export interface LoginFormData {
   role: UserRole;
 }
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-  role: UserRole;
-}
-
 /**
- * Хук для управления авторизацией пользователя
+ * Хук для управления аутентификацией пользователя
+ * 
+ * Предоставляет функциональность для:
+ * - Входа в систему
+ * - Выхода из системы
+ * - Управления формой авторизации
+ * - Инициализации базовых пользователей
  */
-export function useAuth() {
+export function useAuth(navigateTo?: string) {
+  // Состояние формы входа
   const [formData, setFormData] = useState<LoginFormData>({
     username: "",
     password: "",
-    role: "employee"
+    role: "employee" 
   });
   
+  // Состояние ошибки
   const [error, setError] = useState<string | null>(null);
+  
+  // Хук для навигации
   const navigate = useNavigate();
 
   /**
@@ -44,7 +48,7 @@ export function useAuth() {
   };
 
   /**
-   * Обработчик изменения роли
+   * Обработчик изменения роли пользователя
    */
   const handleRoleChange = (value: string) => {
     setFormData(prev => ({ ...prev, role: value as UserRole }));
@@ -53,37 +57,43 @@ export function useAuth() {
   /**
    * Перенаправляет пользователя в зависимости от роли
    */
-  const redirectBasedOnRole = (userRole: UserRole) => {
-    navigate(userRole === "manager" ? "/dashboard" : "/employee");
+  const redirectToRolePage = (role: UserRole) => {
+    const targetPath = role === "manager" ? "/dashboard" : "/employee";
+    const path = navigateTo || targetPath;
+    navigate(path);
   };
 
   /**
    * Проверяет существующую сессию пользователя
+   * Если сессия найдена, перенаправляет на соответствующую страницу
    */
   const checkExistingSession = () => {
     try {
-      const session = AuthSessionManager.getCurrentSession();
+      // Получаем текущую сессию
+      const session = sessionService.getCurrentSession();
+      
+      // Если сессия существует и пользователь аутентифицирован
       if (session && session.isAuthenticated) {
-        redirectBasedOnRole(session.role);
+        redirectToRolePage(session.role);
         return true;
       }
       
-      // Проверяем сообщение об ошибке из sessionStorage
-      const authMessage = AuthSessionManager.getAuthErrorMessage();
-      if (authMessage) {
-        setError(authMessage);
+      // Проверяем наличие сообщения об ошибке
+      const errorMessage = sessionService.getErrorMessage();
+      if (errorMessage) {
+        setError(errorMessage);
       }
       
       return false;
     } catch (error) {
       console.error("Ошибка при проверке сессии:", error);
-      localStorage.removeItem('user');
+      sessionService.clearSession();
       return false;
     }
   };
 
   /**
-   * Обработчик отправки формы
+   * Обработчик отправки формы входа
    */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,15 +105,26 @@ export function useAuth() {
       return;
     }
 
-    // Поиск пользователя
-    const user = AuthenticationManager.findUserForLogin(formData);
-    
-    if (user) {
-      // Аутентификация пользователя
-      AuthenticationManager.authenticateUser(user);
-      redirectBasedOnRole(user.role);
-    } else {
-      setError("Неверный логин или пароль");
+    try {
+      // Попытка авторизации
+      const result = authService.login(formData);
+      
+      if (result.success) {
+        // При успешном входе показываем уведомление
+        toast({
+          title: "Успешный вход",
+          description: `Добро пожаловать, ${result.user.name}!`,
+        });
+        
+        // Перенаправляем на соответствующую страницу
+        redirectToRolePage(result.user.role);
+      } else {
+        // При ошибке устанавливаем сообщение об ошибке
+        setError(result.error || "Произошла ошибка при входе");
+      }
+    } catch (error) {
+      console.error("Ошибка авторизации:", error);
+      setError("Произошла непредвиденная ошибка при входе. Попробуйте позже.");
     }
   };
 
@@ -111,156 +132,53 @@ export function useAuth() {
    * Инициализирует дефолтных пользователей в системе
    */
   const initializeDefaultUsers = () => {
-    UserService.initializeDefaultUsers();
+    userService.initializeDefaultUsers();
+    storageUtils.initializeStorage('projects', []);
   };
 
   /**
-   * Проверяет аутентификацию пользователя
+   * Проверяет аутентификацию пользователя и возвращает данные текущего пользователя
    */
   const checkUserAuth = () => {
-    return AuthSessionManager.getCurrentUser();
+    return sessionService.getCurrentSession();
   };
 
   /**
    * Выход из системы
    */
   const logout = () => {
-    AuthSessionManager.logout();
+    sessionService.clearSession();
+    
+    // Уведомление о выходе
+    toast({
+      title: "Выход из системы",
+      description: "Вы успешно вышли из системы",
+    });
+    
     navigate("/login");
   };
 
+  // Возвращаем объект с методами и состояниями
   return {
+    // Состояния
     formData,
     error,
-    setError,
+    
+    // Обработчики формы
     handleInputChange,
     handleRoleChange,
     handleSubmit,
+    
+    // Методы аутентификации
     checkExistingSession,
     initializeDefaultUsers,
     checkUserAuth,
-    logout
+    logout,
+    
+    // Вспомогательные методы
+    setError
   };
 }
 
-/**
- * Класс для управления аутентификацией пользователей
- */
-const AuthenticationManager = {
-  /**
-   * Находит пользователя по учетным данным
-   */
-  findUserForLogin(formData: LoginFormData): User | null {
-    // Получаем дефолтных пользователей
-    const defaultUsers = UserService.getDefaultUsers();
-    
-    // Проверяем дефолтных пользователей
-    const defaultUserMatch = defaultUsers.find(
-      user => user.email === formData.username && 
-              user.password === formData.password && 
-              user.role === formData.role
-    );
-    
-    if (defaultUserMatch) {
-      // Проверяем наличие дефолтного пользователя в хранилище
-      const storageUsers = UserService.getUsersFromStorage();
-      let existingUser = storageUsers.find(u => u.email === formData.username);
-      
-      if (!existingUser) {
-        // Создаем нового пользователя на основе дефолтного
-        const newUser = UserService.createUserWithId(defaultUserMatch);
-        storageUsers.push(newUser);
-        UserService.saveUsersToStorage(storageUsers);
-        return newUser;
-      }
-      
-      return existingUser;
-    }
-    
-    // Поиск в пользователях из хранилища
-    const storageUsers = UserService.getUsersFromStorage();
-    const user = storageUsers.find(
-      u => (u.email === formData.username || u.name === formData.username) && 
-           u.password === formData.password &&
-           u.role === formData.role
-    );
-    
-    return user || null;
-  },
-
-  /**
-   * Аутентифицирует пользователя и сохраняет сессию
-   */
-  authenticateUser(user: User): void {
-    const sessionData = {
-      username: user.name,
-      role: user.role,
-      id: user.id,
-      isAuthenticated: true,
-      loginTime: new Date().toISOString()
-    };
-    
-    localStorage.setItem("user", JSON.stringify(sessionData));
-    
-    // Инициализируем хранилище проектов, если оно не существует
-    StorageService.initializeStorage("projects", []);
-    
-    toast({
-      title: "Успешный вход",
-      description: `Добро пожаловать в систему, ${user.name}!`,
-    });
-  }
-};
-
-/**
- * Класс для управления сессией пользователя
- */
-const AuthSessionManager = {
-  /**
-   * Получает текущую сессию
-   */
-  getCurrentSession() {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return null;
-    
-    try {
-      return JSON.parse(userStr);
-    } catch (e) {
-      console.error("Ошибка при парсинге сессии:", e);
-      return null;
-    }
-  },
-
-  /**
-   * Получает текущего пользователя
-   */
-  getCurrentUser() {
-    const session = this.getCurrentSession();
-    if (!session) return null;
-    
-    return {
-      id: session.id,
-      username: session.username,
-      role: session.role,
-      isAuthenticated: session.isAuthenticated
-    };
-  },
-
-  /**
-   * Выход из системы
-   */
-  logout() {
-    localStorage.removeItem('user');
-  },
-
-  /**
-   * Получает сообщение об ошибке аутентификации
-   */
-  getAuthErrorMessage() {
-    const message = sessionStorage.getItem('auth_message');
-    if (message) {
-      sessionStorage.removeItem('auth_message');
-    }
-    return message;
-  }
-};
+// Экспортируем дополнительные типы
+export type { User } from "@/services/auth/userService";

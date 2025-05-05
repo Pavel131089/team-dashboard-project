@@ -1,1 +1,1 @@
-export interface Task {
+export interface Task { id: string; name: string; description?: string; status?: 'TODO' | 'IN_PROGRESS' | 'DONE'; priority?: 'LOW' | 'MEDIUM' | 'HIGH'; price?: number; estimatedTime?: number; startDate?: string | null; endDate?: string | null; progress?: number; assignedTo?: string | string[] | null; assignedToNames?: string[]; actualStartDate?: string | null; actualEndDate?: string | null; comments?: string[]; projectName?: string; _deleted?: boolean; }

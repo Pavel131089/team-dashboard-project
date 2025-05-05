@@ -1,37 +1,20 @@
+
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Project, Task } from "@/types/project";
+import { Project } from "@/types/project";
 import { toast } from "@/components/ui/use-toast";
+import ExportTypeSelector from "./export/ExportTypeSelector";
+import ExportFilterForm from "./export/ExportFilterForm";
+import ExportInformation from "./export/ExportInformation";
+import { processExportData, generateCsvContent } from "./export/exportUtils";
 
 interface ProjectExportProps {
   projects: Project[];
 }
 
-type ExportType = "all" | "employee" | "project";
-
-const formatDate = (date: string | undefined): string => {
-  if (!date) return "";
-  try {
-    return new Date(date).toLocaleDateString("ru-RU");
-  } catch (e) {
-    return date;
-  }
-};
-
 const ProjectExport = ({ projects }: ProjectExportProps) => {
-  const [exportType, setExportType] = useState<ExportType>("all");
+  const [exportType, setExportType] = useState<"all" | "employee" | "project">("all");
   const [selectedProject, setSelectedProject] = useState<string>("");
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
@@ -49,84 +32,24 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
       }
     });
   });
-  
-  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
 
   const handleExport = () => {
     setIsLoading(true);
     
     try {
-      // Получение данных для экспорта
-      let dataToExport: Project[] = [];
+      // Получение и форматирование данных для экспорта
+      const dataToExport = processExportData(
+        projects, 
+        exportType, 
+        selectedProject, 
+        selectedEmployee, 
+        dateFrom, 
+        dateTo
+      );
+
+      // Формируем и скачиваем CSV файл
+      const csvContent = generateCsvContent(dataToExport);
       
-      if (exportType === "all") {
-        dataToExport = [...projects];
-      } else if (exportType === "project" && selectedProject) {
-        const found = projects.find(p => p.id === selectedProject);
-        if (found) {
-          dataToExport = [found];
-        }
-      } else if (exportType === "employee" && selectedEmployee) {
-        // Фильтруем задачи по сотруднику
-        dataToExport = projects.map(project => ({
-          ...project,
-          tasks: project.tasks.filter(task => {
-            if (Array.isArray(task.assignedTo)) {
-              return task.assignedTo.includes(selectedEmployee);
-            }
-            return task.assignedTo === selectedEmployee;
-          })
-        })).filter(project => project.tasks.length > 0);
-      }
-
-      // Применяем фильтр по датам, если указаны
-      if (dateFrom || dateTo) {
-        dataToExport = dataToExport.map(project => ({
-          ...project,
-          tasks: project.tasks.filter(task => {
-            const taskStartDate = task.startDate ? new Date(task.startDate) : null;
-            const taskEndDate = task.endDate ? new Date(task.endDate) : null;
-            const filterDateFrom = dateFrom ? new Date(dateFrom) : null;
-            const filterDateTo = dateTo ? new Date(dateTo) : null;
-            
-            if (filterDateFrom && taskStartDate && taskStartDate < filterDateFrom) {
-              return false;
-            }
-            if (filterDateTo && taskEndDate && taskEndDate > filterDateTo) {
-              return false;
-            }
-            return true;
-          })
-        })).filter(project => project.tasks.length > 0);
-      }
-
-
-      // Форматируем данные для CSV - добавляем BOM для корректной кодировки в Excel
-      const headers = "Проект;Задача;Описание;Стоимость;Время;Прогресс;Исполнитель;Дата начала;Дата окончания\n";
-      
-      const rows = dataToExport.flatMap(project => 
-        project.tasks.map(task => {
-          const projectName = project.name.replace(/"/g, '""');
-          const taskName = task.name.replace(/"/g, '""');
-          const taskDesc = (task.description || "").replace(/"/g, '""');
-          
-          let assignedTo = "";
-          if (Array.isArray(task.assignedTo)) {
-            assignedTo = task.assignedTo.join(", ");
-          } else if (task.assignedToNames && task.assignedToNames.length > 0) {
-            assignedTo = task.assignedToNames.join(", ");
-          } else if (task.assignedTo) {
-            assignedTo = String(task.assignedTo);
-          }
-          
-          return `"${projectName}";"${taskName}";"${taskDesc}";"${task.price || 0}";"${task.estimatedTime || 0}";"${task.progress || 0}%;"${assignedTo}";"${formatDate(task.startDate)}";"${formatDate(task.endDate)}"`;
-        })
-      ).join('\n');
-      
-      // Добавляем BOM (Byte Order Mark) для корректного отображения кириллицы в Excel
-      const BOM = "\ufeff";
-      const csvContent = `data:text/csv;charset=utf-8,${encodeURIComponent(BOM + headers + rows)}`;
-
       // Создаем ссылку для скачивания
       const link = document.createElement("a");
       link.setAttribute("href", csvContent);
@@ -160,112 +83,36 @@ const ProjectExport = ({ projects }: ProjectExportProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <Label>Тип отчета</Label>
-        <RadioGroup 
-          value={exportType} 
-          onValueChange={(value) => setExportType(value as ExportType)}
-          className="flex flex-col space-y-2"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="all" id="all" />
-            <Label htmlFor="all">Полный отчет по всем проектам</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="employee" id="employee" />
-            <Label htmlFor="employee">Отчет по сотруднику</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="project" id="project" />
-            <Label htmlFor="project">Отчет по проекту</Label>
-          </div>
-        </RadioGroup>
-      </div>
+      <ExportTypeSelector 
+        exportType={exportType}
+        onExportTypeChange={(value) => setExportType(value as "all" | "employee" | "project")}
+      />
       
-      {exportType === "employee" && (
-        <div className="space-y-2">
-          <Label htmlFor="employee-select">Выберите сотрудника</Label>
-          <Select 
-            value={selectedEmployee} 
-            onValueChange={setSelectedEmployee}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Выберите сотрудника" />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from(employees).map((id) => (
-                <SelectItem key={id} value={id}>
-                  {`Сотрудник ${id.substring(0, 5)}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-      
-      {exportType === "project" && (
-        <div className="space-y-2">
-          <Label htmlFor="project-select">Выберите проект</Label>
-          <Select 
-            value={selectedProject} 
-            onValueChange={setSelectedProject}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Выберите проект" />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map((project) => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-      
-      <div className="space-y-2">
-        <Label>Период отчета</Label>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="date-from" className="text-xs mb-1 block">От</Label>
-            <Input
-              id="date-from"
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="date-to" className="text-xs mb-1 block">До</Label>
-            <Input
-              id="date-to"
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
+      <ExportFilterForm
+        exportType={exportType}
+        selectedProject={selectedProject}
+        selectedEmployee={selectedEmployee}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        projects={projects}
+        employees={Array.from(employees)}
+        onSelectProject={setSelectedProject}
+        onSelectEmployee={setSelectedEmployee}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+      />
       
       <div className="pt-2">
-        <Button 
-          className="w-full"
+        <button 
+          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium disabled:pointer-events-none disabled:opacity-50"
           onClick={handleExport}
           disabled={isExportDisabled()}
         >
           {isLoading ? "Экспорт..." : "Экспортировать отчет"}
-        </Button>
+        </button>
       </div>
       
-      <Card className="p-4 bg-slate-50">
-        <h3 className="font-medium mb-2">Информация об отчетах:</h3>
-        <p className="text-sm text-slate-700">
-          Отчеты экспортируются в формате CSV и содержат детальную информацию о проектах,
-          задачах, назначенных исполнителях, сроках выполнения и текущем прогрессе.
-          Файл можно открыть в Excel или другом табличном редакторе.
-        </p>
-      </Card>
+      <ExportInformation />
     </div>
   );
 };

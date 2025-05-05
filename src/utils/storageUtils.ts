@@ -83,41 +83,23 @@ export const removeUserFromStorage = () => {
 };
 
 /**
- * Создает новый массив проектов в localStorage, если его нет
- */
-export const initializeProjectsStorage = () => {
-  try {
-    const existingProjects = localStorage.getItem('projects');
-    if (!existingProjects) {
-      console.log("Initializing projects storage with empty array");
-      localStorage.setItem('projects', JSON.stringify([]));
-    } else {
-      try {
-        // Проверяем валидность JSON
-        const parsed = JSON.parse(existingProjects);
-        if (!Array.isArray(parsed)) {
-          console.error("Existing projects data is not an array, reinitializing");
-          localStorage.setItem('projects', JSON.stringify([]));
-        }
-      } catch (e) {
-        console.error("Failed to parse existing projects, reinitializing:", e);
-        localStorage.setItem('projects', JSON.stringify([]));
-      }
-    }
-    return true;
-  } catch (error) {
-    console.error("Error initializing projects storage:", error);
-    return false;
-  }
-};
-
-/**
  * Сохраняет сообщение для страницы входа
  */
 export const saveLoginMessage = (message) => {
   if (message) {
     sessionStorage.setItem('auth_message', message);
   }
+};
+
+/**
+ * Получает сообщение об ошибке аутентификации и удаляет его из sessionStorage
+ */
+export const getAuthErrorMessage = () => {
+  const message = sessionStorage.getItem('auth_message');
+  if (message) {
+    sessionStorage.removeItem('auth_message');
+  }
+  return message;
 };
 
 /**
@@ -187,6 +169,35 @@ export const resetProjectsStorage = () => {
     return true;
   } catch (error) {
     console.error('Ошибка при сбросе данных проектов:', error);
+    return false;
+  }
+};
+
+/**
+ * Создает новый массив проектов в localStorage, если его нет
+ */
+export const initializeProjectsStorage = () => {
+  try {
+    const existingProjects = localStorage.getItem('projects');
+    if (!existingProjects) {
+      console.log("Initializing projects storage with empty array");
+      localStorage.setItem('projects', JSON.stringify([]));
+    } else {
+      try {
+        // Проверяем валидность JSON
+        const parsed = JSON.parse(existingProjects);
+        if (!Array.isArray(parsed)) {
+          console.error("Existing projects data is not an array, reinitializing");
+          localStorage.setItem('projects', JSON.stringify([]));
+        }
+      } catch (e) {
+        console.error("Failed to parse existing projects, reinitializing:", e);
+        localStorage.setItem('projects', JSON.stringify([]));
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error("Error initializing projects storage:", error);
     return false;
   }
 };

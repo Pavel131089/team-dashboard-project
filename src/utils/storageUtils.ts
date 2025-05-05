@@ -1,5 +1,3 @@
-]/storageUtils.js"]
-
 /**
  * Утилиты для работы с localStorage
  */
@@ -24,13 +22,29 @@ export const getUserFromStorage = () => {
  */
 export const getProjectsFromStorage = () => {
   const projectsStr = localStorage.getItem('projects');
-  if (!projectsStr) return [];
+  console.log("Raw projects from storage:", projectsStr);
+  
+  if (!projectsStr) {
+    console.log("No projects in storage, initializing empty array");
+    const emptyProjects = [];
+    localStorage.setItem('projects', JSON.stringify(emptyProjects));
+    return emptyProjects;
+  }
 
   try {
-    return JSON.parse(projectsStr);
+    const parsedProjects = JSON.parse(projectsStr);
+    if (!Array.isArray(parsedProjects)) {
+      console.error("Projects data is not an array, resetting to empty array");
+      const emptyProjects = [];
+      localStorage.setItem('projects', JSON.stringify(emptyProjects));
+      return emptyProjects;
+    }
+    return parsedProjects;
   } catch (error) {
     console.error("Failed to parse projects data:", error);
-    return [];
+    const emptyProjects = [];
+    localStorage.setItem('projects', JSON.stringify(emptyProjects));
+    return emptyProjects;
   }
 };
 
@@ -38,7 +52,27 @@ export const getProjectsFromStorage = () => {
  * Сохраняет проекты в localStorage
  */
 export const saveProjectsToStorage = (projects) => {
-  localStorage.setItem('projects', JSON.stringify(projects));
+  try {
+    if (!Array.isArray(projects)) {
+      console.error("Trying to save non-array projects data:", projects);
+      return false;
+    }
+    
+    const projectsJson = JSON.stringify(projects);
+    localStorage.setItem('projects', projectsJson);
+    
+    // Проверка сохранения
+    const savedData = localStorage.getItem('projects');
+    if (savedData !== projectsJson) {
+      console.error("Storage verification failed - data mismatch");
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error saving projects to storage:", error);
+    return false;
+  }
 };
 
 /**
@@ -52,8 +86,28 @@ export const removeUserFromStorage = () => {
  * Создает новый массив проектов в localStorage, если его нет
  */
 export const initializeProjectsStorage = () => {
-  if (!localStorage.getItem('projects')) {
-    localStorage.setItem('projects', JSON.stringify([]));
+  try {
+    const existingProjects = localStorage.getItem('projects');
+    if (!existingProjects) {
+      console.log("Initializing projects storage with empty array");
+      localStorage.setItem('projects', JSON.stringify([]));
+    } else {
+      try {
+        // Проверяем валидность JSON
+        const parsed = JSON.parse(existingProjects);
+        if (!Array.isArray(parsed)) {
+          console.error("Existing projects data is not an array, reinitializing");
+          localStorage.setItem('projects', JSON.stringify([]));
+        }
+      } catch (e) {
+        console.error("Failed to parse existing projects, reinitializing:", e);
+        localStorage.setItem('projects', JSON.stringify([]));
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error("Error initializing projects storage:", error);
+    return false;
   }
 };
 
@@ -77,7 +131,7 @@ export const testStorageAvailability = () => {
     localStorage.removeItem(test);
     return result === test;
   } catch (e) {
-    console.error('LocalStorage не доступен:', e);
+    console.error('Локальное хранилище не доступно:', e);
     return false;
   }
 };

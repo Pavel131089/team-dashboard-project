@@ -1,16 +1,11 @@
+
 import { useState } from "react";
-import { Project, Task } from "@/types/project";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-} from "@/components/ui/accordion";
+import { Project } from "@/types/project";
 import { toast } from "@/components/ui/use-toast";
-import ProjectTaskEditor from "@/components/ui/project-task-editor";
-import DeleteConfirmationDialog from "@/components/ui/delete-confirmation-dialog";
-import ProjectHeader from "@/components/projects/ProjectHeader";
-import ProjectActions from "@/components/projects/ProjectActions";
-import ProjectTasksTable from "@/components/projects/ProjectTasksTable";
+import ProjectItem from "@/components/projects/ProjectItem";
+import ProjectDialogs from "@/components/projects/ProjectDialogs";
+import EmptyProjectsList from "@/components/projects/EmptyProjectsList";
+import { formatDate, getAssignedUserName } from "@/components/utils/FormatUtils";
 
 interface User {
   id: string;
@@ -40,6 +35,10 @@ const ProjectList = ({
   const [isDeleteProjectDialogOpen, setIsDeleteProjectDialogOpen] = useState(false);
   const [isDeleteTaskDialogOpen, setIsDeleteTaskDialogOpen] = useState(false);
 
+  const handleExpandToggle = (projectId: string | null) => {
+    setExpandedProject(projectId);
+  };
+
   const handleDeleteProjectClick = (projectId: string) => {
     setProjectToDelete(projectId);
     setIsDeleteProjectDialogOpen(true);
@@ -54,11 +53,9 @@ const ProjectList = ({
     if (projectToDelete) {
       if (onDeleteProject) {
         onDeleteProject(projectToDelete);
-      } else {
+      } else if (onProjectsUpdated) {
         const updatedProjects = projects.filter(p => p.id !== projectToDelete);
-        if (onProjectsUpdated) {
-          onProjectsUpdated(updatedProjects);
-        }
+        onProjectsUpdated(updatedProjects);
       }
       
       toast({
@@ -101,28 +98,7 @@ const ProjectList = ({
     setTaskToDelete(null);
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "—";
-    return new Date(dateString).toLocaleDateString();
-  };
-
-// ... keep existing code 
-  const getAssignedUserName = (assignedTo: string | string[] | null | undefined) => {
-    if (!assignedTo) return "—";
-    
-    const findUserById = (id: string) => {
-      const user = users?.find(u => u.id === id);
-      return user ? user.username : id;
-    };
-
-    if (Array.isArray(assignedTo)) {
-      return assignedTo.map(id => findUserById(id)).join(", ");
-    }
-    
-    return findUserById(assignedTo);
-  };
-// ... keep existing code 
-  const handleTaskUpdate = (projectId: string, updatedTask: Task) => {
+  const handleTaskUpdate = (projectId: string, updatedTask: any) => {
     const updatedProjects = projects.map(project => {
       if (project.id === projectId) {
         const updatedTasks = project.tasks.map(task => 
@@ -154,72 +130,42 @@ const ProjectList = ({
     }
   };
 
+  const getFormattedUserName = (assignedTo: string | string[] | null | undefined) => {
+    if (users && users.length > 0) {
+      return getAssignedUserName(assignedTo, users);
+    }
+    return getAssignedUserName(assignedTo);
+  };
+
   if (projects.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-slate-500">Проекты отсутствуют</p>
-        <p className="text-slate-400 text-sm mt-2">
-          Создайте новый проект или импортируйте существующие через вкладку "Импорт данных"
-        </p>
-      </div>
-    );
+    return <EmptyProjectsList />;
   }
 
   return (
     <div className="space-y-6">
       {projects.map((project) => (
-        <div key={project.id} className="border rounded-lg overflow-hidden">
-          <Accordion 
-            type="single" 
-            collapsible
-            value={expandedProject === project.id ? project.id : undefined}
-            onValueChange={(value) => setExpandedProject(value || null)}
-          >
-            <AccordionItem value={project.id}>
-              <ProjectHeader project={project} />
-              <AccordionContent>
-                <ProjectActions 
-                  projectId={project.id}
-                  tasksCount={project.tasks.length}
-                  onDeleteProject={handleDeleteProjectClick}
-                  userRole={userRole}
-                />
-                <ProjectTasksTable 
-                  project={project}
-                  userRole={userRole}
-                  formatDate={formatDate}
-                  getAssignedUserName={getAssignedUserName}
-                  onTaskUpdate={handleTaskUpdate}
-                  onDeleteTask={handleDeleteTaskClick}
-                />
-                {userRole === "manager" && (
-                  <ProjectTaskEditor 
-                    project={project} 
-                    onProjectUpdate={handleProjectUpdate} 
-                  />
-                )}
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </div>
+        <ProjectItem
+          key={project.id}
+          project={project}
+          isExpanded={expandedProject === project.id}
+          onExpandToggle={handleExpandToggle}
+          userRole={userRole}
+          formatDate={formatDate}
+          getAssignedUserName={getFormattedUserName}
+          onTaskUpdate={handleTaskUpdate}
+          onProjectUpdate={handleProjectUpdate}
+          onDeleteTask={handleDeleteTaskClick}
+          onDeleteProject={handleDeleteProjectClick}
+        />
       ))}
 
-      {/* Диалог подтверждения удаления проекта */}
-      <DeleteConfirmationDialog
-        isOpen={isDeleteProjectDialogOpen}
-        onClose={() => setIsDeleteProjectDialogOpen(false)}
-        onConfirm={confirmDeleteProject}
-        title="Удалить проект"
-        description="Вы уверены, что хотите удалить проект? Это действие нельзя отменить. Все задачи, связанные с этим проектом, также будут удалены."
-      />
-
-      {/* Диалог подтверждения удаления задачи */}
-      <DeleteConfirmationDialog
-        isOpen={isDeleteTaskDialogOpen}
-        onClose={() => setIsDeleteTaskDialogOpen(false)}
-        onConfirm={confirmDeleteTask}
-        title="Удалить задачу"
-        description="Вы уверены, что хотите удалить задачу? Это действие нельзя отменить."
+      <ProjectDialogs
+        isDeleteProjectDialogOpen={isDeleteProjectDialogOpen}
+        isDeleteTaskDialogOpen={isDeleteTaskDialogOpen}
+        onCloseProjectDialog={() => setIsDeleteProjectDialogOpen(false)}
+        onCloseTaskDialog={() => setIsDeleteTaskDialogOpen(false)}
+        onConfirmDeleteProject={confirmDeleteProject}
+        onConfirmDeleteTask={confirmDeleteTask}
       />
     </div>
   );

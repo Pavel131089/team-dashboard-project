@@ -1,4 +1,5 @@
-import React, { useState } from "react");
+
+import React, { useState } from "react";
 import { Project, Task } from "@/types/project";
 import {
   Table,
@@ -77,6 +78,7 @@ const ProjectTasksTable: React.FC<ProjectTasksTableProps> = ({
               <TableCell>
                 <div className="font-medium">{task.name}</div>
                 <div className="text-xs text-slate-500 mt-1">{task.description}</div>
+                {/* Отображение количества исполнителей */}
                 {Array.isArray(task.assignedTo) && task.assignedTo.length > 1 && (
                   <div className="mt-1 text-xs inline-flex items-center bg-purple-100 text-purple-800 rounded px-2 py-0.5">
                     <Icon name="Users" className="h-3 w-3 mr-1" />

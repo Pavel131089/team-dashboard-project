@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Project, Task } from "@/types/project";
 import { Button } from "@/components/ui/button";
@@ -43,6 +42,14 @@ const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
           <p className="text-sm text-slate-700 mt-2">
             {task.description}
           </p>
+          
+          {/* Отображение стоимости задачи */}
+          {task.price > 0 && (
+            <div className="mt-1 text-xs font-medium text-green-700 bg-green-50 inline-flex items-center rounded px-2 py-0.5 mr-1">
+              <Icon name="CircleDollarSign" className="h-3 w-3 mr-1" />
+              Стоимость: {task.price} ₽
+            </div>
+          )}
           
           {/* Отображение количества исполнителей */}
           {Array.isArray(task.assignedTo) && task.assignedTo.length > 0 && (

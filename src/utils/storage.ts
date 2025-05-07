@@ -1,4 +1,3 @@
-
 /**
  * Утилиты для работы с локальным хранилищем
  */
@@ -89,5 +88,75 @@ export const storageUtils = {
     } catch (error) {
       console.error(`Ошибка при инициализации хранилища (${key}):`, error);
     }
+  },
+
+  /**
+   * Создает тестовый проект для отладки
+   * @returns {boolean} Успешность операции
+   */
+  createSampleProject(): boolean {
+    try {
+      // Получаем текущий список проектов
+      const projects = this.getFromStorage('projects', []);
+      
+      // Создаем тестовый проект
+      const testProject = {
+        id: crypto.randomUUID(),
+        name: 'Тестовый проект',
+        description: 'Проект для проверки работы приложения',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        tasks: [
+          {
+            id: crypto.randomUUID(),
+            name: 'Тестовая задача',
+            description: 'Описание тестовой задачи',
+            price: 5000,
+            estimatedTime: 8,
+            progress: 50,
+            startDate: new Date().toISOString(),
+            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            assignedTo: null
+          }
+        ]
+      };
+      
+      // Добавляем проект в список
+      projects.push(testProject);
+      
+      // Сохраняем обновленный список
+      return this.saveToStorage('projects', projects);
+    } catch (error) {
+      console.error("Ошибка при создании тестового проекта:", error);
+      return false;
+    }
   }
 };
+
+// Экспортируем отдельные функции для совместимости
+export function createSampleProject(): boolean {
+  return storageUtils.createSampleProject();
+}
+
+export function getProjectsFromStorage(): any[] {
+  return storageUtils.getFromStorage('projects', []);
+}
+
+export function saveProjectsToStorage(projects: any[]): boolean {
+  return storageUtils.saveToStorage('projects', projects);
+}
+
+export function initializeProjectsStorage(): void {
+  storageUtils.initializeStorage('projects', []);
+}
+
+export function testStorageAvailability(): boolean {
+  return storageUtils.isStorageAvailable();
+}
+
+export function resetProjectsStorage(): boolean {
+  return storageUtils.saveToStorage('projects', []);
+}
+
+// Экспортируем по умолчанию объект с функциями
+export default storageUtils;

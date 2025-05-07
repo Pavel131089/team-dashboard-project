@@ -24,7 +24,10 @@ export {
   saveProjectsToStorage,
   initializeProjectsStorage,
   testStorageAvailability,
-  resetProjectsStorage
+  resetProjectsStorage,
+  removeUserFromStorage,
+  saveLoginMessage,
+  getAuthErrorMessage
 };
 
 // Экспортируем по умолчанию объект с функциями для обратной совместимости

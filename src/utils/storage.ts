@@ -1,3 +1,5 @@
+import { Project, Task } from "@/types/project";
+
 /**
  * Утилиты для работы с локальным хранилищем
  */
@@ -130,6 +132,35 @@ export const storageUtils = {
       console.error("Ошибка при создании тестового проекта:", error);
       return false;
     }
+  },
+  
+  /**
+   * Удаляет информацию о пользователе из хранилища
+   */
+  removeUserFromStorage(): boolean {
+    return this.removeFromStorage('user');
+  },
+  
+  /**
+   * Сохраняет сообщение для страницы входа
+   * @param {string} message - Сообщение
+   */
+  saveLoginMessage(message: string | null): void {
+    if (message) {
+      sessionStorage.setItem('auth_message', message);
+    }
+  },
+  
+  /**
+   * Получает сообщение об ошибке аутентификации
+   * @returns {string|null} Сообщение или null
+   */
+  getAuthErrorMessage(): string | null {
+    const message = sessionStorage.getItem('auth_message');
+    if (message) {
+      sessionStorage.removeItem('auth_message');
+    }
+    return message;
   }
 };
 
@@ -156,6 +187,18 @@ export function testStorageAvailability(): boolean {
 
 export function resetProjectsStorage(): boolean {
   return storageUtils.saveToStorage('projects', []);
+}
+
+export function removeUserFromStorage(): boolean {
+  return storageUtils.removeUserFromStorage();
+}
+
+export function saveLoginMessage(message: string | null): void {
+  storageUtils.saveLoginMessage(message);
+}
+
+export function getAuthErrorMessage(): string | null {
+  return storageUtils.getAuthErrorMessage();
 }
 
 // Экспортируем по умолчанию объект с функциями

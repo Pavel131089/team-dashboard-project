@@ -1,4 +1,3 @@
-
 /**
  * Управление проектами в хранилище
  * @module storage/projects
@@ -29,10 +28,14 @@ export interface Task {
   price?: number;
   estimatedTime?: number;
   progress?: number;
-  startDate?: string;
-  endDate?: string;
+  startDate?: string | null;
+  endDate?: string | null;
   assignedTo?: string | string[] | null;
-  [key: string]: any;
+  assignedToNames?: string[];
+  actualStartDate?: string | null;
+  actualEndDate?: string | null;
+  comments?: string[];
+  _deleted?: boolean;
 }
 
 /**

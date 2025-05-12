@@ -1,4 +1,3 @@
-
 /**
  * Инициализация и диагностика хранилища
  * @module storage/diagnostics

@@ -1,15 +1,25 @@
 
-# Настройки сборки для React-приложения
+# Настройки сборки
 [build]
+  # Команда для сборки проекта
   command = "npm run build"
+  # Директория с результатами сборки
   publish = "dist"
+  # Окружение сборки
+  environment = { NODE_VERSION = "18" }
 
-# Отключение плагина Angular Runtime, так как это React-приложение
+# Явно отключаем Angular плагин
+[plugins]
+  package = "@netlify/plugin-lighthouse"
+
+# Переменные окружения для всех окружений
 [build.environment]
   NETLIFY_USE_ANGULAR = "false"
+  NETLIFY_SKIP_ANGULAR_PLUGIN = "true"
 
-# Настройки редиректов для SPA
+# Обработка SPA роутинга
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = true

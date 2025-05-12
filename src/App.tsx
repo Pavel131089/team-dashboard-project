@@ -20,6 +20,49 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  // Импорт пользователей из URL при первом запуске
+  React.useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const encodedUsers = params.get("users");
+
+      if (encodedUsers) {
+        const decodedUsers = JSON.parse(atob(decodeURIComponent(encodedUsers)));
+        if (Array.isArray(decodedUsers) && decodedUsers.length > 0) {
+          // Объединяем с существующими пользователями, избегая дубликатов
+          const existingUsers = localStorage.getItem("users")
+            ? JSON.parse(localStorage.getItem("users")!)
+            : [];
+
+          // Создаем Set из ID существующих пользователей
+          const existingIds = new Set(
+            existingUsers.map((user: any) => user.id),
+          );
+
+          // Фильтруем новых пользователей, исключая дубликаты
+          const newUsers = decodedUsers.filter(
+            (user: any) => !existingIds.has(user.id),
+          );
+
+          // Объединяем массивы
+          const mergedUsers = [...existingUsers, ...newUsers];
+
+          // Сохраняем в localStorage
+          localStorage.setItem("users", JSON.stringify(mergedUsers));
+
+          // Очищаем URL, чтобы избежать повторного импорта при обновлении страницы
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname,
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Ошибка при импорте пользователей из URL:", error);
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={0}>

@@ -1,22 +1,16 @@
 
-# Основные настройки сборки
+# Netlify configuration
 [build]
   command = "npm run build"
   publish = "dist"
-  node_version = "20"
 
-# Переменные окружения
-[build.environment]
-  NODE_VERSION = "20"
-  NETLIFY_SKIP_ANGULAR_PLUGIN = "true"
-  NODE_ENV = "production"
-
-# Настройки для плагинов
-[[plugins]]
-package = "@netlify/plugin-lighthouse"
-
-# Настройки для перенаправлений
+# Redirects for SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Environment variables
+[build.environment]
+  NODE_VERSION = "20"
+  NETLIFY_SKIP_ANGULAR_PLUGIN = "true"

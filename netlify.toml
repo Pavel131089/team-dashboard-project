@@ -1,0 +1,15 @@
+
+# Настройки сборки для React-приложения
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Отключение плагина Angular Runtime, так как это React-приложение
+[build.environment]
+  NETLIFY_USE_ANGULAR = "false"
+
+# Настройки редиректов для SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

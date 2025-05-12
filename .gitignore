@@ -1,4 +1,4 @@
-# Logs
+# Логи
 logs
 *.log
 npm-debug.log*
@@ -7,12 +7,13 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Зависимости
 node_modules
 dist
 dist-ssr
 *.local
 
-# Editor directories and files
+# Файлы редактора
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -22,4 +23,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-builds
+
+# Специфичные для Netlify
+.netlify

@@ -1,25 +1,22 @@
 
-# Настройки сборки
+# Основные настройки сборки
 [build]
-  # Команда для сборки проекта
   command = "npm run build"
-  # Директория с результатами сборки
   publish = "dist"
-  # Окружение сборки
-  environment = { NODE_VERSION = "18" }
+  node_version = "20"
 
-# Явно отключаем Angular плагин
-[plugins]
-  package = "@netlify/plugin-lighthouse"
-
-# Переменные окружения для всех окружений
+# Переменные окружения
 [build.environment]
-  NETLIFY_USE_ANGULAR = "false"
+  NODE_VERSION = "20"
   NETLIFY_SKIP_ANGULAR_PLUGIN = "true"
+  NODE_ENV = "production"
 
-# Обработка SPA роутинга
+# Настройки для плагинов
+[[plugins]]
+package = "@netlify/plugin-lighthouse"
+
+# Настройки для перенаправлений
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  force = true

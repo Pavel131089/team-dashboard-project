@@ -89,7 +89,7 @@ export const userService = {
       // Если пользователей нет, создаем дефолтных
       if (users.length === 0) {
         const defaultUsers = this.getDefaultUsers();
-        const initialUsers = defaultUsers.map(this.createUser);
+        const initialUsers = defaultUsers.map(user => this.createUser(user));
         this.saveUsersToStorage(initialUsers);
       }
     } catch (error) {
@@ -97,7 +97,7 @@ export const userService = {
       
       // В случае ошибки пересоздаем хранилище
       const defaultUsers = this.getDefaultUsers();
-      const initialUsers = defaultUsers.map(this.createUser);
+      const initialUsers = defaultUsers.map(user => this.createUser(user));
       this.saveUsersToStorage(initialUsers);
     }
   }

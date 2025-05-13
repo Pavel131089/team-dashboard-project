@@ -1,25 +1,49 @@
+
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import Icon from "@/components/ui/icon";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
+import StatusBadge from "./StatusBadge";
+import StorageCounter from "./StorageCounter";
+import SyncActions from "./SyncActions";
+
+// Типы для состояния синхронизации
+interface SyncStatusState {
+  status: "idle" | "syncing" | "success" | "error";
+  count: number;
+}
+
+interface SyncStatusesState {
+  users: SyncStatusState;
+  projects: SyncStatusState;
+}
 
 /**
- * Компонент для отображения статуса хранилища
+ * Компонент для отображения статуса облачного хранилища
  */
-const CloudStorageStatus = () => {
-  const [syncStatus, setSyncStatus] = useState({
+const CloudStorageStatus: React.FC = () => {
+  // Состояние для отслеживания статуса синхронизации
+  const [syncStatus, setSyncStatus] = useState<SyncStatusesState>({
     users: { status: "idle", count: 0 },
-    projects: { status: "idle", count: 0 },
+    projects: { status: "idle", count: 0 }
   });
 
-  const [lastSync, setLastSync] = useState(null);
-
-  // Проверяем количество записей при загрузке компонента
+  // Последняя синхронизация
+  const [lastSync, setLastSync] = useState<string | null>(null);
+  
+  // Проверка данных при загрузке компонента
   useEffect(() => {
     checkDataCount();
   }, []);
+
+  /**
+   * Определяет, выполняется ли сейчас синхронизация
+   */
+  const isSyncing = (): boolean => {
+    return (
+      syncStatus.users.status === "syncing" ||
+      syncStatus.projects.status === "syncing"
+    );
+  };
 
   /**
    * Получение количества записей в локальном хранилище
@@ -27,97 +51,60 @@ const CloudStorageStatus = () => {
   const checkDataCount = async () => {
     try {
       // Получаем пользователей
-      setSyncStatus((prev) => ({
-        ...prev,
-        users: { ...prev.users, status: "syncing" },
-      }));
-
+      updateSyncStatus("users", "syncing");
       const usersStr = localStorage.getItem("users") || "[]";
       const users = JSON.parse(usersStr);
-
-      setSyncStatus((prev) => ({
-        ...prev,
-        users: { status: "success", count: users.length },
-      }));
+      updateSyncStatus("users", "success", users.length);
 
       // Получаем проекты
-      setSyncStatus((prev) => ({
-        ...prev,
-        projects: { ...prev.projects, status: "syncing" },
-      }));
-
+      updateSyncStatus("projects", "syncing");
       const projectsStr = localStorage.getItem("projects") || "[]";
       const projects = JSON.parse(projectsStr);
-
-      setSyncStatus((prev) => ({
-        ...prev,
-        projects: { status: "success", count: projects.length },
-      }));
+      updateSyncStatus("projects", "success", projects.length);
 
       // Обновляем время последней синхронизации
-      setLastSync(new Date().toLocaleString());
+      updateLastSyncTime();
 
       toast.success("Данные успешно получены из локального хранилища");
     } catch (error) {
-      console.error("Ошибка при получении данных:", error);
-
-      setSyncStatus({
-        users: { status: "error", count: 0 },
-        projects: { status: "error", count: 0 },
-      });
-
-      toast.error("Не удалось получить данные из хранилища");
+      handleSyncError("Не удалось получить данные из хранилища", error);
     }
   };
 
   /**
-   * Имитация синхронизации облачных данных
+   * Имитация синхронизации данных с облаком (загрузка)
    */
   const syncLocalToCloud = async () => {
     try {
       // Устанавливаем статус "синхронизация"
-      setSyncStatus({
-        users: { status: "syncing", count: 0 },
-        projects: { status: "syncing", count: 0 },
-      });
+      resetSyncStatuses("syncing");
 
       toast.info("Имитация синхронизации данных с облачным хранилищем...");
 
-      // Получаем пользователей и проекты из localStorage
+      // Получаем данные из localStorage
       const usersStr = localStorage.getItem("users") || "[]";
       const users = JSON.parse(usersStr);
-
       const projectsStr = localStorage.getItem("projects") || "[]";
       const projects = JSON.parse(projectsStr);
 
       // Имитируем задержку сети
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await simulateNetworkDelay();
 
-      // Обновляем статус
-      setSyncStatus({
-        users: { status: "success", count: users.length },
-        projects: { status: "success", count: projects.length },
-      });
+      // Обновляем статус после "успешной" синхронизации
+      updateSyncStatus("users", "success", users.length);
+      updateSyncStatus("projects", "success", projects.length);
 
-      // Создаем резервную копию данных (имитация облачной синхронизации)
-      localStorage.setItem("cloud_users_backup", usersStr);
-      localStorage.setItem("cloud_projects_backup", projectsStr);
+      // Создаем резервные копии данных
+      createBackups(usersStr, projectsStr);
 
       // Обновляем время последней синхронизации
-      setLastSync(new Date().toLocaleString());
+      updateLastSyncTime();
 
       toast.success(
-        `Синхронизация завершена. Синхронизировано: ${users.length} пользователей, ${projects.length} проектов`,
+        `Синхронизация завершена. Синхронизировано: ${users.length} пользователей, ${projects.length} проектов`
       );
     } catch (error) {
-      console.error("Ошибка при синхронизации:", error);
-
-      setSyncStatus({
-        users: { status: "error", count: 0 },
-        projects: { status: "error", count: 0 },
-      });
-
-      toast.error("Не удалось синхронизировать данные");
+      handleSyncError("Не удалось синхронизировать данные", error);
     }
   };
 
@@ -127,73 +114,120 @@ const CloudStorageStatus = () => {
   const syncCloudToLocal = async () => {
     try {
       // Устанавливаем статус "синхронизация"
-      setSyncStatus({
-        users: { status: "syncing", count: 0 },
-        projects: { status: "syncing", count: 0 },
-      });
+      resetSyncStatuses("syncing");
 
       toast.info("Имитация загрузки данных из облачного хранилища...");
 
       // Имитируем задержку сети
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await simulateNetworkDelay();
 
       // Проверяем наличие резервных копий
-      const usersBackup = localStorage.getItem("cloud_users_backup");
-      const projectsBackup = localStorage.getItem("cloud_projects_backup");
-
-      if (usersBackup && projectsBackup) {
-        // Восстанавливаем данные из резервных копий
-        localStorage.setItem("users", usersBackup);
-        localStorage.setItem("projects", projectsBackup);
-
-        const users = JSON.parse(usersBackup);
-        const projects = JSON.parse(projectsBackup);
-
-        // Обновляем статус
-        setSyncStatus({
-          users: { status: "success", count: users.length },
-          projects: { status: "success", count: projects.length },
-        });
-
-        // Обновляем время последней синхронизации
-        setLastSync(new Date().toLocaleString());
-
-        toast.success(
-          `Данные загружены из облачного хранилища: ${users.length} пользователей, ${projects.length} проектов`,
-        );
+      if (await restoreFromBackups()) {
+        updateLastSyncTime();
       } else {
         // Если нет резервных копий, сообщаем об этом
         toast.error("Нет данных для восстановления из облачного хранилища");
-
-        // Обновляем статус
-        setSyncStatus({
-          users: { status: "error", count: 0 },
-          projects: { status: "error", count: 0 },
-        });
+        resetSyncStatuses("error");
       }
     } catch (error) {
-      console.error("Ошибка при загрузке данных:", error);
-
-      setSyncStatus({
-        users: { status: "error", count: 0 },
-        projects: { status: "error", count: 0 },
-      });
-
-      toast.error("Не удалось загрузить данные из облачного хранилища");
+      handleSyncError("Не удалось загрузить данные из облачного хранилища", error);
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "idle":
-        return <Icon name="CircleDashed" className="text-slate-400" />;
-      case "syncing":
-        return <Icon name="RefreshCw" className="animate-spin text-blue-500" />;
-      case "success":
-        return <Icon name="CheckCircle" className="text-green-500" />;
-      case "error":
-        return <Icon name="XCircle" className="text-red-500" />;
+  /**
+   * Обновляет статус синхронизации для указанного типа данных
+   */
+  const updateSyncStatus = (
+    type: "users" | "projects", 
+    status: "idle" | "syncing" | "success" | "error", 
+    count: number = 0
+  ) => {
+    setSyncStatus(prev => ({
+      ...prev,
+      [type]: { status, count }
+    }));
+  };
+
+  /**
+   * Сбрасывает статусы синхронизации обоих типов данных
+   */
+  const resetSyncStatuses = (status: "idle" | "syncing" | "success" | "error") => {
+    setSyncStatus({
+      users: { status, count: 0 },
+      projects: { status, count: 0 }
+    });
+  };
+
+  /**
+   * Обновляет время последней синхронизации
+   */
+  const updateLastSyncTime = () => {
+    setLastSync(new Date().toLocaleString());
+  };
+
+  /**
+   * Имитирует задержку сети
+   */
+  const simulateNetworkDelay = (): Promise<void> => {
+    return new Promise(resolve => setTimeout(resolve, 1500));
+  };
+
+  /**
+   * Создает резервные копии данных
+   */
+  const createBackups = (usersStr: string, projectsStr: string) => {
+    localStorage.setItem("cloud_users_backup", usersStr);
+    localStorage.setItem("cloud_projects_backup", projectsStr);
+  };
+
+  /**
+   * Восстанавливает данные из резервных копий
+   */
+  const restoreFromBackups = async (): Promise<boolean> => {
+    const usersBackup = localStorage.getItem("cloud_users_backup");
+    const projectsBackup = localStorage.getItem("cloud_projects_backup");
+
+    if (usersBackup && projectsBackup) {
+      // Восстанавливаем данные из резервных копий
+      localStorage.setItem("users", usersBackup);
+      localStorage.setItem("projects", projectsBackup);
+
+      const users = JSON.parse(usersBackup);
+      const projects = JSON.parse(projectsBackup);
+
+      // Обновляем статус
+      updateSyncStatus("users", "success", users.length);
+      updateSyncStatus("projects", "success", projects.length);
+
+      toast.success(
+        `Данные загружены из облачного хранилища: ${users.length} пользователей, ${projects.length} проектов`
+      );
+      return true;
     }
+    return false;
+  };
+
+  /**
+   * Обрабатывает ошибки синхронизации
+   */
+  const handleSyncError = (message: string, error: any) => {
+    console.error(`${message}:`, error);
+    resetSyncStatuses("error");
+    toast.error(message);
+  };
+
+  // Получаем общий статус синхронизации
+  const getSyncOverallStatus = (): "idle" | "syncing" | "success" | "error" => {
+    if (syncStatus.users.status === "error" || syncStatus.projects.status === "error") {
+      return "error";
+    }
+    if (syncStatus.users.status === "syncing" || syncStatus.projects.status === "syncing") {
+      return "syncing";
+    }
+    if (syncStatus.users.status === "success" || syncStatus.projects.status === "success") {
+      return "success";
+    }
+    return "idle";
   };
 
   return (
@@ -201,98 +235,30 @@ const CloudStorageStatus = () => {
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <span>Синхронизация данных</span>
-          <Badge
-            variant="outline"
-            className={
-              syncStatus.users.status === "error" ||
-              syncStatus.projects.status === "error"
-                ? "bg-red-100 text-red-800"
-                : syncStatus.users.status === "syncing" ||
-                    syncStatus.projects.status === "syncing"
-                  ? "bg-blue-100 text-blue-800"
-                  : syncStatus.users.status === "success" ||
-                      syncStatus.projects.status === "success"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-slate-100"
-            }
-          >
-            {syncStatus.users.status === "error" ||
-            syncStatus.projects.status === "error"
-              ? "Ошибка синхронизации"
-              : syncStatus.users.status === "syncing" ||
-                  syncStatus.projects.status === "syncing"
-                ? "Синхронизация..."
-                : syncStatus.users.status === "success" ||
-                    syncStatus.projects.status === "success"
-                  ? "Синхронизировано"
-                  : "Не синхронизировано"}
-          </Badge>
+          <StatusBadge status={getSyncOverallStatus()} />
         </CardTitle>
       </CardHeader>
 
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div className="p-3 border rounded-md bg-slate-50">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-medium text-sm">Пользователи</span>
-              {getStatusIcon(syncStatus.users.status)}
-            </div>
-            <div className="text-2xl font-semibold">
-              {syncStatus.users.count}
-            </div>
-            <div className="text-xs text-slate-500">записей в хранилище</div>
-          </div>
-
-          <div className="p-3 border rounded-md bg-slate-50">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-medium text-sm">Проекты</span>
-              {getStatusIcon(syncStatus.projects.status)}
-            </div>
-            <div className="text-2xl font-semibold">
-              {syncStatus.projects.count}
-            </div>
-            <div className="text-xs text-slate-500">записей в хранилище</div>
-          </div>
+          <StorageCounter 
+            title="Пользователи" 
+            count={syncStatus.users.count} 
+            status={syncStatus.users.status} 
+          />
+          <StorageCounter 
+            title="Проекты" 
+            count={syncStatus.projects.count} 
+            status={syncStatus.projects.status} 
+          />
         </div>
 
-        <div className="flex flex-col gap-2">
-          <Button
-            variant="outline"
-            className="w-full"
-            disabled={
-              syncStatus.users.status === "syncing" ||
-              syncStatus.projects.status === "syncing"
-            }
-            onClick={checkDataCount}
-          >
-            <Icon name="RefreshCw" className="mr-2 h-4 w-4" />
-            Обновить статистику
-          </Button>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              disabled={
-                syncStatus.users.status === "syncing" ||
-                syncStatus.projects.status === "syncing"
-              }
-              onClick={syncLocalToCloud}
-            >
-              <Icon name="Upload" className="mr-2 h-4 w-4" />
-              Загрузить в облако
-            </Button>
-
-            <Button
-              disabled={
-                syncStatus.users.status === "syncing" ||
-                syncStatus.projects.status === "syncing"
-              }
-              onClick={syncCloudToLocal}
-            >
-              <Icon name="Download" className="mr-2 h-4 w-4" />
-              Загрузить из облака
-            </Button>
-          </div>
-        </div>
+        <SyncActions 
+          isSyncing={isSyncing()}
+          onRefreshStats={checkDataCount}
+          onUploadToCloud={syncLocalToCloud}
+          onDownloadFromCloud={syncCloudToLocal}
+        />
 
         {lastSync && (
           <div className="text-xs text-slate-500 text-center mt-2">

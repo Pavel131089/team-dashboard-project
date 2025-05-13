@@ -28,7 +28,21 @@ export const authService = {
       // Инициализируем пользователей при каждой попытке входа
       userService.initializeDefaultUsers();
 
-      // Поиск пользователя по учетным данным
+      // Проверяем стандартные учетные данные напрямую
+      if (this.isDefaultUser(credentials)) {
+        console.log("Обнаружен вход со стандартными учетными данными");
+
+        const defaultUser = this.createDefaultUserFromCredentials(credentials);
+        // Создаем сессию для стандартного пользователя
+        this.createUserSession(defaultUser);
+
+        return {
+          success: true,
+          user: defaultUser,
+        };
+      }
+
+      // Поиск пользователя по учетным данным если это не стандартный пользователь
       const user = this.findUserByCredentials(credentials);
 
       if (!user) {
@@ -58,6 +72,37 @@ export const authService = {
   },
 
   /**
+   * Проверяет, являются ли учетные данные стандартными
+   */
+  isDefaultUser(credentials: LoginFormData): boolean {
+    const { username, password, role } = credentials;
+
+    return (
+      (username === "manager" &&
+        password === "manager123" &&
+        role === "manager") ||
+      (username === "employee" &&
+        password === "employee123" &&
+        role === "employee")
+    );
+  },
+
+  /**
+   * Создает объект пользователя из стандартных учетных данных
+   */
+  createDefaultUserFromCredentials(credentials: LoginFormData): User {
+    const { username, password, role } = credentials;
+
+    return {
+      id: username === "manager" ? "default-manager" : "default-employee",
+      name: username === "manager" ? "Менеджер" : "Сотрудник",
+      email: username,
+      password: password,
+      role: role,
+    };
+  },
+
+  /**
    * Поиск пользователя по учетным данным
    *
    * @param credentials - Учетные данные пользователя
@@ -76,19 +121,6 @@ export const authService = {
     if (!Array.isArray(users)) {
       console.warn("Хранилище пользователей повреждено, инициализируем заново");
       userService.initializeDefaultUsers();
-      const defaultUsers = userService.getDefaultUsers();
-
-      // Проверяем дефолтные учетные данные
-      for (const user of defaultUsers) {
-        if (
-          user.email === username &&
-          user.password === password &&
-          user.role === role
-        ) {
-          const newUser = userService.createUser(user);
-          return newUser;
-        }
-      }
       return null;
     }
 
@@ -107,40 +139,6 @@ export const authService = {
         console.log("Найден пользователь:", user.name);
         return user;
       }
-    }
-
-    // Проверяем стандартные учетные данные менеджера и сотрудника
-    if (
-      (username === "manager" || username === "employee") &&
-      ((username === "manager" &&
-        password === "manager123" &&
-        role === "manager") ||
-        (username === "employee" &&
-          password === "employee123" &&
-          role === "employee"))
-    ) {
-      console.log("Используются стандартные учетные данные:", username);
-
-      // Создаем стандартного пользователя
-      const defaultUser = {
-        id: username === "manager" ? "default-manager" : "default-employee",
-        name: username === "manager" ? "Менеджер" : "Сотрудник",
-        email: username,
-        password: password,
-        role: role,
-      };
-
-      // Проверяем, существует ли уже такой пользователь в хранилище
-      const existingUser = users.find((u) => u.id === defaultUser.id);
-      if (existingUser) {
-        return existingUser;
-      }
-
-      // Добавляем пользователя в хранилище
-      users.push(defaultUser);
-      userService.saveUsersToStorage(users);
-
-      return defaultUser;
     }
 
     console.log("Пользователь не найден");

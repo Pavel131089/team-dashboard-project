@@ -17,12 +17,6 @@ export interface LoginFormData {
 
 /**
  * Хук для управления аутентификацией пользователя
- *
- * Предоставляет функциональность для:
- * - Входа в систему
- * - Выхода из системы
- * - Управления формой авторизации
- * - Инициализации базовых пользователей
  */
 export function useAuth(navigateTo?: string) {
   // Состояние формы входа
@@ -68,18 +62,11 @@ export function useAuth(navigateTo?: string) {
    */
   const checkExistingSession = () => {
     try {
-      // Проверяем наличие пользователей в системе
-      const usersStr = localStorage.getItem("users");
-      if (!usersStr) {
-        // Если пользователей нет, инициализируем дефолтных
-        initializeDefaultUsers();
-      }
+      // Удостоверимся, что у нас есть дефолтные пользователи
+      userService.initializeDefaultUsers();
 
       // Получаем текущую сессию
-      const userStr = localStorage.getItem("user");
-      if (!userStr) return false;
-
-      const session = JSON.parse(userStr);
+      const session = sessionService.getCurrentSession();
 
       // Если сессия существует и пользователь аутентифицирован
       if (session && session.isAuthenticated) {
@@ -88,9 +75,8 @@ export function useAuth(navigateTo?: string) {
       }
 
       // Проверяем наличие сообщения об ошибке
-      const errorMessage = sessionStorage.getItem("auth_message");
+      const errorMessage = sessionService.getErrorMessage();
       if (errorMessage) {
-        sessionStorage.removeItem("auth_message");
         setError(errorMessage);
       }
 
@@ -98,7 +84,7 @@ export function useAuth(navigateTo?: string) {
     } catch (error) {
       console.error("Ошибка при проверке сессии:", error);
       // В случае ошибки лучше сбросить сессию
-      localStorage.removeItem("user");
+      sessionService.clearSession();
       return false;
     }
   };
@@ -119,8 +105,11 @@ export function useAuth(navigateTo?: string) {
     try {
       console.log("Отправка формы авторизации:", formData);
 
+      // Создаем копию данных формы для гарантии отсутствия мутации
+      const credentials = { ...formData };
+
       // Попытка авторизации
-      const result = authService.login(formData);
+      const result = authService.login(credentials);
 
       if (result.success && result.user) {
         console.log("Успешный вход:", result.user);

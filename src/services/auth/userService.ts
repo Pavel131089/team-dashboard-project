@@ -96,7 +96,6 @@ export const userService = {
       const users = this.getUsersFromStorage();
 
       console.log("Проверка наличия дефолтных пользователей");
-      console.log("Текущие пользователи:", users);
 
       // Проверяем наличие дефолтных пользователей
       let managerExists = false;

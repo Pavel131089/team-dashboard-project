@@ -4,241 +4,329 @@
  * Использует localStorage вместо Firestore
  */
 import { Project, Task } from "@/types/project";
+import { storageUtils } from "../storageUtils";
 
-export const firebaseProjectService = {
+// Ключи для хранения данных в localStorage
+const STORAGE_KEYS = {
+  PROJECTS: 'projects'
+};
+
+/**
+ * Модуль для работы с локальным хранилищем проектов
+ * Инкапсулирует базовые операции чтения/записи
+ */
+const projectStorageModule = {
   /**
-   * Получение всех проектов
+   * Получает все проекты из localStorage
+   * @returns Массив проектов или пустой массив
    */
-  async getAllProjects(): Promise<Project[]> {
-    try {
-      const projectsStr = localStorage.getItem("projects") || "[]";
-      return JSON.parse(projectsStr);
-    } catch (error) {
-      console.error("Ошибка при получении проектов:", error);
-      return [];
-    }
+  getProjects(): Project[] {
+    return storageUtils.getFromStorage<Project[]>(STORAGE_KEYS.PROJECTS, []);
   },
 
   /**
-   * Получение проекта по ID
+   * Сохраняет проекты в localStorage
+   * @param projects - Массив проектов для сохранения
+   * @returns true, если сохранение успешно
    */
-  async getProjectById(projectId: string): Promise<Project | null> {
+  saveProjects(projects: Project[]): boolean {
     try {
-      const projectsStr = localStorage.getItem("projects") || "[]";
-      const projects = JSON.parse(projectsStr);
-      
-      return projects.find((p: Project) => p.id === projectId) || null;
+      localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+      return true;
+    } catch (error) {
+      console.error("Ошибка при сохранении проектов:", error);
+      return false;
+    }
+  }
+};
+
+/**
+ * Модуль для работы с проектами
+ * Обеспечивает операции получения, создания, обновления и удаления проектов
+ */
+const projectModule = {
+  /**
+   * Получает проект по ID
+   * @param projectId - ID проекта
+   * @returns Проект или null, если не найден
+   */
+  getProjectById(projectId: string): Promise<Project | null> {
+    try {
+      const projects = projectStorageModule.getProjects();
+      return Promise.resolve(projects.find(p => p.id === projectId) || null);
     } catch (error) {
       console.error("Ошибка при получении проекта:", error);
-      return null;
+      return Promise.resolve(null);
     }
   },
 
   /**
-   * Получение проектов пользователя
+   * Получает проекты, созданные пользователем
+   * @param userId - ID пользователя
+   * @returns Массив проектов пользователя
    */
-  async getUserProjects(userId: string): Promise<Project[]> {
+  getUserProjects(userId: string): Promise<Project[]> {
     try {
-      const projectsStr = localStorage.getItem("projects") || "[]";
-      const projects = JSON.parse(projectsStr);
-      
+      const projects = projectStorageModule.getProjects();
       // Фильтруем проекты, созданные пользователем
-      return projects.filter((p: Project) => p.createdBy === userId);
+      return Promise.resolve(projects.filter(p => p.createdBy === userId));
     } catch (error) {
       console.error("Ошибка при получении проектов пользователя:", error);
-      return [];
+      return Promise.resolve([]);
     }
   },
 
   /**
-   * Создание нового проекта
+   * Создает новый проект
+   * @param project - Данные проекта без ID
+   * @returns Созданный проект с ID или null при ошибке
    */
-  async createProject(project: Omit<Project, "id">): Promise<Project | null> {
+  createProject(project: Omit<Project, "id">): Promise<Project | null> {
     try {
-      const projectsStr = localStorage.getItem("projects") || "[]";
-      const projects = JSON.parse(projectsStr);
+      const projects = projectStorageModule.getProjects();
       
-      // Генерируем ID проекта
-      const projectId = crypto.randomUUID();
-      
-      // Установка дат создания и обновления
+      // Генерируем ID проекта и добавляем метаданные
       const now = new Date();
-      const projectWithDates = {
+      const newProject: Project = {
         ...project,
-        id: projectId,
+        id: crypto.randomUUID(),
         createdAt: now.toISOString(),
         updatedAt: now.toISOString()
       };
       
-      // Добавляем проект в список
-      projects.push(projectWithDates);
-      localStorage.setItem("projects", JSON.stringify(projects));
+      // Добавляем проект в список и сохраняем
+      projects.push(newProject);
+      projectStorageModule.saveProjects(projects);
       
-      return projectWithDates;
+      return Promise.resolve(newProject);
     } catch (error) {
       console.error("Ошибка при создании проекта:", error);
-      return null;
+      return Promise.resolve(null);
     }
   },
 
   /**
-   * Обновление проекта
+   * Обновляет существующий проект
+   * @param projectId - ID проекта
+   * @param projectData - Данные для обновления
+   * @returns true при успешном обновлении
    */
-  async updateProject(projectId: string, projectData: Partial<Project>): Promise<boolean> {
+  updateProject(projectId: string, projectData: Partial<Project>): Promise<boolean> {
     try {
-      const projectsStr = localStorage.getItem("projects") || "[]";
-      const projects = JSON.parse(projectsStr);
+      const projects = projectStorageModule.getProjects();
       
-      // Обновляем проект
-      const updatedProjects = projects.map((p: Project) => {
-        if (p.id === projectId) {
-          return { 
-            ...p, 
-            ...projectData,
-            updatedAt: new Date().toISOString()
-          };
-        }
-        return p;
-      });
-      
-      localStorage.setItem("projects", JSON.stringify(updatedProjects));
-      return true;
-    } catch (error) {
-      console.error("Ошибка при обновлении проекта:", error);
-      return false;
-    }
-  },
-
-  /**
-   * Удаление проекта
-   */
-  async deleteProject(projectId: string): Promise<boolean> {
-    try {
-      const projectsStr = localStorage.getItem("projects") || "[]";
-      const projects = JSON.parse(projectsStr);
-      
-      // Фильтруем проекты
-      const updatedProjects = projects.filter((p: Project) => p.id !== projectId);
-      
-      localStorage.setItem("projects", JSON.stringify(updatedProjects));
-      return true;
-    } catch (error) {
-      console.error("Ошибка при удалении проекта:", error);
-      return false;
-    }
-  },
-
-  /**
-   * Добавление задачи в проект
-   */
-  async addTaskToProject(projectId: string, task: Omit<Task, "id">): Promise<Task | null> {
-    try {
-      const projectsStr = localStorage.getItem("projects") || "[]";
-      const projects = JSON.parse(projectsStr);
-      
-      // Находим проект
-      const projectIndex = projects.findIndex((p: Project) => p.id === projectId);
+      // Ищем проект для обновления
+      const projectIndex = projects.findIndex(p => p.id === projectId);
       if (projectIndex === -1) {
-        console.error("Проект не найден");
-        return null;
+        console.warn(`Проект с ID ${projectId} не найден`);
+        return Promise.resolve(false);
       }
       
-      // Генерируем ID задачи
-      const taskId = crypto.randomUUID();
-      const newTask = { id: taskId, ...task };
+      // Обновляем проект
+      projects[projectIndex] = {
+        ...projects[projectIndex],
+        ...projectData,
+        updatedAt: new Date().toISOString()
+      };
+      
+      projectStorageModule.saveProjects(projects);
+      return Promise.resolve(true);
+    } catch (error) {
+      console.error("Ошибка при обновлении проекта:", error);
+      return Promise.resolve(false);
+    }
+  },
+
+  /**
+   * Удаляет проект
+   * @param projectId - ID проекта для удаления
+   * @returns true при успешном удалении
+   */
+  deleteProject(projectId: string): Promise<boolean> {
+    try {
+      const projects = projectStorageModule.getProjects();
+      
+      // Фильтруем проекты, удаляя проект с указанным ID
+      const filteredProjects = projects.filter(p => p.id !== projectId);
+      
+      // Если количество проектов не изменилось, значит проект не найден
+      if (filteredProjects.length === projects.length) {
+        console.warn(`Проект с ID ${projectId} не найден для удаления`);
+        return Promise.resolve(false);
+      }
+      
+      projectStorageModule.saveProjects(filteredProjects);
+      return Promise.resolve(true);
+    } catch (error) {
+      console.error("Ошибка при удалении проекта:", error);
+      return Promise.resolve(false);
+    }
+  }
+};
+
+/**
+ * Модуль для работы с задачами проекта
+ * Обеспечивает операции добавления, обновления и удаления задач
+ */
+const taskModule = {
+  /**
+   * Добавляет задачу в проект
+   * @param projectId - ID проекта
+   * @param task - Данные задачи без ID
+   * @returns Созданная задача с ID или null при ошибке
+   */
+  addTaskToProject(projectId: string, task: Omit<Task, "id">): Promise<Task | null> {
+    try {
+      const projects = projectStorageModule.getProjects();
+      
+      // Находим проект
+      const projectIndex = projects.findIndex(p => p.id === projectId);
+      if (projectIndex === -1) {
+        console.error(`Проект с ID ${projectId} не найден`);
+        return Promise.resolve(null);
+      }
+      
+      // Создаем новую задачу с ID
+      const newTask: Task = {
+        id: crypto.randomUUID(),
+        ...task
+      };
       
       // Добавляем задачу в проект
-      const project = projects[projectIndex];
-      const updatedProject = {
-        ...project,
-        tasks: [...project.tasks, newTask],
+      const updatedProject: Project = {
+        ...projects[projectIndex],
+        tasks: [...projects[projectIndex].tasks, newTask],
         updatedAt: new Date().toISOString()
       };
       
       projects[projectIndex] = updatedProject;
-      localStorage.setItem("projects", JSON.stringify(projects));
+      projectStorageModule.saveProjects(projects);
       
-      return newTask;
+      return Promise.resolve(newTask);
     } catch (error) {
       console.error("Ошибка при добавлении задачи:", error);
-      return null;
+      return Promise.resolve(null);
     }
   },
 
   /**
-   * Обновление задачи в проекте
+   * Обновляет задачу в проекте
+   * @param projectId - ID проекта
+   * @param taskId - ID задачи
+   * @param taskData - Данные для обновления
+   * @returns true при успешном обновлении
    */
-  async updateTaskInProject(projectId: string, taskId: string, taskData: Partial<Task>): Promise<boolean> {
+  updateTaskInProject(projectId: string, taskId: string, taskData: Partial<Task>): Promise<boolean> {
     try {
-      const projectsStr = localStorage.getItem("projects") || "[]";
-      const projects = JSON.parse(projectsStr);
+      const projects = projectStorageModule.getProjects();
       
       // Находим проект
-      const projectIndex = projects.findIndex((p: Project) => p.id === projectId);
+      const projectIndex = projects.findIndex(p => p.id === projectId);
       if (projectIndex === -1) {
-        console.error("Проект не найден");
-        return false;
+        console.error(`Проект с ID ${projectId} не найден`);
+        return Promise.resolve(false);
+      }
+      
+      const project = projects[projectIndex];
+      
+      // Находим задачу
+      const taskIndex = project.tasks.findIndex(t => t.id === taskId);
+      if (taskIndex === -1) {
+        console.error(`Задача с ID ${taskId} не найдена в проекте ${projectId}`);
+        return Promise.resolve(false);
       }
       
       // Обновляем задачу
-      const project = projects[projectIndex];
-      const updatedTasks = project.tasks.map((task: Task) => {
-        if (task.id === taskId) {
-          return { ...task, ...taskData };
-        }
-        return task;
-      });
+      const updatedTask = {
+        ...project.tasks[taskIndex],
+        ...taskData
+      };
       
-      const updatedProject = {
+      // Создаем новый массив задач с обновленной задачей
+      const updatedTasks = [
+        ...project.tasks.slice(0, taskIndex),
+        updatedTask,
+        ...project.tasks.slice(taskIndex + 1)
+      ];
+      
+      // Обновляем проект
+      projects[projectIndex] = {
         ...project,
         tasks: updatedTasks,
         updatedAt: new Date().toISOString()
       };
       
-      projects[projectIndex] = updatedProject;
-      localStorage.setItem("projects", JSON.stringify(projects));
-      
-      return true;
+      projectStorageModule.saveProjects(projects);
+      return Promise.resolve(true);
     } catch (error) {
       console.error("Ошибка при обновлении задачи:", error);
-      return false;
+      return Promise.resolve(false);
     }
   },
 
   /**
-   * Удаление задачи из проекта
+   * Удаляет задачу из проекта
+   * @param projectId - ID проекта
+   * @param taskId - ID задачи
+   * @returns true при успешном удалении
    */
-  async deleteTaskFromProject(projectId: string, taskId: string): Promise<boolean> {
+  deleteTaskFromProject(projectId: string, taskId: string): Promise<boolean> {
     try {
-      const projectsStr = localStorage.getItem("projects") || "[]";
-      const projects = JSON.parse(projectsStr);
+      const projects = projectStorageModule.getProjects();
       
       // Находим проект
-      const projectIndex = projects.findIndex((p: Project) => p.id === projectId);
+      const projectIndex = projects.findIndex(p => p.id === projectId);
       if (projectIndex === -1) {
-        console.error("Проект не найден");
-        return false;
+        console.error(`Проект с ID ${projectId} не найден`);
+        return Promise.resolve(false);
       }
       
-      // Удаляем задачу
       const project = projects[projectIndex];
-      const updatedTasks = project.tasks.filter((task: Task) => task.id !== taskId);
       
-      const updatedProject = {
+      // Фильтруем задачи, удаляя задачу с указанным ID
+      const filteredTasks = project.tasks.filter(t => t.id !== taskId);
+      
+      // Если количество задач не изменилось, значит задача не найдена
+      if (filteredTasks.length === project.tasks.length) {
+        console.warn(`Задача с ID ${taskId} не найдена в проекте ${projectId}`);
+        return Promise.resolve(false);
+      }
+      
+      // Обновляем проект
+      projects[projectIndex] = {
         ...project,
-        tasks: updatedTasks,
+        tasks: filteredTasks,
         updatedAt: new Date().toISOString()
       };
       
-      projects[projectIndex] = updatedProject;
-      localStorage.setItem("projects", JSON.stringify(projects));
-      
-      return true;
+      projectStorageModule.saveProjects(projects);
+      return Promise.resolve(true);
     } catch (error) {
       console.error("Ошибка при удалении задачи:", error);
-      return false;
+      return Promise.resolve(false);
     }
   }
+};
+
+/**
+ * Основной экспортируемый объект сервиса для работы с проектами
+ * Объединяет все необходимые операции с проектами и задачами
+ */
+export const firebaseProjectService = {
+  // API для работы с проектами
+  getAllProjects: async (): Promise<Project[]> => {
+    return projectStorageModule.getProjects();
+  },
+  getProjectById: projectModule.getProjectById,
+  getUserProjects: projectModule.getUserProjects,
+  createProject: projectModule.createProject,
+  updateProject: projectModule.updateProject,
+  deleteProject: projectModule.deleteProject,
+  
+  // API для работы с задачами
+  addTaskToProject: taskModule.addTaskToProject,
+  updateTaskInProject: taskModule.updateTaskInProject,
+  deleteTaskFromProject: taskModule.deleteTaskFromProject
 };
 
 export default firebaseProjectService;

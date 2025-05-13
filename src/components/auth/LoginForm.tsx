@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,8 +28,13 @@ export const DemoCredentials = () => {
     <div className="pt-2 text-sm text-slate-500">
       <p>Для демо-доступа используйте:</p>
       <ul className="list-disc pl-5 mt-1 space-y-1">
-        <li>Руководитель: <span className="font-medium">manager / manager123</span></li>
-        <li>Сотрудник: <span className="font-medium">employee / employee123</span></li>
+        <li>
+          Руководитель:{" "}
+          <span className="font-medium">manager / manager123</span>
+        </li>
+        <li>
+          Сотрудник: <span className="font-medium">employee / employee123</span>
+        </li>
       </ul>
     </div>
   );
@@ -52,22 +56,24 @@ const LoginForm = ({
   error,
   onInputChange,
   onRoleChange,
-  onSubmit
+  onSubmit,
 }: LoginFormProps) => {
   return (
     <form onSubmit={onSubmit}>
       <CardContent className="space-y-4">
         {error && <LoginError message={error} />}
-        
+
         <UsernameField value={formData.username} onChange={onInputChange} />
         <PasswordField value={formData.password} onChange={onInputChange} />
         <RoleSelector value={formData.role} onChange={onRoleChange} />
-        
+
         <DemoCredentials />
       </CardContent>
-      
+
       <CardFooter>
-        <Button type="submit" className="w-full">Войти</Button>
+        <Button type="submit" className="w-full">
+          Войти
+        </Button>
       </CardFooter>
     </form>
   );
@@ -76,12 +82,12 @@ const LoginForm = ({
 /**
  * Поле для ввода имени пользователя
  */
-const UsernameField = ({ 
-  value, 
-  onChange 
-}: { 
-  value: string; 
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void 
+const UsernameField = ({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => {
   return (
     <div className="space-y-2">
@@ -100,12 +106,12 @@ const UsernameField = ({
 /**
  * Поле для ввода пароля
  */
-const PasswordField = ({ 
-  value, 
-  onChange 
-}: { 
-  value: string; 
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void 
+const PasswordField = ({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => {
   return (
     <div className="space-y-2">
@@ -125,12 +131,12 @@ const PasswordField = ({
 /**
  * Выбор роли пользователя
  */
-const RoleSelector = ({ 
-  value, 
-  onChange 
-}: { 
-  value: string; 
-  onChange: (value: string) => void 
+const RoleSelector = ({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
 }) => {
   return (
     <div className="space-y-2">

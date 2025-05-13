@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { User } from "@/types/index";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
@@ -21,48 +20,64 @@ interface UserShareButtonProps {
 }
 
 /**
- * Кнопка для обмена пользователями через URL-ссылку
+ * Компонент для обмена пользователями через URL-ссылку
  */
-const UserShareButton: React.FC<UserShareButtonProps> = ({ users, disabled = false }) => {
+const UserShareButton: React.FC<UserShareButtonProps> = ({ 
+  users, 
+  disabled = false 
+}) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [exportLink, setExportLink] = useState<string>("");
   const [includePasswords, setIncludePasswords] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Генерируем ссылку при открытии диалога
+  useEffect(() => {
+    if (isDialogOpen) {
+      generateExportLink();
+    }
+  }, [isDialogOpen, includePasswords]);
 
   /**
    * Генерирует ссылку для экспорта пользователей
    */
   const generateExportLink = () => {
+    setIsGenerating(true);
+    setError(null);
+    
     try {
       if (!users || users.length === 0) {
-        toast({
-          title: "Ошибка",
-          description: "Нет пользователей для экспорта",
-          variant: "destructive",
-        });
-        return "";
+        setError("Нет пользователей для экспорта");
+        setExportLink("");
+        setIsGenerating(false);
+        return;
       }
       
-      // Подготавливаем пользователей для экспорта
-      const usersToExport = [...users].map(user => {
+      // Безопасное клонирование массива пользователей
+      const usersToExport = users.map(user => {
         // Если не включаем пароли, создаем копию без пароля
         if (!includePasswords) {
           const { password, ...userWithoutPassword } = user;
           return userWithoutPassword;
         }
-        return user;
+        // Возвращаем безопасную копию объекта
+        return {...user};
       });
-      
-      const encodedUsers = encodeURIComponent(btoa(JSON.stringify(usersToExport)));
+
+      // Создаем URL с закодированными данными
+      const serializedData = JSON.stringify(usersToExport);
+      const encodedUsers = btoa(encodeURIComponent(serializedData));
       const baseUrl = window.location.origin;
-      return `${baseUrl}?users=${encodedUsers}`;
+      const generatedLink = `${baseUrl}?users=${encodedUsers}`;
+      
+      setExportLink(generatedLink);
+      setIsGenerating(false);
     } catch (error) {
       console.error("Ошибка при создании ссылки:", error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось создать ссылку для экспорта",
-        variant: "destructive",
-      });
-      return "";
+      setError("Не удалось создать ссылку для экспорта");
+      setExportLink("");
+      setIsGenerating(false);
     }
   };
 
@@ -71,44 +86,38 @@ const UserShareButton: React.FC<UserShareButtonProps> = ({ users, disabled = fal
    */
   const handleCopyLink = () => {
     if (!exportLink) {
-      const link = generateExportLink();
-      if (!link) return;
-      setExportLink(link);
+      setError("Нет ссылки для копирования");
+      return;
     }
     
-    navigator.clipboard
-      .writeText(exportLink || generateExportLink())
-      .then(() => {
-        toast({
-          title: "Успешно",
-          description: "Ссылка скопирована в буфер обмена",
+    try {
+      navigator.clipboard.writeText(exportLink)
+        .then(() => {
+          toast({
+            title: "Успешно",
+            description: "Ссылка скопирована в буфер обмена",
+          });
+        })
+        .catch(err => {
+          console.error("Ошибка при копировании ссылки:", err);
+          setError("Не удалось скопировать ссылку автоматически. Скопируйте вручную.");
+          
+          // Выделяем текст для ручного копирования
+          const input = document.getElementById("export-link-input") as HTMLInputElement;
+          if (input) {
+            input.select();
+          }
         });
-        setIsDialogOpen(false);
-      })
-      .catch((err) => {
-        console.error("Ошибка при копировании ссылки:", err);
-        
-        // Показываем сообщение об ошибке
-        toast({
-          title: "Ошибка копирования",
-          description: "Используйте ручное копирование: выделите ссылку и скопируйте",
-        });
-        
-        // На мобильных устройствах может не работать clipboard API
-        const input = document.getElementById("export-link-input") as HTMLInputElement;
-        if (input) {
-          input.select();
-        }
-      });
-  };
-
-  /**
-   * Обработчик открытия диалога
-   */
-  const handleOpenDialog = () => {
-    const link = generateExportLink();
-    setExportLink(link);
-    setIsDialogOpen(true);
+    } catch (err) {
+      console.error("Ошибка при копировании:", err);
+      setError("Не удалось скопировать ссылку. Скопируйте вручную.");
+      
+      // Выделяем текст для ручного копирования
+      const input = document.getElementById("export-link-input") as HTMLInputElement;
+      if (input) {
+        input.select();
+      }
+    }
   };
 
   /**
@@ -116,67 +125,85 @@ const UserShareButton: React.FC<UserShareButtonProps> = ({ users, disabled = fal
    */
   const toggleIncludePasswords = () => {
     setIncludePasswords(!includePasswords);
-    // При изменении этого параметра обновляем ссылку
-    setExportLink("");
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          onClick={handleOpenDialog}
-          disabled={disabled}
-        >
-          <Icon name="Share2" className="mr-2 h-4 w-4" />
-          Экспорт пользователей
-        </Button>
-      </DialogTrigger>
+    <>
+      <Button
+        variant="outline"
+        onClick={() => setIsDialogOpen(true)}
+        disabled={disabled}
+      >
+        <Icon name="Share2" className="mr-2 h-4 w-4" />
+        Экспорт пользователей
+      </Button>
       
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Экспорт пользователей</DialogTitle>
-          <DialogDescription>
-            Скопируйте эту ссылку и откройте её на другом устройстве, чтобы импортировать пользователей.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="include-passwords"
-              checked={includePasswords}
-              onChange={toggleIncludePasswords}
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-            />
-            <label htmlFor="include-passwords" className="text-sm">
-              Включить пароли пользователей
-            </label>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Экспорт пользователей</DialogTitle>
+            <DialogDescription>
+              Скопируйте эту ссылку и откройте её на другом устройстве, чтобы импортировать пользователей.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="include-passwords"
+                checked={includePasswords}
+                onChange={toggleIncludePasswords}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label htmlFor="include-passwords" className="text-sm">
+                Включить пароли пользователей
+              </label>
+            </div>
+            
+            <div className="flex flex-col items-stretch space-y-2">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-md text-sm">
+                  {error}
+                </div>
+              )}
+              
+              {isGenerating ? (
+                <div className="h-10 flex items-center justify-center">
+                  <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+                  <span className="ml-2">Генерация ссылки...</span>
+                </div>
+              ) : (
+                <>
+                  <Input
+                    id="export-link-input"
+                    value={exportLink}
+                    readOnly
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                    className="font-mono text-xs"
+                  />
+                  <Button 
+                    onClick={handleCopyLink} 
+                    type="button" 
+                    className="w-full"
+                    disabled={!exportLink}
+                  >
+                    <Icon name="Copy" className="mr-2 h-4 w-4" />
+                    Копировать ссылку
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
           
-          <div className="flex flex-col items-stretch space-y-2">
-            <Input
-              id="export-link-input"
-              value={exportLink}
-              readOnly
-              onClick={(e) => (e.target as HTMLInputElement).select()}
-              className="font-mono text-xs"
-            />
-            <Button onClick={handleCopyLink} type="button" className="w-full">
-              <Icon name="Copy" className="mr-2 h-4 w-4" />
-              Копировать ссылку
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Закрыть
             </Button>
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-            Закрыть
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

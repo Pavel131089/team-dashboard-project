@@ -1,21 +1,11 @@
 
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  collection, 
-  query, 
-  getDocs, 
-  where, 
-  updateDoc, 
-  deleteDoc 
-} from "firebase/firestore";
-import { db } from "./firebase";
+/**
+ * Сервис для работы с пользователями (имитация Firebase Firestore)
+ * Использует localStorage вместо Firestore
+ */
+
 import { User, UserRole } from "@/types/index";
 
-/**
- * Сервис для работы с пользователями в Firestore
- */
 export const firebaseUserService = {
   /**
    * Дефолтные пользователи для демо-доступа
@@ -25,14 +15,14 @@ export const firebaseUserService = {
       id: "default-manager",
       name: "Менеджер",
       email: "manager@example.com",
-      password: "manager123", // В реальном приложении храним только хэш
+      password: "manager123",
       role: "manager" as UserRole
     },
     {
       id: "default-employee",
       name: "Сотрудник",
       email: "employee@example.com",
-      password: "employee123", // В реальном приложении храним только хэш
+      password: "employee123",
       role: "employee" as UserRole
     }
   ],
@@ -42,13 +32,12 @@ export const firebaseUserService = {
    */
   async getUserById(userId: string): Promise<User | null> {
     try {
-      const userDoc = await getDoc(doc(db, "users", userId));
+      const usersStr = localStorage.getItem("users") || "[]";
+      const users = JSON.parse(usersStr);
       
-      if (userDoc.exists()) {
-        return userDoc.data() as User;
-      }
-      
-      return null;
+      // Поиск пользователя
+      const user = users.find((u: User) => u.id === userId);
+      return user || null;
     } catch (error) {
       console.error("Ошибка при получении пользователя:", error);
       return null;
@@ -69,16 +58,12 @@ export const firebaseUserService = {
         return this.defaultUsers[1];
       }
 
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
+      const usersStr = localStorage.getItem("users") || "[]";
+      const users = JSON.parse(usersStr);
       
-      if (!querySnapshot.empty) {
-        const userDoc = querySnapshot.docs[0];
-        return { id: userDoc.id, ...userDoc.data() } as User;
-      }
-      
-      return null;
+      // Поиск пользователя
+      const user = users.find((u: User) => u.email === email);
+      return user || null;
     } catch (error) {
       console.error("Ошибка при получении пользователя по email:", error);
       return null;
@@ -90,16 +75,12 @@ export const firebaseUserService = {
    */
   async getAllUsers(): Promise<User[]> {
     try {
-      const usersRef = collection(db, "users");
-      const querySnapshot = await getDocs(usersRef);
+      const usersStr = localStorage.getItem("users") || "[]";
+      let users = JSON.parse(usersStr);
       
-      const users = querySnapshot.docs.map(doc => {
-        return { id: doc.id, ...doc.data() } as User;
-      });
-      
-      // Добавляем дефолтных пользователей, если их нет в базе
-      const managerExists = users.some(user => user.email === "manager@example.com");
-      const employeeExists = users.some(user => user.email === "employee@example.com");
+      // Добавляем дефолтных пользователей, если их нет в списке
+      const managerExists = users.some((user: User) => user.email === "manager@example.com");
+      const employeeExists = users.some((user: User) => user.email === "employee@example.com");
       
       if (!managerExists) {
         users.push(this.defaultUsers[0]);
@@ -121,20 +102,26 @@ export const firebaseUserService = {
    */
   async createUser(user: Omit<User, "id">): Promise<User | null> {
     try {
-      // Проверяем, существует ли пользователь с таким email
-      const existingUser = await this.getUserByEmail(user.email);
+      // Получаем существующих пользователей
+      const usersStr = localStorage.getItem("users") || "[]";
+      const users = JSON.parse(usersStr);
       
+      // Проверяем, существует ли пользователь с таким email
+      const existingUser = users.find((u: User) => u.email === user.email);
       if (existingUser) {
         console.error("Пользователь с таким email уже существует");
         return null;
       }
       
-      // Генерируем ID
-      const newUserId = crypto.randomUUID();
-      const newUser = { id: newUserId, ...user };
+      // Создаем нового пользователя
+      const newUser = {
+        id: crypto.randomUUID(),
+        ...user
+      };
       
-      // Сохраняем пользователя
-      await setDoc(doc(db, "users", newUserId), newUser);
+      // Добавляем в список
+      users.push(newUser);
+      localStorage.setItem("users", JSON.stringify(users));
       
       return newUser;
     } catch (error) {
@@ -154,8 +141,18 @@ export const firebaseUserService = {
     }
     
     try {
-      const userRef = doc(db, "users", userId);
-      await updateDoc(userRef, userData);
+      const usersStr = localStorage.getItem("users") || "[]";
+      const users = JSON.parse(usersStr);
+      
+      // Обновляем пользователя
+      const updatedUsers = users.map((u: User) => {
+        if (u.id === userId) {
+          return { ...u, ...userData };
+        }
+        return u;
+      });
+      
+      localStorage.setItem("users", JSON.stringify(updatedUsers));
       return true;
     } catch (error) {
       console.error("Ошибка при обновлении пользователя:", error);
@@ -174,7 +171,13 @@ export const firebaseUserService = {
     }
     
     try {
-      await deleteDoc(doc(db, "users", userId));
+      const usersStr = localStorage.getItem("users") || "[]";
+      const users = JSON.parse(usersStr);
+      
+      // Фильтруем пользователей
+      const updatedUsers = users.filter((u: User) => u.id !== userId);
+      
+      localStorage.setItem("users", JSON.stringify(updatedUsers));
       return true;
     } catch (error) {
       console.error("Ошибка при удалении пользователя:", error);
@@ -200,13 +203,15 @@ export const firebaseUserService = {
     }
     
     try {
-      const user = await this.getUserByEmail(email);
+      const usersStr = localStorage.getItem("users") || "[]";
+      const users = JSON.parse(usersStr);
       
-      if (user && user.password === password && user.role === role) {
-        return user;
-      }
+      // Поиск пользователя
+      const user = users.find((u: User) => 
+        u.email === email && u.password === password && u.role === role
+      );
       
-      return null;
+      return user || null;
     } catch (error) {
       console.error("Ошибка при проверке учетных данных:", error);
       return null;
@@ -218,21 +223,27 @@ export const firebaseUserService = {
    */
   async initializeDefaultUsers(): Promise<void> {
     try {
+      const usersStr = localStorage.getItem("users") || "[]";
+      let users = JSON.parse(usersStr);
+      
       // Проверяем наличие дефолтных пользователей
-      const manager = await this.getUserByEmail("manager@example.com");
-      const employee = await this.getUserByEmail("employee@example.com");
+      const managerExists = users.some((user: User) => user.email === "manager@example.com");
+      const employeeExists = users.some((user: User) => user.email === "employee@example.com");
       
-      if (!manager) {
-        await setDoc(doc(db, "users", "default-manager"), this.defaultUsers[0]);
-        console.log("Дефолтный менеджер добавлен в БД");
+      if (!managerExists) {
+        users.push(this.defaultUsers[0]);
       }
       
-      if (!employee) {
-        await setDoc(doc(db, "users", "default-employee"), this.defaultUsers[1]);
-        console.log("Дефолтный сотрудник добавлен в БД");
+      if (!employeeExists) {
+        users.push(this.defaultUsers[1]);
       }
+      
+      localStorage.setItem("users", JSON.stringify(users));
     } catch (error) {
       console.error("Ошибка при инициализации дефолтных пользователей:", error);
+      
+      // В случае ошибки пересоздаем список
+      localStorage.setItem("users", JSON.stringify(this.defaultUsers));
     }
   }
 };

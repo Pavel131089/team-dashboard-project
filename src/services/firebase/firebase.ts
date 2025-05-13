@@ -1,20 +1,22 @@
 
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { firebaseConfig } from "./config";
+/**
+ * Мок для Firebase API
+ * Этот файл имитирует функциональность Firebase, используя localStorage
+ */
 
-// Инициализация Firebase
-const app = initializeApp(firebaseConfig);
+// Имитация Firestore
+export const db = {
+  // Это просто заглушка для имитации структуры Firebase
+};
 
-// Доступ к Firestore (база данных)
-export const db = getFirestore(app);
-
-// Доступ к сервису аутентификации
-export const auth = getAuth(app);
+// Имитация Auth
+export const auth = {
+  currentUser: null,
+  // Методы аутентификации имитированы через localStorage
+};
 
 /**
- * Сервис для работы с аутентификацией Firebase
+ * Сервис для работы с аутентификацией (имитация Firebase Auth)
  */
 export const firebaseAuthService = {
   /**
@@ -22,15 +24,38 @@ export const firebaseAuthService = {
    */
   async registerUser(email: string, password: string) {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      return { success: true, user: userCredential.user };
+      // Получаем существующих пользователей
+      const usersStr = localStorage.getItem("users") || "[]";
+      const users = JSON.parse(usersStr);
+      
+      // Проверяем, существует ли пользователь
+      const existingUser = users.find((user: any) => user.email === email);
+      if (existingUser) {
+        return { 
+          success: false, 
+          error: 'Пользователь с таким email уже существует' 
+        };
+      }
+      
+      // Создаем нового пользователя
+      const newUser = {
+        id: crypto.randomUUID(),
+        email,
+        password,
+        name: email.split('@')[0] || "Пользователь",
+        role: "employee" // По умолчанию - сотрудник
+      };
+      
+      // Добавляем в список
+      users.push(newUser);
+      localStorage.setItem("users", JSON.stringify(users));
+      
+      return { success: true, user: newUser };
     } catch (error: any) {
       console.error("Ошибка при регистрации:", error);
       return { 
         success: false, 
-        error: error.code === 'auth/email-already-in-use' 
-          ? 'Пользователь с таким email уже существует' 
-          : 'Ошибка при регистрации' 
+        error: 'Ошибка при регистрации' 
       };
     }
   },
@@ -40,15 +65,39 @@ export const firebaseAuthService = {
    */
   async loginUser(email: string, password: string) {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return { success: true, user: userCredential.user };
+      // Получаем существующих пользователей
+      const usersStr = localStorage.getItem("users") || "[]";
+      const users = JSON.parse(usersStr);
+      
+      // Ищем пользователя
+      const user = users.find((u: any) => 
+        u.email === email && u.password === password
+      );
+      
+      if (!user) {
+        return { 
+          success: false, 
+          error: 'Неверный email или пароль'
+        };
+      }
+      
+      // Создаем сессию
+      const sessionData = {
+        id: user.id,
+        username: user.name,
+        role: user.role,
+        isAuthenticated: true,
+        loginTime: new Date().toISOString(),
+      };
+      
+      localStorage.setItem("user", JSON.stringify(sessionData));
+      
+      return { success: true, user };
     } catch (error: any) {
       console.error("Ошибка при входе:", error);
       return { 
         success: false, 
-        error: error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password'
-          ? 'Неверный email или пароль'
-          : 'Ошибка при входе' 
+        error: 'Ошибка при входе' 
       };
     }
   },
@@ -58,7 +107,7 @@ export const firebaseAuthService = {
    */
   async logoutUser() {
     try {
-      await signOut(auth);
+      localStorage.removeItem("user");
       return { success: true };
     } catch (error) {
       console.error("Ошибка при выходе:", error);
@@ -70,7 +119,14 @@ export const firebaseAuthService = {
    * Получение текущего пользователя
    */
   getCurrentUser() {
-    return auth.currentUser;
+    try {
+      const userStr = localStorage.getItem("user");
+      if (!userStr) return null;
+      
+      return JSON.parse(userStr);
+    } catch {
+      return null;
+    }
   }
 };
 

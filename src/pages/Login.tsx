@@ -1,6 +1,10 @@
-
 import { useEffect } from "react";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import LoginForm from "@/components/auth/LoginForm";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -17,16 +21,31 @@ const Login = () => {
     handleRoleChange,
     handleSubmit,
     checkExistingSession,
-    initializeDefaultUsers
+    initializeDefaultUsers,
   } = useAuth();
-  
+
   // При загрузке компонента
   useEffect(() => {
+    console.log("Инициализация страницы входа");
+
     // Инициализируем дефолтных пользователей
     initializeDefaultUsers();
-    
+
     // Проверяем текущую сессию
     checkExistingSession();
+
+    // Проверяем наличие пользователей
+    const usersStr = localStorage.getItem("users");
+    if (usersStr) {
+      try {
+        const users = JSON.parse(usersStr);
+        console.log(`Найдено ${users.length} пользователей в хранилище`);
+      } catch (error) {
+        console.error("Ошибка при проверке пользователей:", error);
+      }
+    } else {
+      console.log("Пользователи не найдены в хранилище");
+    }
   }, []);
 
   return (
@@ -38,8 +57,8 @@ const Login = () => {
             Войдите для доступа к управлению проектами
           </CardDescription>
         </CardHeader>
-        
-        <LoginForm 
+
+        <LoginForm
           formData={formData}
           error={error}
           onInputChange={handleInputChange}

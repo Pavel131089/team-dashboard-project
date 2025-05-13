@@ -10,41 +10,68 @@ import { User } from "@/types/index";
 export const useUserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [exportLink, setExportLink] = useState<string>("");
 
   // Загрузка пользователей из localStorage
   useEffect(() => {
-    const storedUsers = localStorage.getItem("users");
-    if (storedUsers) {
-      try {
-        setUsers(JSON.parse(storedUsers));
-      } catch (error) {
-        console.error("Ошибка при загрузке пользователей:", error);
-        toast({
-          title: "Ошибка",
-          description: "Не удалось загрузить список пользователей",
-          variant: "destructive",
-        });
-      }
-    }
+    loadUsers();
   }, []);
 
-  // Генерация ссылки для экспорта пользователей
-  useEffect(() => {
-    if (users.length > 0) {
-      try {
-        const encodedUsers = encodeURIComponent(btoa(JSON.stringify(users)));
-        const baseUrl = window.location.origin;
-        const sharableLink = `${baseUrl}?users=${encodedUsers}`;
-        setExportLink(sharableLink);
-      } catch (error) {
-        console.error("Ошибка при создании ссылки:", error);
-        setExportLink("");
+  /**
+   * Загружает пользователей из localStorage
+   */
+  const loadUsers = () => {
+    try {
+      const storedUsers = localStorage.getItem("users");
+      if (storedUsers) {
+        const parsedUsers = JSON.parse(storedUsers);
+        if (Array.isArray(parsedUsers)) {
+          setUsers(parsedUsers);
+        } else {
+          console.error("Данные пользователей не являются массивом:", parsedUsers);
+          setUsers([]);
+          initializeDefaultUsers();
+        }
+      } else {
+        // Если пользователей нет, инициализируем дефолтными
+        initializeDefaultUsers();
       }
-    } else {
-      setExportLink("");
+    } catch (error) {
+      console.error("Ошибка при загрузке пользователей:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить список пользователей",
+        variant: "destructive",
+      });
+      // В случае ошибки инициализируем дефолтными
+      initializeDefaultUsers();
     }
-  }, [users]);
+  };
+
+  /**
+   * Инициализирует хранилище дефолтными пользователями
+   */
+  const initializeDefaultUsers = () => {
+    const defaultUsers = [
+      {
+        id: "default-manager",
+        name: "Менеджер",
+        email: "manager",
+        password: "manager123",
+        role: "manager"
+      },
+      {
+        id: "default-employee",
+        name: "Сотрудник",
+        email: "employee",
+        password: "employee123",
+        role: "employee"
+      }
+    ];
+    
+    localStorage.setItem("users", JSON.stringify(defaultUsers));
+    setUsers(defaultUsers);
+    console.log("Инициализированы дефолтные пользователи");
+  };
 
   /**
    * Создание нового пользователя
@@ -65,7 +92,7 @@ export const useUserManagement = () => {
     // Создание нового пользователя
     const newUserWithId: User = {
       ...newUser,
-      id: Math.random().toString(36).substring(2),
+      id: crypto.randomUUID(),
     };
 
     const updatedUsers = [...users, newUserWithId];
@@ -87,6 +114,17 @@ export const useUserManagement = () => {
    * @param userId ID пользователя для удаления
    */
   const handleDeleteUser = (userId: string) => {
+    // Проверяем, что пользователь не дефолтный
+    const user = users.find(u => u.id === userId);
+    if (user && (user.email === "manager" || user.email === "employee")) {
+      toast({
+        title: "Ошибка",
+        description: "Нельзя удалить дефолтного пользователя",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const updatedUsers = users.filter((user) => user.id !== userId);
     setUsers(updatedUsers);
     localStorage.setItem("users", JSON.stringify(updatedUsers));
@@ -96,44 +134,12 @@ export const useUserManagement = () => {
     });
   };
 
-  /**
-   * Копировать ссылку для экспорта в буфер обмена
-   */
-  const copyExportLink = () => {
-    if (!exportLink) {
-      toast({
-        title: "Ошибка",
-        description: "Нет пользователей для экспорта",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    navigator.clipboard
-      .writeText(exportLink)
-      .then(() => {
-        toast({
-          title: "Успешно",
-          description: "Ссылка скопирована в буфер обмена",
-        });
-      })
-      .catch((err) => {
-        console.error("Ошибка при копировании ссылки:", err);
-        toast({
-          title: "Ошибка",
-          description: "Не удалось скопировать ссылку",
-          variant: "destructive",
-        });
-      });
-  };
-
   return {
     users,
     isDialogOpen,
     setIsDialogOpen,
-    exportLink,
     handleCreateUser,
     handleDeleteUser,
-    copyExportLink,
+    loadUsers,
   };
 };

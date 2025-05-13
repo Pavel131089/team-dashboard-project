@@ -23,29 +23,103 @@ const UserImportHandler: React.FC = () => {
             ? JSON.parse(localStorage.getItem("users")!)
             : [];
 
-          // Создаем Set из ID существующих пользователей для быстрого поиска
-          const existingIds = new Set(
-            existingUsers.map((user: User) => user.id)
-          );
+          // Создаем Map из идентификаторов существующих пользователей для быстрого поиска
+          const existingIdsMap = new Map();
+          const existingEmailsMap = new Map();
+          
+          existingUsers.forEach((user: User) => {
+            if (user.id) existingIdsMap.set(user.id, user);
+            if (user.email) existingEmailsMap.set(user.email, user);
+          });
 
-          // Фильтруем новых пользователей, исключая дубликаты
-          const newUsers = decodedUsers.filter(
-            (user: User) => !existingIds.has(user.id)
-          );
+          // Обработка пользователей из URL
+          let newUsersCount = 0;
+          let updatedUsersCount = 0;
+          const processedUsers = [...existingUsers];
+          
+          decodedUsers.forEach((importedUser: any) => {
+            // Проверяем наличие обязательных полей
+            if (!importedUser.email || !importedUser.role) return;
+            
+            // Проверка по ID
+            if (importedUser.id && existingIdsMap.has(importedUser.id)) {
+              // Обновляем существующего пользователя
+              const index = processedUsers.findIndex(u => u.id === importedUser.id);
+              if (index !== -1) {
+                // Сохраняем пароль, если он есть в импортируемом пользователе
+                if (importedUser.password) {
+                  processedUsers[index] = {
+                    ...processedUsers[index],
+                    ...importedUser
+                  };
+                } else {
+                  // Иначе обновляем все кроме пароля
+                  const { password } = processedUsers[index];
+                  processedUsers[index] = {
+                    ...importedUser,
+                    password
+                  };
+                }
+                updatedUsersCount++;
+              }
+            } 
+            // Проверка по email
+            else if (importedUser.email && existingEmailsMap.has(importedUser.email)) {
+              // Обновляем существующего пользователя по email
+              const index = processedUsers.findIndex(u => u.email === importedUser.email);
+              if (index !== -1) {
+                // Сохраняем пароль, если он есть в импортируемом пользователе
+                if (importedUser.password) {
+                  processedUsers[index] = {
+                    ...processedUsers[index],
+                    ...importedUser
+                  };
+                } else {
+                  // Иначе обновляем все кроме пароля
+                  const { password } = processedUsers[index];
+                  processedUsers[index] = {
+                    ...importedUser,
+                    password
+                  };
+                }
+                updatedUsersCount++;
+              }
+            } 
+            // Новый пользователь
+            else {
+              // Добавляем ID, если его нет
+              const userToAdd = importedUser.id 
+                ? importedUser 
+                : { ...importedUser, id: crypto.randomUUID() };
+                
+              processedUsers.push(userToAdd);
+              newUsersCount++;
+            }
+          });
 
-          if (newUsers.length > 0) {
-            // Объединяем массивы и сохраняем
-            const mergedUsers = [...existingUsers, ...newUsers];
-            localStorage.setItem("users", JSON.stringify(mergedUsers));
+          // Обеспечиваем наличие дефолтных пользователей
+          ensureDefaultUsers(processedUsers);
+          
+          // Сохраняем обновленный список пользователей
+          localStorage.setItem("users", JSON.stringify(processedUsers));
 
+          if (newUsersCount > 0 || updatedUsersCount > 0) {
+            let message = "";
+            if (newUsersCount > 0) {
+              message += `Добавлено ${newUsersCount} новых пользователей. `;
+            }
+            if (updatedUsersCount > 0) {
+              message += `Обновлено ${updatedUsersCount} существующих пользователей.`;
+            }
+            
             toast({
               title: "Пользователи импортированы",
-              description: `Добавлено ${newUsers.length} новых пользователей`,
+              description: message.trim(),
             });
           } else {
             toast({
               title: "Информация",
-              description: "Все пользователи из ссылки уже существуют в системе",
+              description: "Нет новых пользователей для импорта",
             });
           }
 
@@ -56,6 +130,9 @@ const UserImportHandler: React.FC = () => {
             window.location.pathname
           );
         }
+      } else {
+        // Даже если в URL нет параметров, проверяем наличие дефолтных пользователей
+        ensureDefaultUsers();
       }
     } catch (error) {
       console.error("Ошибка при импорте пользователей из URL:", error);
@@ -64,8 +141,73 @@ const UserImportHandler: React.FC = () => {
         description: "Не удалось импортировать пользователей из ссылки",
         variant: "destructive",
       });
+      
+      // Проверяем наличие дефолтных пользователей даже в случае ошибки
+      ensureDefaultUsers();
     }
   }, []);
+
+  /**
+   * Добавляет дефолтных пользователей, если их нет в системе
+   */
+  const ensureDefaultUsers = (existingUsersList?: User[]) => {
+    const existingUsers = existingUsersList || (localStorage.getItem("users")
+      ? JSON.parse(localStorage.getItem("users")!)
+      : []);
+
+    // Дефолтные пользователи для демо-доступа
+    const defaultUsers = [
+      {
+        id: "default-manager",
+        name: "Менеджер",
+        email: "manager",
+        password: "manager123",
+        role: "manager"
+      },
+      {
+        id: "default-employee",
+        name: "Сотрудник",
+        email: "employee",
+        password: "employee123",
+        role: "employee"
+      }
+    ];
+
+    // Создаем Map для быстрого поиска по email
+    const existingEmailsMap = new Map();
+    existingUsers.forEach((user: User) => {
+      if (user.email) existingEmailsMap.set(user.email, user);
+    });
+
+    // Проверяем наличие каждого дефолтного пользователя
+    let defaultsAdded = false;
+    const processedUsers = [...existingUsers];
+    
+    defaultUsers.forEach(defaultUser => {
+      if (!existingEmailsMap.has(defaultUser.email)) {
+        // Добавляем дефолтного пользователя
+        processedUsers.push(defaultUser);
+        defaultsAdded = true;
+      } else {
+        // Обновляем существующего дефолтного пользователя
+        const index = processedUsers.findIndex(u => u.email === defaultUser.email);
+        if (index !== -1) {
+          // Обновляем только пароль, если он отличается
+          if (processedUsers[index].password !== defaultUser.password) {
+            processedUsers[index].password = defaultUser.password;
+            defaultsAdded = true;
+          }
+        }
+      }
+    });
+
+    if (defaultsAdded) {
+      localStorage.setItem("users", JSON.stringify(processedUsers));
+      console.log("Дефолтные пользователи добавлены или обновлены");
+    }
+
+    return processedUsers;
+  };
 
   // Компонент не рендерит UI
   return null;

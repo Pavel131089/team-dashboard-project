@@ -20,7 +20,93 @@ const queryClient = new QueryClient({
   },
 });
 
+// Определяем дебаггер для localStorage
+const logStorageState = () => {
+  try {
+    const users = localStorage.getItem("users")
+      ? JSON.parse(localStorage.getItem("users")!)
+      : [];
+
+    console.log(`[App] Пользователей в хранилище: ${users.length}`);
+    console.log(`[App] Все хранилище:`, localStorage);
+  } catch (error) {
+    console.error("[App] Ошибка при проверке хранилища:", error);
+  }
+};
+
 function App() {
+  // Вызываем дебаггер при каждом рендере
+  React.useEffect(() => {
+    logStorageState();
+
+    // Проверяем наличие дефолтных пользователей
+    const ensureDefaultUsers = () => {
+      const defaultUsers = [
+        {
+          id: "default-manager",
+          name: "Менеджер",
+          email: "manager",
+          password: "manager123",
+          role: "manager",
+        },
+        {
+          id: "default-employee",
+          name: "Сотрудник",
+          email: "employee",
+          password: "employee123",
+          role: "employee",
+        },
+      ];
+
+      try {
+        const storedUsers = localStorage.getItem("users");
+        if (!storedUsers) {
+          localStorage.setItem("users", JSON.stringify(defaultUsers));
+          console.log("[App] Инициализированы дефолтные пользователи");
+          return;
+        }
+
+        const users = JSON.parse(storedUsers);
+        if (!Array.isArray(users) || users.length === 0) {
+          localStorage.setItem("users", JSON.stringify(defaultUsers));
+          console.log(
+            "[App] Инициализированы дефолтные пользователи (пустой массив)",
+          );
+          return;
+        }
+
+        // Проверяем наличие дефолтных пользователей
+        let hasManager = false;
+        let hasEmployee = false;
+
+        users.forEach((user) => {
+          if (user.email === "manager") hasManager = true;
+          if (user.email === "employee") hasEmployee = true;
+        });
+
+        if (!hasManager || !hasEmployee) {
+          const updatedUsers = [...users];
+
+          if (!hasManager) {
+            updatedUsers.push(defaultUsers[0]);
+          }
+
+          if (!hasEmployee) {
+            updatedUsers.push(defaultUsers[1]);
+          }
+
+          localStorage.setItem("users", JSON.stringify(updatedUsers));
+          console.log("[App] Добавлены отсутствующие дефолтные пользователи");
+        }
+      } catch (error) {
+        console.error("[App] Ошибка при проверке пользователей:", error);
+        localStorage.setItem("users", JSON.stringify(defaultUsers));
+      }
+    };
+
+    ensureDefaultUsers();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={0}>

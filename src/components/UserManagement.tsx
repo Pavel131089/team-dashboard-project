@@ -2,8 +2,9 @@
 import React from "react";
 import UserList from "./users/UserList";
 import UserHeader from "./users/UserHeader";
-import ExportInstructions from "./users/ExportInstructions";
 import { useUserManagement } from "@/hooks/useUserManagement";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import Icon from "@/components/ui/icon";
 
 /**
  * Компонент управления пользователями
@@ -14,10 +15,8 @@ const UserManagement: React.FC = () => {
     users,
     isDialogOpen,
     setIsDialogOpen,
-    exportLink,
     handleCreateUser,
     handleDeleteUser,
-    copyExportLink,
   } = useUserManagement();
 
   return (
@@ -27,12 +26,21 @@ const UserManagement: React.FC = () => {
         isDialogOpen={isDialogOpen}
         setIsDialogOpen={setIsDialogOpen}
         onCreateUser={handleCreateUser}
-        onExportUsers={copyExportLink}
-        hasUsers={users.length > 0}
+        users={users}
       />
 
-      {/* Инструкции по экспорту */}
-      <ExportInstructions exportLink={exportLink} />
+      {/* Информация о дефолтных пользователях */}
+      <Alert>
+        <Icon name="Info" className="h-4 w-4" />
+        <AlertTitle>Важная информация</AlertTitle>
+        <AlertDescription>
+          Для доступа к демо-версии используйте:
+          <ul className="list-disc pl-5 mt-1">
+            <li>Руководитель: manager / manager123</li>
+            <li>Сотрудник: employee / employee123</li>
+          </ul>
+        </AlertDescription>
+      </Alert>
 
       {/* Список пользователей */}
       <UserList users={users} onDeleteUser={handleDeleteUser} />

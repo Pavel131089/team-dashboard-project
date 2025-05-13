@@ -68,8 +68,18 @@ export function useAuth(navigateTo?: string) {
    */
   const checkExistingSession = () => {
     try {
+      // Проверяем наличие пользователей в системе
+      const usersStr = localStorage.getItem("users");
+      if (!usersStr) {
+        // Если пользователей нет, инициализируем дефолтных
+        initializeDefaultUsers();
+      }
+
       // Получаем текущую сессию
-      const session = sessionService.getCurrentSession();
+      const userStr = localStorage.getItem("user");
+      if (!userStr) return false;
+
+      const session = JSON.parse(userStr);
 
       // Если сессия существует и пользователь аутентифицирован
       if (session && session.isAuthenticated) {
@@ -78,15 +88,17 @@ export function useAuth(navigateTo?: string) {
       }
 
       // Проверяем наличие сообщения об ошибке
-      const errorMessage = sessionService.getErrorMessage();
+      const errorMessage = sessionStorage.getItem("auth_message");
       if (errorMessage) {
+        sessionStorage.removeItem("auth_message");
         setError(errorMessage);
       }
 
       return false;
     } catch (error) {
       console.error("Ошибка при проверке сессии:", error);
-      sessionService.clearSession();
+      // В случае ошибки лучше сбросить сессию
+      localStorage.removeItem("user");
       return false;
     }
   };

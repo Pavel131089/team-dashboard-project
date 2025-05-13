@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { User } from "@/types/index";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
@@ -120,14 +120,6 @@ const UserShareButton: React.FC<UserShareButtonProps> = ({ users, disabled = fal
     setExportLink("");
   };
 
-  // Обновляем ссылку при изменении флага включения паролей
-  useEffect(() => {
-    if (isDialogOpen) {
-      const link = generateExportLink();
-      setExportLink(link);
-    }
-  }, [includePasswords, isDialogOpen]);
-
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
@@ -159,13 +151,8 @@ const UserShareButton: React.FC<UserShareButtonProps> = ({ users, disabled = fal
               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
             <label htmlFor="include-passwords" className="text-sm">
-              Включить пароли пользователей (рекомендуется)
+              Включить пароли пользователей
             </label>
-          </div>
-          
-          <div className="bg-slate-50 p-2 rounded text-xs text-slate-700">
-            <p className="font-medium">Почему рекомендуется включать пароли:</p>
-            <p>Без паролей пользователи смогут войти только если знают их пароли. Включение паролей в экспорт позволит им войти сразу.</p>
           </div>
           
           <div className="flex flex-col items-stretch space-y-2">
@@ -180,16 +167,6 @@ const UserShareButton: React.FC<UserShareButtonProps> = ({ users, disabled = fal
               <Icon name="Copy" className="mr-2 h-4 w-4" />
               Копировать ссылку
             </Button>
-          </div>
-          
-          <div className="text-sm text-slate-600">
-            <p className="font-medium">Инструкция:</p>
-            <ol className="list-decimal pl-5 space-y-1">
-              <li>Скопируйте ссылку</li>
-              <li>Отправьте её через мессенджер или почту</li>
-              <li>Откройте ссылку на другом устройстве</li>
-              <li>Пользователи будут автоматически импортированы</li>
-            </ol>
           </div>
         </div>
         

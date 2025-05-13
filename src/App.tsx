@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Employee from "./pages/Employee";
 import NotFound from "./pages/NotFound";
+import DatabaseStatus from "./pages/DatabaseStatus";
 import UserImportHandler from "./components/users/UserImportHandler";
 
 // Создаем инстанс Query Client с настройками для мобильных устройств
@@ -124,6 +125,7 @@ function App() {
             {/* Защищенные маршруты для руководителей */}
             <Route element={<AuthGuard requiredRole="manager" />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/database-status" element={<DatabaseStatus />} />
             </Route>
 
             {/* Защищенные маршруты для сотрудников */}

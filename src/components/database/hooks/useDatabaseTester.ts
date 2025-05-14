@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 
@@ -14,16 +13,24 @@ export interface TestResults {
 }
 
 /**
+ * Константы для тестирования
+ */
+const TEST_CONFIG = {
+  COLLECTION_NAME: "database_tests",
+  TEST_KEY: "test_connection",
+};
+
+/**
  * Хук для логики тестирования подключения к базе данных
  * @returns Объект с состоянием и методами для тестирования хранилища
  */
 export function useDatabaseTester() {
   // Состояние подключения (true - подключено, false - отключено, null - не проверено)
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
-  
+
   // Состояние загрузки во время операций
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Результаты тестирования
   const [testResults, setTestResults] = useState<TestResults>({
     write: null,
@@ -34,42 +41,87 @@ export function useDatabaseTester() {
   });
 
   /**
+   * Сбрасывает все результаты тестов
+   */
+  const resetTestResults = () => {
+    setTestResults({
+      write: null,
+      read: null,
+      update: null,
+      delete: null,
+      testData: null,
+    });
+  };
+
+  /**
+   * Обновляет один результат теста
+   */
+  const updateTestResult = (
+    operation: keyof Omit<TestResults, "testData">,
+    success: boolean,
+    data?: any,
+  ) => {
+    setTestResults((prev) => ({
+      ...prev,
+      [operation]: success,
+      ...(data && { testData: data }),
+    }));
+  };
+
+  /**
+   * Показывает уведомление о результате операции
+   */
+  const showOperationNotification = (operation: string, success: boolean) => {
+    toast({
+      title: success
+        ? `${operation} успешна`
+        : `Ошибка ${operation.toLowerCase()}`,
+      description: success
+        ? `Операция ${operation.toLowerCase()} успешно выполнена`
+        : `Не удалось выполнить операцию ${operation.toLowerCase()}`,
+      variant: success ? "default" : "destructive",
+    });
+  };
+
+  /**
    * Проверяет доступность localStorage
    */
   const checkConnection = async () => {
     setIsLoading(true);
-    
+
     try {
       // Тест доступности localStorage
-      const testKey = "test_connection";
-      localStorage.setItem(testKey, "true");
-      const testValue = localStorage.getItem(testKey);
-      localStorage.removeItem(testKey);
+      localStorage.setItem(TEST_CONFIG.TEST_KEY, "true");
+      const testValue = localStorage.getItem(TEST_CONFIG.TEST_KEY);
+      localStorage.removeItem(TEST_CONFIG.TEST_KEY);
 
       // Если смогли прочитать то же значение, что записали - соединение работает
       const connectionStatus = testValue === "true";
       setIsConnected(connectionStatus);
 
-      if (connectionStatus) {
-        toast({
-          title: "Соединение установлено",
-          description: "Локальное хранилище данных доступно",
-        });
-      } else {
-        toast({
-          title: "Ошибка соединения",
-          description: "Локальное хранилище данных недоступно",
-          variant: "destructive",
-        });
-      }
+      // Показываем уведомление о результате
+      toast({
+        title: connectionStatus
+          ? "Соединение установлено"
+          : "Ошибка соединения",
+        description: connectionStatus
+          ? "Локальное хранилище данных доступно"
+          : "Локальное хранилище данных недоступно",
+        variant: connectionStatus ? "default" : "destructive",
+      });
+
+      return connectionStatus;
     } catch (error) {
       console.error("Ошибка при проверке подключения:", error);
       setIsConnected(false);
+
       toast({
         title: "Ошибка соединения",
         description: "Локальное хранилище данных недоступно",
         variant: "destructive",
       });
+
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -91,23 +143,22 @@ export function useDatabaseTester() {
     setIsLoading(true);
     // Уникальный идентификатор для текущего теста
     const testId = "test_" + Date.now().toString();
-    const testCollectionName = "database_tests";
 
     // Сбрасываем предыдущие результаты
-    setTestResults({
-      write: null,
-      read: null,
-      update: null,
-      delete: null,
-      testData: null,
-    });
+    resetTestResults();
 
     try {
       // Последовательно запускаем все тесты
-      await testWriteOperation(testId, testCollectionName);
-      await testReadOperation(testId, testCollectionName);
-      await testUpdateOperation(testId, testCollectionName);
-      await testDeleteOperation(testId, testCollectionName);
+      const writeSuccess = await testWriteOperation(testId);
+      if (!writeSuccess) return;
+
+      const readSuccess = await testReadOperation(testId);
+      if (!readSuccess) return;
+
+      const updateSuccess = await testUpdateOperation(testId);
+      if (!updateSuccess) return;
+
+      await testDeleteOperation(testId);
     } catch (error) {
       console.error("Общая ошибка при тестировании хранилища:", error);
       toast({
@@ -121,10 +172,41 @@ export function useDatabaseTester() {
   };
 
   /**
+   * Получает коллекцию тестовых данных из хранилища
+   */
+  const getTestCollection = (): Record<string, any> => {
+    try {
+      const testsStr =
+        localStorage.getItem(TEST_CONFIG.COLLECTION_NAME) || "{}";
+      return JSON.parse(testsStr);
+    } catch (error) {
+      console.error("Ошибка при получении тестовой коллекции:", error);
+      return {};
+    }
+  };
+
+  /**
+   * Сохраняет коллекцию тестовых данных в хранилище
+   */
+  const saveTestCollection = (collection: Record<string, any>): boolean => {
+    try {
+      localStorage.setItem(
+        TEST_CONFIG.COLLECTION_NAME,
+        JSON.stringify(collection),
+      );
+      return true;
+    } catch (error) {
+      console.error("Ошибка при сохранении тестовой коллекции:", error);
+      return false;
+    }
+  };
+
+  /**
    * Выполняет тест операции записи
    */
-  const testWriteOperation = async (testId: string, testCollectionName: string) => {
+  const testWriteOperation = async (testId: string): Promise<boolean> => {
     try {
+      // Создаем тестовые данные
       const testData = {
         message: "Test data",
         timestamp: new Date().toISOString(),
@@ -132,29 +214,28 @@ export function useDatabaseTester() {
       };
 
       // Получаем или создаем коллекцию для тестов
-      const testsStr = localStorage.getItem(testCollectionName) || "{}";
-      const tests = JSON.parse(testsStr);
+      const testCollection = getTestCollection();
 
       // Добавляем тестовые данные
-      tests[testId] = testData;
-      localStorage.setItem(testCollectionName, JSON.stringify(tests));
+      testCollection[testId] = testData;
 
-      setTestResults((prev) => ({ ...prev, write: true }));
-      toast({
-        title: "Запись успешна",
-        description: "Тестовые данные успешно записаны в хранилище",
-      });
-      
+      // Сохраняем обновленную коллекцию
+      const saveSuccess = saveTestCollection(testCollection);
+
+      if (!saveSuccess) {
+        throw new Error("Не удалось сохранить данные");
+      }
+
+      // Обновляем результат теста
+      updateTestResult("write", true);
+      showOperationNotification("Запись", true);
+
       return true;
     } catch (error) {
       console.error("Ошибка при записи данных:", error);
-      setTestResults((prev) => ({ ...prev, write: false }));
-      toast({
-        title: "Ошибка записи",
-        description: "Не удалось записать данные в хранилище",
-        variant: "destructive",
-      });
-      
+      updateTestResult("write", false);
+      showOperationNotification("Запись", false);
+
       return false;
     }
   };
@@ -162,39 +243,29 @@ export function useDatabaseTester() {
   /**
    * Выполняет тест операции чтения
    */
-  const testReadOperation = async (testId: string, testCollectionName: string) => {
+  const testReadOperation = async (testId: string): Promise<boolean> => {
     try {
-      const testsStr = localStorage.getItem(testCollectionName) || "{}";
-      const tests = JSON.parse(testsStr);
+      // Получаем коллекцию тестов
+      const testCollection = getTestCollection();
 
-      if (tests[testId]) {
-        setTestResults((prev) => ({
-          ...prev,
-          read: true,
-          testData: {
-            id: testId,
-            ...tests[testId],
-          },
-        }));
-        
-        toast({
-          title: "Чтение успешно",
-          description: "Тестовые данные успешно прочитаны из хранилища",
-        });
-        
-        return true;
-      } else {
+      // Проверяем наличие тестовых данных
+      if (!testCollection[testId]) {
         throw new Error("Данные не найдены");
       }
+
+      // Обновляем результат теста с прочитанными данными
+      updateTestResult("read", true, {
+        id: testId,
+        ...testCollection[testId],
+      });
+
+      showOperationNotification("Чтение", true);
+      return true;
     } catch (error) {
       console.error("Ошибка при чтении данных:", error);
-      setTestResults((prev) => ({ ...prev, read: false }));
-      toast({
-        title: "Ошибка чтения",
-        description: "Не удалось прочитать данные из хранилища",
-        variant: "destructive",
-      });
-      
+      updateTestResult("read", false);
+      showOperationNotification("Чтение", false);
+
       return false;
     }
   };
@@ -202,48 +273,43 @@ export function useDatabaseTester() {
   /**
    * Выполняет тест операции обновления
    */
-  const testUpdateOperation = async (testId: string, testCollectionName: string) => {
+  const testUpdateOperation = async (testId: string): Promise<boolean> => {
     try {
-      const testsStr = localStorage.getItem(testCollectionName) || "{}";
-      const tests = JSON.parse(testsStr);
+      // Получаем коллекцию тестов
+      const testCollection = getTestCollection();
 
-      if (tests[testId]) {
-        // Обновляем данные
-        tests[testId] = {
-          ...tests[testId],
-          updated: true,
-          updateTimestamp: new Date().toISOString(),
-        };
-
-        localStorage.setItem(testCollectionName, JSON.stringify(tests));
-
-        setTestResults((prev) => ({
-          ...prev,
-          update: true,
-          testData: {
-            id: testId,
-            ...tests[testId],
-          },
-        }));
-
-        toast({
-          title: "Обновление успешно",
-          description: "Тестовые данные успешно обновлены в хранилище",
-        });
-        
-        return true;
-      } else {
+      // Проверяем наличие тестовых данных
+      if (!testCollection[testId]) {
         throw new Error("Данные не найдены");
       }
+
+      // Обновляем данные
+      testCollection[testId] = {
+        ...testCollection[testId],
+        updated: true,
+        updateTimestamp: new Date().toISOString(),
+      };
+
+      // Сохраняем обновленную коллекцию
+      const saveSuccess = saveTestCollection(testCollection);
+
+      if (!saveSuccess) {
+        throw new Error("Не удалось обновить данные");
+      }
+
+      // Обновляем результат теста с обновленными данными
+      updateTestResult("update", true, {
+        id: testId,
+        ...testCollection[testId],
+      });
+
+      showOperationNotification("Обновление", true);
+      return true;
     } catch (error) {
       console.error("Ошибка при обновлении данных:", error);
-      setTestResults((prev) => ({ ...prev, update: false }));
-      toast({
-        title: "Ошибка обновления",
-        description: "Не удалось обновить данные в хранилище",
-        variant: "destructive",
-      });
-      
+      updateTestResult("update", false);
+      showOperationNotification("Обновление", false);
+
       return false;
     }
   };
@@ -251,44 +317,43 @@ export function useDatabaseTester() {
   /**
    * Выполняет тест операции удаления
    */
-  const testDeleteOperation = async (testId: string, testCollectionName: string) => {
+  const testDeleteOperation = async (testId: string): Promise<boolean> => {
     try {
-      const testsStr = localStorage.getItem(testCollectionName) || "{}";
-      const tests = JSON.parse(testsStr);
+      // Получаем коллекцию тестов
+      const testCollection = getTestCollection();
 
-      if (tests[testId]) {
-        // Удаляем данные
-        delete tests[testId];
-        localStorage.setItem(testCollectionName, JSON.stringify(tests));
-
-        // Проверяем удаление
-        const updatedTestsStr =
-          localStorage.getItem(testCollectionName) || "{}";
-        const updatedTests = JSON.parse(updatedTestsStr);
-
-        if (!updatedTests[testId]) {
-          setTestResults((prev) => ({ ...prev, delete: true }));
-          toast({
-            title: "Удаление успешно",
-            description: "Тестовые данные успешно удалены из хранилища",
-          });
-          
-          return true;
-        } else {
-          throw new Error("Данные не были удалены");
-        }
-      } else {
+      // Проверяем наличие тестовых данных
+      if (!testCollection[testId]) {
         throw new Error("Данные не найдены");
       }
+
+      // Удаляем данные
+      delete testCollection[testId];
+
+      // Сохраняем обновленную коллекцию
+      const saveSuccess = saveTestCollection(testCollection);
+
+      if (!saveSuccess) {
+        throw new Error("Не удалось удалить данные");
+      }
+
+      // Проверяем удаление
+      const updatedCollection = getTestCollection();
+
+      if (updatedCollection[testId]) {
+        throw new Error("Данные не были удалены");
+      }
+
+      // Обновляем результат теста
+      updateTestResult("delete", true);
+      showOperationNotification("Удаление", true);
+
+      return true;
     } catch (error) {
       console.error("Ошибка при удалении данных:", error);
-      setTestResults((prev) => ({ ...prev, delete: false }));
-      toast({
-        title: "Ошибка удаления",
-        description: "Не удалось удалить данные из хранилища",
-        variant: "destructive",
-      });
-      
+      updateTestResult("delete", false);
+      showOperationNotification("Удаление", false);
+
       return false;
     }
   };

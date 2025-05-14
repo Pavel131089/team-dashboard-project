@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Project, Task } from "@/types/project";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -12,13 +11,16 @@ import TaskDatesCell from "./task-components/TaskDatesCell";
 import TaskAssigneeCell from "./task-components/TaskAssigneeCell";
 import TaskProgressCell from "./task-components/TaskProgressCell";
 import TaskCommentSection from "./task-components/TaskCommentSection";
+import TaskEditDialog from "@/components/tasks/TaskEditDialog";
 
 interface TaskTableRowProps {
   task: Task;
   project: Project;
   userRole: "manager" | "employee";
   formatDate: (dateString: string | null) => string;
-  getAssignedUserName: (assignedTo: string | string[] | null | undefined) => string;
+  getAssignedUserName: (
+    assignedTo: string | string[] | null | undefined,
+  ) => string;
   onTaskUpdate: (projectId: string, updatedTask: Task) => void;
   onDeleteTask: (projectId: string, taskId: string) => void;
 }
@@ -30,10 +32,11 @@ const TaskTableRow: React.FC<TaskTableRowProps> = ({
   formatDate,
   getAssignedUserName,
   onTaskUpdate,
-  onDeleteTask
+  onDeleteTask,
 }) => {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const handleAddComment = () => {
     if (!newComment.trim()) {
@@ -42,25 +45,23 @@ const TaskTableRow: React.FC<TaskTableRowProps> = ({
     }
 
     const comments = task.comments || [];
-    const updatedTask = { 
-      ...task, 
-      comments: [...comments, newComment]
+    const updatedTask = {
+      ...task,
+      comments: [...comments, newComment],
     };
     onTaskUpdate(project.id, updatedTask);
     setNewComment("");
     setEditingTaskId(null);
-    
+
     toast("Комментарий успешно добавлен");
   };
 
   return (
     <TableRow>
       <TableCell>
-        <TaskDetails 
-          task={task} 
-        />
-        
-        <TaskCommentSection 
+        <TaskDetails task={task} />
+
+        <TaskCommentSection
           comments={task.comments}
           isEditing={editingTaskId === task.id}
           newComment={newComment}
@@ -73,21 +74,19 @@ const TaskTableRow: React.FC<TaskTableRowProps> = ({
           onStartEdit={() => setEditingTaskId(task.id)}
         />
       </TableCell>
-      
+
       <TableCell>
         <TaskStatus progress={task.progress} assignedTo={task.assignedTo} />
       </TableCell>
-      
-      <TableCell>
-        {task.price ? `${task.price} ₽` : "—"}
-      </TableCell>
-      
+
+      <TableCell>{task.price ? `${task.price} ₽` : "—"}</TableCell>
+
       <TableCell>
         {task.estimatedTime ? `${task.estimatedTime} ч` : "—"}
       </TableCell>
-      
+
       <TableCell>
-        <TaskDatesCell 
+        <TaskDatesCell
           startDate={task.startDate}
           endDate={task.endDate}
           actualStartDate={task.actualStartDate}
@@ -95,22 +94,22 @@ const TaskTableRow: React.FC<TaskTableRowProps> = ({
           formatDate={formatDate}
         />
       </TableCell>
-      
+
       <TableCell>
-        <TaskAssigneeCell 
+        <TaskAssigneeCell
           assignedTo={task.assignedTo}
           assignedToNames={task.assignedToNames}
           getAssignedUserName={getAssignedUserName}
         />
       </TableCell>
-      
+
       <TableCell>
         <TaskProgressCell
           progress={task.progress || 0}
           onProgressChange={(progress) => {
             const updatedTask = {
               ...task,
-              progress
+              progress,
             };
             if (updatedTask.progress === 100 && !updatedTask.actualEndDate) {
               updatedTask.actualEndDate = new Date().toISOString();
@@ -119,17 +118,36 @@ const TaskTableRow: React.FC<TaskTableRowProps> = ({
           }}
         />
       </TableCell>
-      
+
       {userRole === "manager" && (
         <TableCell>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-            onClick={() => onDeleteTask(project.id, task.id)}
-          >
-            <Icon name="Trash2" size={16} />
-          </Button>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+              onClick={() => setIsEditDialogOpen(true)}
+            >
+              <Icon name="Edit" size={16} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              onClick={() => onDeleteTask(project.id, task.id)}
+            >
+              <Icon name="Trash2" size={16} />
+            </Button>
+          </div>
+
+          {/* Диалог редактирования задачи */}
+          <TaskEditDialog
+            isOpen={isEditDialogOpen}
+            onClose={() => setIsEditDialogOpen(false)}
+            task={task}
+            projectId={project.id}
+            onSave={onTaskUpdate}
+          />
         </TableCell>
       )}
     </TableRow>

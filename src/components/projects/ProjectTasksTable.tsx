@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Project, Task } from "@/types/project";
 import {
@@ -10,22 +9,14 @@ import {
 } from "@/components/ui/table";
 import TaskTableRow from "./TaskTableRow";
 
-interface ProjectTasksTableProps {
-  project: Project;
-  userRole: "manager" | "employee";
-  formatDate: (dateString: string | null) => string;
-  getAssignedUserName: (assignedTo: string | string[] | null | undefined) => string;
-  onTaskUpdate: (projectId: string, updatedTask: Task) => void;
-  onDeleteTask: (projectId: string, taskId: string) => void;
-}
-
+// Find section: ProjectTasksTable component
 const ProjectTasksTable: React.FC<ProjectTasksTableProps> = ({
   project,
   userRole,
   formatDate,
   getAssignedUserName,
   onTaskUpdate,
-  onDeleteTask
+  onDeleteTask,
 }) => {
   return (
     <div className="p-4">
@@ -61,4 +52,5 @@ const ProjectTasksTable: React.FC<ProjectTasksTableProps> = ({
   );
 };
 
+// ... keep existing code below
 export default ProjectTasksTable;

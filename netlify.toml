@@ -1,4 +1,7 @@
-# .prettierignore
 
-# Ignore Netlify config so prettier won’t try to parse TOML
-**/netlify.toml
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[context.production]
+  branch = "main"  # Указываем основную ветку для продакшн-деплоя

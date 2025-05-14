@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Task } from "@/types/project";
 import { toast } from "@/components/ui/use-toast";
 
+/**
+ * Интерфейс пропсов для диалога редактирования задачи
+ */
 interface TaskEditDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -16,6 +19,9 @@ interface TaskEditDialogProps {
   onSave: (projectId: string, updatedTask: Task) => void;
 }
 
+/**
+ * Компонент диалога редактирования задачи
+ */
 const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
   isOpen,
   onClose,
@@ -23,15 +29,8 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
   projectId,
   onSave,
 }) => {
-  const [formData, setFormData] = useState<Partial<Task>>({
-    name: "",
-    description: "",
-    price: 0,
-    estimatedTime: 0,
-    startDate: "",
-    endDate: "",
-    progress: 0,
-  });
+  // Состояние формы
+  const [formData, setFormData] = useState<Partial<Task>>({});
 
   // Загружаем данные задачи при открытии диалога
   useEffect(() => {
@@ -53,6 +52,9 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
     }
   }, [task, isOpen]);
 
+  /**
+   * Обработчик изменения текстовых и числовых полей
+   */
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -69,6 +71,9 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
     }));
   };
 
+  /**
+   * Обработчик сохранения данных задачи
+   */
   const handleSubmit = () => {
     if (!task || !formData.name) {
       toast({
@@ -103,115 +108,32 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Название
-            </Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className="col-span-3"
-            />
-          </div>
+          <TaskNameField 
+            value={formData.name || ""} 
+            onChange={handleInputChange} 
+          />
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">
-              Описание
-            </Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              className="col-span-3"
-              rows={3}
-            />
-          </div>
+          <TaskDescriptionField 
+            value={formData.description || ""} 
+            onChange={handleInputChange} 
+          />
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="price" className="text-right">
-              Стоимость (₽)
-            </Label>
-            <Input
-              id="price"
-              name="price"
-              type="number"
-              value={formData.price || ""}
-              onChange={handleInputChange}
-              className="col-span-3"
-            />
-          </div>
+          <TaskMetadataFields 
+            price={formData.price} 
+            estimatedTime={formData.estimatedTime}
+            onChange={handleInputChange}
+          />
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="estimatedTime" className="text-right">
-              Время (ч)
-            </Label>
-            <Input
-              id="estimatedTime"
-              name="estimatedTime"
-              type="number"
-              value={formData.estimatedTime || ""}
-              onChange={handleInputChange}
-              className="col-span-3"
-            />
-          </div>
+          <TaskDateFields 
+            startDate={formData.startDate}
+            endDate={formData.endDate}
+            onChange={handleInputChange}
+          />
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="startDate" className="text-right">
-              Дата начала
-            </Label>
-            <Input
-              id="startDate"
-              name="startDate"
-              type="date"
-              value={formData.startDate ? new Date(formData.startDate).toISOString().split('T')[0] : ""}
-              onChange={handleInputChange}
-              className="col-span-3"
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="endDate" className="text-right">
-              Дата окончания
-            </Label>
-            <Input
-              id="endDate"
-              name="endDate"
-              type="date"
-              value={formData.endDate ? new Date(formData.endDate).toISOString().split('T')[0] : ""}
-              onChange={handleInputChange}
-              className="col-span-3"
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="progress" className="text-right">
-              Прогресс (%)
-            </Label>
-            <div className="col-span-3 flex items-center gap-2">
-              <Input
-                id="progress"
-                name="progress"
-                type="number"
-                min="0"
-                max="100"
-                value={formData.progress}
-                onChange={handleInputChange}
-              />
-              <input
-                type="range"
-                id="progress-range"
-                name="progress"
-                min="0"
-                max="100"
-                value={formData.progress}
-                onChange={handleInputChange}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-          </div>
+          <TaskProgressField 
+            progress={formData.progress || 0}
+            onChange={handleInputChange}
+          />
         </div>
 
         <DialogFooter>
@@ -226,5 +148,190 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
     </Dialog>
   );
 };
+
+/**
+ * Компонент поля имени задачи
+ */
+interface InputFieldProps {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+}
+
+const TaskNameField: React.FC<InputFieldProps> = ({ value, onChange }) => (
+  <div className="grid grid-cols-4 items-center gap-4">
+    <Label htmlFor="name" className="text-right">
+      Название
+    </Label>
+    <Input
+      id="name"
+      name="name"
+      value={value}
+      onChange={onChange}
+      className="col-span-3"
+    />
+  </div>
+);
+
+/**
+ * Компонент поля описания задачи
+ */
+const TaskDescriptionField: React.FC<InputFieldProps> = ({ value, onChange }) => (
+  <div className="grid grid-cols-4 items-center gap-4">
+    <Label htmlFor="description" className="text-right">
+      Описание
+    </Label>
+    <Textarea
+      id="description"
+      name="description"
+      value={value}
+      onChange={onChange}
+      className="col-span-3"
+      rows={3}
+    />
+  </div>
+);
+
+/**
+ * Компонент полей метаданных задачи (стоимость и время)
+ */
+interface TaskMetadataFieldsProps {
+  price?: number;
+  estimatedTime?: number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+const TaskMetadataFields: React.FC<TaskMetadataFieldsProps> = ({ 
+  price = 0, 
+  estimatedTime = 0, 
+  onChange 
+}) => (
+  <>
+    <div className="grid grid-cols-4 items-center gap-4">
+      <Label htmlFor="price" className="text-right">
+        Стоимость (₽)
+      </Label>
+      <Input
+        id="price"
+        name="price"
+        type="number"
+        value={price || ""}
+        onChange={onChange}
+        className="col-span-3"
+      />
+    </div>
+    
+    <div className="grid grid-cols-4 items-center gap-4">
+      <Label htmlFor="estimatedTime" className="text-right">
+        Время (ч)
+      </Label>
+      <Input
+        id="estimatedTime"
+        name="estimatedTime"
+        type="number"
+        value={estimatedTime || ""}
+        onChange={onChange}
+        className="col-span-3"
+      />
+    </div>
+  </>
+);
+
+/**
+ * Компонент полей дат задачи
+ */
+interface TaskDateFieldsProps {
+  startDate?: string | null;
+  endDate?: string | null;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+const TaskDateFields: React.FC<TaskDateFieldsProps> = ({ 
+  startDate, 
+  endDate, 
+  onChange 
+}) => {
+  /**
+   * Форматирует дату из ISO в формат для input[type="date"]
+   */
+  const formatDateForInput = (dateStr?: string | null): string => {
+    if (!dateStr) return "";
+    try {
+      return new Date(dateStr).toISOString().split('T')[0];
+    } catch {
+      return "";
+    }
+  };
+
+  return (
+    <>
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="startDate" className="text-right">
+          Дата начала
+        </Label>
+        <Input
+          id="startDate"
+          name="startDate"
+          type="date"
+          value={formatDateForInput(startDate)}
+          onChange={onChange}
+          className="col-span-3"
+        />
+      </div>
+      
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="endDate" className="text-right">
+          Дата окончания
+        </Label>
+        <Input
+          id="endDate"
+          name="endDate"
+          type="date"
+          value={formatDateForInput(endDate)}
+          onChange={onChange}
+          className="col-span-3"
+        />
+      </div>
+    </>
+  );
+};
+
+/**
+ * Компонент поля прогресса задачи
+ */
+interface TaskProgressFieldProps {
+  progress: number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+const TaskProgressField: React.FC<TaskProgressFieldProps> = ({ progress, onChange }) => (
+  <div className="grid grid-cols-4 items-center gap-4">
+    <Label htmlFor="progress" className="text-right">
+      Прогресс (%)
+    </Label>
+    <div className="col-span-3 flex items-center gap-2">
+      <Input
+        id="progress"
+        name="progress"
+        type="number"
+        min="0"
+        max="100"
+        value={progress}
+        onChange={onChange}
+        className="w-20"
+      />
+      <input
+        type="range"
+        id="progress-range"
+        name="progress"
+        min="0"
+        max="100"
+        value={progress}
+        onChange={onChange}
+        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+      />
+      <span className="w-9 text-center">{progress}%</span>
+    </div>
+  </div>
+);
 
 export default TaskEditDialog;

@@ -1,16 +1,4 @@
+# .prettierignore
 
-# Netlify configuration
-[build]
-  command = "npm run build"
-  publish = "dist"
-
-# Redirects for SPA
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-# Environment variables
-[build.environment]
-  NODE_VERSION = "20"
-  NETLIFY_SKIP_ANGULAR_PLUGIN = "true"
+# Ignore Netlify config so prettier won’t try to parse TOML
+**/netlify.toml

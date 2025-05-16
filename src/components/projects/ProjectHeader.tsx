@@ -1,76 +1,108 @@
 import React from "react";
 import { Project } from "@/types/project";
-import { AccordionTrigger } from "@/components/ui/accordion";
+import { AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import Icon from "@/components/ui/icon";
-import ProjectProgress from "./ProjectProgress";
+import ProjectProgress from "@/components/projects/ProjectProgress";
+import { formatDate, formatCurrency } from "@/components/utils/FormatUtils";
+
+// Функция для расчета количества дней между датами
+const calculateDaysBetween = (
+  startDate: string | null | undefined,
+  endDate: string | null | undefined,
+): number => {
+  if (!startDate) return 0;
+
+  const start = new Date(startDate);
+  const end = endDate ? new Date(endDate) : new Date();
+
+  // Разница в миллисекундах
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  // Конвертация в дни
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+// Функция для расчета общей стоимости задач
+const calculateTotalTasksPrice = (project: Project): number => {
+  return project.tasks.reduce((total, task) => total + (task.price || 0), 0);
+};
 
 interface ProjectHeaderProps {
   project: Project;
 }
 
 const ProjectHeader: React.FC<ProjectHeaderProps> = ({ project }) => {
-  // Форматирование суммы с разделителями тысяч
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("ru-RU", {
-      style: "currency",
-      currency: "RUB",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  // Рассчитываем общую стоимость задач
+  const totalTasksPrice = calculateTotalTasksPrice(project);
 
-  // Расчет общей стоимости всех задач
-  const calculateTotalBudget = () => {
-    return project.tasks.reduce((sum, task) => sum + (task.price || 0), 0);
-  };
+  // Рассчитываем количество дней выполнения проекта
+  const projectDuration = calculateDaysBetween(
+    project.startDate,
+    project.endDate,
+  );
 
-  // Расчет общего времени всех задач
-  const calculateTotalTime = () => {
-    return project.tasks.reduce(
-      (sum, task) => sum + (task.estimatedTime || 0),
-      0,
-    );
-  };
-
-  const totalBudget = calculateTotalBudget();
-  const totalTime = calculateTotalTime();
+  // Количество задач в проекте
+  const tasksCount = project.tasks.length;
 
   return (
-    <div className="p-4 pb-0">
-      <AccordionTrigger className="py-2 hover:no-underline">
-        <div className="flex flex-1 flex-col items-start text-left">
-          <div className="flex w-full items-center justify-between">
-            <h3 className="text-xl font-medium">{project.name}</h3>
-            <div className="flex gap-2">
-              <Badge variant="outline" className="rounded-md">
-                <Icon name="Calendar" className="mr-1 h-3.5 w-3.5" />
-                {project.startDate || "Не указано"}
-              </Badge>
-              <Badge variant="outline" className="rounded-md">
-                <Icon name="Clock" className="mr-1 h-3.5 w-3.5" />
-                {totalTime} ч
-              </Badge>
-              <Badge variant="outline" className="rounded-md">
-                <Icon name="DollarSign" className="mr-1 h-3.5 w-3.5" />
-                {formatCurrency(totalBudget)}
-              </Badge>
-              <Badge variant="outline" className="rounded-md">
-                <Icon name="ListTodo" className="mr-1 h-3.5 w-3.5" />
-                {project.tasks.length} задач
-                {project.tasks.length === 1
-                  ? "а"
-                  : project.tasks.length > 1 && project.tasks.length < 5
-                    ? "и"
-                    : ""}
-              </Badge>
+    <>
+      <AccordionTrigger className="px-4 py-3 hover:no-underline">
+        <div className="flex w-full items-start justify-between">
+          <div className="flex items-start space-x-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <Icon name="FolderOpen" className="h-5 w-5 text-primary" />
+            </div>
+            <div className="space-y-1 text-left">
+              <h3 className="text-base font-medium">{project.name}</h3>
+              <p className="text-sm text-muted-foreground">
+                {project.description || "Нет описания"}
+              </p>
             </div>
           </div>
-
-          {/* Здесь вставляем компонент с информацией о прогрессе */}
-          <ProjectProgress project={project} />
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="ml-auto">
+              Задач: {tasksCount}
+            </Badge>
+            <Badge variant="secondary" className="font-mono">
+              {formatCurrency(totalTasksPrice)}
+            </Badge>
+          </div>
         </div>
       </AccordionTrigger>
-    </div>
+      <AccordionContent className="px-4 pb-3 pt-0">
+        <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+          <div className="flex items-center gap-1.5">
+            <Icon name="Calendar" className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Даты:</span>
+            <span className="text-sm font-medium">
+              {formatDate(project.startDate)} — {formatDate(project.endDate)}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Icon name="Clock" className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Длительность:</span>
+            <span className="text-sm font-medium">
+              {projectDuration}{" "}
+              {projectDuration === 1
+                ? "день"
+                : projectDuration > 1 && projectDuration < 5
+                  ? "дня"
+                  : "дней"}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Icon name="DollarSign" className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Бюджет:</span>
+            <span className="text-sm font-medium">
+              {formatCurrency(project.price || 0)} /{" "}
+              {formatCurrency(totalTasksPrice)} (задачи)
+            </span>
+          </div>
+        </div>
+
+        <ProjectProgress project={project} />
+      </AccordionContent>
+    </>
   );
 };
 

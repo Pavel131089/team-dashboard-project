@@ -3,49 +3,58 @@
  */
 import { getUserNameById, getUserNamesByIds } from "@/utils/userUtils";
 
-/**
- * Форматирует дату в локальный формат
- *
- * @param dateString - Строка с датой в ISO формате или null
- * @returns Отформатированная дата или символ "—" если дата не задана
- */
-export const formatDate = (dateString: string | null): string => {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString();
+// Форматирование даты
+export const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return "Не указана";
+
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Некорректная дата";
+  }
 };
 
-/**
- * Получает имя исполнителя по его ID
- *
- * @param assignedTo - ID исполнителя (строка, массив строк или null)
- * @param users - Массив пользователей для поиска
- * @returns Имя исполнителя или "—" если исполнитель не задан
- */
+// Форматирование суммы в рубли
+export const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency: "RUB",
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+// Получение имени исполнителя
 export const getAssignedUserName = (
   assignedTo: string | string[] | null | undefined,
-  users: Array<{ id: string; username: string }> = [],
+  users?: any[],
 ): string => {
-  if (!assignedTo) return "—";
+  if (!assignedTo) return "Не назначено";
 
-  // Если пользователи уже переданы, используем их
-  if (users.length > 0) {
+  // Если передан массив пользователей, попробуем найти имя пользователя по ID
+  if (users && users.length > 0) {
     if (Array.isArray(assignedTo)) {
       return assignedTo
-        .map((id) => {
-          const user = users.find((u) => u.id === id);
-          return user ? user.username : id;
+        .map((userId) => {
+          const user = users.find((u) => u.id === userId);
+          return user ? user.username : userId;
         })
         .join(", ");
+    } else {
+      const user = users.find((u) => u.id === assignedTo);
+      return user ? user.username : assignedTo;
     }
-
-    const user = users.find((u) => u.id === assignedTo);
-    return user ? user.username : assignedTo;
   }
 
-  // Если нет переданных пользователей, используем данные из хранилища
+  // Если пользователи не переданы, просто возвращаем ID или строку
   if (Array.isArray(assignedTo)) {
-    return getUserNamesByIds(assignedTo).join(", ");
+    return assignedTo.join(", ");
   }
 
-  return getUserNameById(assignedTo);
+  return assignedTo;
 };

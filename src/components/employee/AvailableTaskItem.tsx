@@ -1,108 +1,126 @@
-
 import React from "react";
 import { Project, Task } from "@/types/project";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import Icon from "@/components/ui/icon";
-import TaskComments from "./TaskComments";
-import TaskCommentForm from "./TaskCommentForm";
-import TaskMetadata from "./TaskMetadata";
+import { formatDate, formatCurrency } from "@/components/utils/FormatUtils";
+import ProjectInfoBadge from "@/components/employee/ProjectInfoBadge";
 
 interface AvailableTaskItemProps {
   project: Project;
   task: Task;
-  editingTaskId: string | null;
-  newComment: string;
-  onNewCommentChange: (comment: string) => void;
-  onStartEditing: () => void;
-  onCancelEditing: () => void;
-  onAddComment: () => void;
-  onAssignTask: () => void;
+  userId: string;
+  onAssignTask: (projectId: string, task: Task) => void;
 }
 
 const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
   project,
   task,
-  editingTaskId,
-  newComment,
-  onNewCommentChange,
-  onStartEditing,
-  onCancelEditing,
-  onAddComment,
-  onAssignTask
+  userId,
+  onAssignTask,
 }) => {
-  const isEditing = editingTaskId === task.id;
-  
-  return (
-    <div className="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="font-medium text-slate-900">{task.name}</p>
-          <p className="text-sm text-slate-500 mt-1">
-            Проект: {project.name}
-          </p>
-          <p className="text-sm text-slate-700 mt-2">
-            {task.description}
-          </p>
-          
-          {/* Отображение стоимости задачи */}
-          {task.price > 0 && (
-            <div className="mt-1 text-xs font-medium text-green-700 bg-green-50 inline-flex items-center rounded px-2 py-0.5 mr-1">
-              <Icon name="CircleDollarSign" className="h-3 w-3 mr-1" />
-              Стоимость: {task.price} ₽
-            </div>
-          )}
-          
-          {/* Отображение количества исполнителей */}
-          {Array.isArray(task.assignedTo) && task.assignedTo.length > 0 && (
-            <div className="mt-1 text-xs inline-flex items-center bg-purple-100 text-purple-800 rounded px-2 py-0.5">
-              <Icon name="Users" className="h-3 w-3 mr-1" />
-              {task.assignedTo.length > 1 
-                ? `Выполняют ${task.assignedTo.length} сотрудников` 
-                : "Выполняет 1 сотрудник"}
-            </div>
-          )}
-          
-          {/* Комментарии к задаче */}
-          {task.comments && task.comments.length > 0 && (
-            <TaskComments comments={task.comments} />
-          )}
+  const handleAssignTask = () => {
+    // Установка текущей даты как actualStartDate
+    const updatedTask = {
+      ...task,
+      assignedTo: task.assignedTo
+        ? Array.isArray(task.assignedTo)
+          ? [...task.assignedTo, userId]
+          : [task.assignedTo, userId]
+        : userId,
+      actualStartDate: new Date().toISOString(),
+    };
 
-          {/* Форма добавления комментария */}
-          {isEditing ? (
-            <TaskCommentForm 
-              comment={newComment}
-              onCommentChange={onNewCommentChange}
-              onSave={onAddComment}
-              onCancel={onCancelEditing}
-            />
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-2 h-7 text-xs"
-              onClick={onStartEditing}
-            >
-              <Icon name="MessageSquarePlus" className="h-3.5 w-3.5 mr-1" />
-              Добавить комментарий
-            </Button>
-          )}
-          
-          {/* Метаданные задачи */}
-          <TaskMetadata 
-            price={task.price} 
-            estimatedTime={task.estimatedTime} 
-          />
+    onAssignTask(project.id, updatedTask);
+  };
+
+  return (
+    <Card className="mb-4">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{task.name}</CardTitle>
+          <ProjectInfoBadge project={project} />
         </div>
-        
-        <Button 
-          variant="outline"
-          size="sm"
-          onClick={onAssignTask}
-        >
+        <CardDescription>{task.description || "Нет описания"}</CardDescription>
+      </CardHeader>
+      <CardContent className="pb-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="flex items-center gap-1.5">
+            <Icon name="Calendar" className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Дата начала:</span>
+            <span className="text-sm">{formatDate(task.startDate)}</span>
+          </div>
+          {task.endDate && (
+            <div className="flex items-center gap-1.5">
+              <Icon
+                name="CalendarRange"
+                className="h-4 w-4 text-muted-foreground"
+              />
+              <span className="text-sm text-muted-foreground">
+                Дата окончания:
+              </span>
+              <span className="text-sm">{formatDate(task.endDate)}</span>
+            </div>
+          )}
+          {task.estimatedTime && (
+            <div className="flex items-center gap-1.5">
+              <Icon name="Clock" className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                Расчетное время:
+              </span>
+              <span className="text-sm">
+                {task.estimatedTime}{" "}
+                {task.estimatedTime === 1 ? "час" : "часов"}
+              </span>
+            </div>
+          )}
+          {task.price && (
+            <div className="flex items-center gap-1.5">
+              <Icon
+                name="DollarSign"
+                className="h-4 w-4 text-muted-foreground"
+              />
+              <span className="text-sm text-muted-foreground">Стоимость:</span>
+              <span className="text-sm">{formatCurrency(task.price)}</span>
+            </div>
+          )}
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <div className="flex gap-2">
+          {task.priority && (
+            <Badge
+              variant={
+                task.priority === "HIGH"
+                  ? "destructive"
+                  : task.priority === "MEDIUM"
+                    ? "default"
+                    : "outline"
+              }
+            >
+              {task.priority === "HIGH"
+                ? "Высокий"
+                : task.priority === "MEDIUM"
+                  ? "Средний"
+                  : "Низкий"}{" "}
+              приоритет
+            </Badge>
+          )}
+        </div>
+        <Button onClick={handleAssignTask}>
+          <Icon name="Plus" className="mr-2 h-4 w-4" />
           Взять в работу
         </Button>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 };
 

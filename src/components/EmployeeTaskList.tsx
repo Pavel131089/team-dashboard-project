@@ -1,121 +1,186 @@
+import React, { useState } from "react";
 import { Task } from "@/types/project";
 import {
   Table,
   TableBody,
+  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import DeleteConfirmationDialog from "@/components/ui/delete-confirmation-dialog";
-import { useState } from "react";
-import { toast } from "@/components/ui/use-toast";
-import TaskRow from "./tasks/TaskRow";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import Icon from "@/components/ui/icon";
+import ProjectInfoBadge from "@/components/employee/ProjectInfoBadge";
+import { formatDate } from "@/components/utils/FormatUtils";
 
 interface EmployeeTaskListProps {
-  tasks: {project: any, task: Task}[] | Task[];
+  tasks: { project: any; task: Task }[];
   userId: string;
-  onTaskUpdate?: (projectId: string, task: Task) => void;
+  onTaskUpdate: (projectId: string, updatedTask: Task) => void;
 }
 
-/**
- * Компонент для отображения списка задач сотрудника
- */
-const EmployeeTaskList = ({ tasks, userId, onTaskUpdate }: EmployeeTaskListProps) => {
-  const [taskToDelete, setTaskToDelete] = useState<{projectId: string, taskId: string} | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+const EmployeeTaskList: React.FC<EmployeeTaskListProps> = ({
+  tasks,
+  userId,
+  onTaskUpdate,
+}) => {
+  const [progressValues, setProgressValues] = useState<Record<string, number>>(
+    {},
+  );
 
-  // Нормализация задач в единый формат
-  const employeeTasks = tasks.map(item => {
-    if ('task' in item) {
-      return {
-        task: item.task,
-        project: item.project
-      };
-    }
-    return {
-      task: item,
-      project: null
-    };
-  }).filter(({ task }) => {
-    // Фильтрация задач, назначенных этому сотруднику
-    if (Array.isArray(task.assignedTo)) {
-      return task.assignedTo.includes(userId);
-    }
-    return task.assignedTo === userId;
-  });
-  
-  /**
-   * Обработчик удаления задачи
-   */
-  const handleDeleteTask = (projectId: string, taskId: string) => {
-    setTaskToDelete({ projectId, taskId });
-    setIsDeleteDialogOpen(true);
+  const handleProgressChange = (taskId: string, value: number) => {
+    setProgressValues({
+      ...progressValues,
+      [taskId]: value,
+    });
   };
 
-  /**
-   * Подтверждение удаления задачи
-   */
-  const confirmDelete = () => {
-    if (taskToDelete && onTaskUpdate) {
-      // Находим задачу, которую нужно удалить
-      const taskItem = employeeTasks.find(({ task }) => task.id === taskToDelete.taskId);
-      if (taskItem && taskToDelete.projectId) {
-        // Создаем копию задачи с флагом удаления
-        const taskWithDeleteFlag = { ...taskItem.task, _deleted: true };
-        onTaskUpdate(taskToDelete.projectId, taskWithDeleteFlag);
-        toast({
-          title: "Задача удалена",
-          description: `Задача "${taskItem.task.name}" была успешно удалена.`,
-        });
-      }
-    }
-    setIsDeleteDialogOpen(false);
-    setTaskToDelete(null);
+  const handleUpdateProgress = (projectId: string, task: Task) => {
+    const newProgress =
+      progressValues[task.id] !== undefined
+        ? progressValues[task.id]
+        : task.progress || 0;
+
+    onTaskUpdate(projectId, {
+      ...task,
+      progress: newProgress,
+    });
+
+    // Очищаем значение в стейте после обновления
+    const updatedValues = { ...progressValues };
+    delete updatedValues[task.id];
+    setProgressValues(updatedValues);
   };
 
-  // Если нет задач для отображения
-  if (employeeTasks.length === 0) {
+  if (tasks.length === 0) {
     return (
-      <div className="text-center py-6">
-        <p className="text-slate-500">Нет назначенных задач для сотрудника</p>
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <Icon
+          name="ClipboardCheck"
+          className="h-12 w-12 text-muted-foreground/50"
+        />
+        <h3 className="mt-4 text-lg font-medium">У вас нет задач</h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          На данный момент вам не назначено ни одной задачи
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="font-medium text-lg">Задачи сотрудника:</h3>
+    <div className="overflow-hidden rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Название</TableHead>
-            <TableHead>Проект</TableHead>
-            <TableHead>Статус</TableHead>
-            <TableHead>Даты</TableHead>
-            <TableHead>Прогресс</TableHead>
-            <TableHead>Действия</TableHead>
+            <TableHead className="w-[30%]">Задача</TableHead>
+            <TableHead className="w-[20%]">Проект</TableHead>
+            <TableHead className="w-[20%]">Дата</TableHead>
+            <TableHead className="w-[20%]">Прогресс</TableHead>
+            <TableHead className="w-[10%]">Действия</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {employeeTasks.map(({ task, project }, index) => (
-            <TaskRow 
-              key={task.id || index}
-              task={task}
-              project={project}
-              onDeleteTask={handleDeleteTask}
-              onTaskUpdate={onTaskUpdate}
-            />
+          {tasks.map(({ project, task }) => (
+            <TableRow key={task.id}>
+              <TableCell className="font-medium">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-help">{task.name}</div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <div className="max-w-xs space-y-1">
+                        <p className="font-medium">{task.name}</p>
+                        <p className="text-xs">
+                          {task.description || "Нет описания"}
+                        </p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </TableCell>
+
+              <TableCell>
+                <ProjectInfoBadge project={project} />
+              </TableCell>
+
+              <TableCell>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <Icon
+                      name="Calendar"
+                      className="h-3 w-3 text-muted-foreground"
+                    />
+                    <span>{formatDate(task.startDate)}</span>
+                  </div>
+                  {task.endDate && (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <Icon
+                        name="CalendarClock"
+                        className="h-3 w-3 text-muted-foreground"
+                      />
+                      <span>{formatDate(task.endDate)}</span>
+                    </div>
+                  )}
+                </div>
+              </TableCell>
+
+              <TableCell>
+                <div className="flex w-full items-center space-x-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    className="h-8 w-16"
+                    value={
+                      progressValues[task.id] !== undefined
+                        ? progressValues[task.id]
+                        : task.progress || 0
+                    }
+                    onChange={(e) =>
+                      handleProgressChange(
+                        task.id,
+                        parseInt(e.target.value, 10) || 0,
+                      )
+                    }
+                  />
+                  <div className="flex-1">
+                    <div className="h-2 w-full rounded-full bg-secondary">
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{
+                          width: `${
+                            progressValues[task.id] !== undefined
+                              ? progressValues[task.id]
+                              : task.progress || 0
+                          }%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </TableCell>
+
+              <TableCell>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleUpdateProgress(project.id, task)}
+                >
+                  <Icon name="Save" className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
         </TableBody>
       </Table>
-
-      <DeleteConfirmationDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={confirmDelete}
-        title="Удалить задачу"
-        description="Вы уверены, что хотите удалить задачу? Это действие нельзя отменить."
-      />
     </div>
   );
 };

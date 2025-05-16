@@ -1,142 +1,73 @@
-import React from "react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import Icon from "../ui/icon";
+
+import React from 'react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { Alert, AlertDescription } from '../ui/alert';
+import Icon from '../ui/icon';
 
 export const FileImportHelp: React.FC = () => {
   return (
-    <div className="mt-6">
-      <Alert>
-        <Icon name="Info" className="h-4 w-4" />
-        <AlertTitle>Подсказка по импорту</AlertTitle>
-        <AlertDescription>
-          Вы можете импортировать проекты из CSV, JSON или Excel файлов.
-        </AlertDescription>
-      </Alert>
-
-      <Accordion type="single" collapsible className="mt-4">
-        <AccordionItem value="csv-format">
-          <AccordionTrigger>Формат CSV файла</AccordionTrigger>
-          <AccordionContent>
-            <p className="mb-2">
-              CSV файл должен содержать следующие обязательные заголовки:
-            </p>
-            <ul className="list-disc pl-5 space-y-1 text-sm">
-              <li>
-                <code>projectName</code> - Название проекта
-              </li>
-              <li>
-                <code>name</code> - Название задачи
-              </li>
-            </ul>
-            <p className="mt-2 mb-2">Дополнительные поля:</p>
-            <ul className="list-disc pl-5 space-y-1 text-sm">
-              <li>
-                <code>description</code> - Описание задачи
-              </li>
-              <li>
-                <code>price</code> - Стоимость
-              </li>
-              <li>
-                <code>estimatedTime</code> - Оценка времени (в часах)
-              </li>
-              <li>
-                <code>startDate</code> - Дата начала (формат YYYY-MM-DD)
-              </li>
-              <li>
-                <code>endDate</code> - Дата окончания (формат YYYY-MM-DD)
-              </li>
-              <li>
-                <code>assignedTo</code> - Исполнитель (через запятую для
-                нескольких)
-              </li>
-              <li>
-                <code>progress</code> - Прогресс выполнения (0-100)
-              </li>
-            </ul>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="json-format">
-          <AccordionTrigger>Формат JSON файла</AccordionTrigger>
-          <AccordionContent>
-            <p className="mb-2">
-              JSON файл должен содержать объект проекта или массив проектов со
-              следующей структурой:
-            </p>
-            <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto mt-2">
-              {`{
+    <Accordion type="single" collapsible className="mt-4">
+      <AccordionItem value="help">
+        <AccordionTrigger>Инструкции по импорту</AccordionTrigger>
+        <AccordionContent>
+          <div className="space-y-4 text-sm">
+            <section className="space-y-2">
+              <h3 className="font-medium">Поддерживаемые форматы файлов:</h3>
+              <ul className="list-disc list-inside space-y-1">
+                <li><strong>CSV</strong> - текстовый формат с разделителями (поля разделены запятыми)</li>
+                <li><strong>JSON</strong> - формат структурированных данных</li>
+              </ul>
+            </section>
+            
+            <Alert>
+              <Icon name="InfoCircle" className="h-4 w-4" />
+              <AlertDescription>
+                Для импорта из Excel, пожалуйста, сохраните таблицу как CSV-файл: 
+                в Excel выберите "Файл" → "Сохранить как" → выберите "CSV (разделители - запятые)"
+              </AlertDescription>
+            </Alert>
+            
+            <section className="space-y-2">
+              <h3 className="font-medium">Структура CSV файла:</h3>
+              <p>CSV файл должен содержать следующие колонки:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li><strong>projectName</strong> - название проекта</li>
+                <li><strong>name</strong> - название задачи</li>
+                <li><strong>description</strong> - описание задачи (необязательно)</li>
+                <li><strong>price</strong> - стоимость задачи (необязательно)</li>
+                <li><strong>estimatedTime</strong> - оценка времени в часах (необязательно)</li>
+                <li><strong>startDate</strong> - дата начала (необязательно)</li>
+                <li><strong>endDate</strong> - дата окончания (необязательно)</li>
+                <li><strong>assignedTo</strong> - назначенные исполнители через запятую (необязательно)</li>
+                <li><strong>progress</strong> - прогресс выполнения в процентах (необязательно)</li>
+              </ul>
+            </section>
+            
+            <section className="space-y-2">
+              <h3 className="font-medium">Структура JSON файла:</h3>
+              <p>JSON файл должен содержать объект проекта или массив проектов со следующей структурой:</p>
+              <pre className="bg-slate-100 p-2 rounded text-xs overflow-auto">
+{`{
   "name": "Название проекта",
   "description": "Описание проекта",
   "tasks": [
     {
-      "name": "Название задачи",
+      "name": "Задача 1",
       "description": "Описание задачи",
       "price": 1000,
-      "estimatedTime": 5,
-      "startDate": "2023-06-01",
-      "endDate": "2023-06-10",
+      "estimatedTime": 8,
+      "startDate": "2023-05-15",
+      "endDate": "2023-05-20",
       "assignedTo": "Иванов И.И., Петров П.П.",
       "progress": 50
     }
   ]
 }`}
-            </pre>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="excel-format">
-          <AccordionTrigger>Формат Excel файла</AccordionTrigger>
-          <AccordionContent>
-            <p className="mb-2">
-              Excel файл должен содержать таблицу со следующими обязательными
-              столбцами:
-            </p>
-            <ul className="list-disc pl-5 space-y-1 text-sm">
-              <li>
-                <code>projectName</code> - Название проекта
-              </li>
-              <li>
-                <code>name</code> - Название задачи
-              </li>
-            </ul>
-            <p className="mt-2 mb-2">Дополнительные столбцы:</p>
-            <ul className="list-disc pl-5 space-y-1 text-sm">
-              <li>
-                <code>description</code> - Описание задачи
-              </li>
-              <li>
-                <code>price</code> - Стоимость
-              </li>
-              <li>
-                <code>estimatedTime</code> - Оценка времени (в часах)
-              </li>
-              <li>
-                <code>startDate</code> - Дата начала
-              </li>
-              <li>
-                <code>endDate</code> - Дата окончания
-              </li>
-              <li>
-                <code>assignedTo</code> - Исполнитель (через запятую для
-                нескольких)
-              </li>
-              <li>
-                <code>progress</code> - Прогресс выполнения (0-100)
-              </li>
-            </ul>
-            <p className="mt-2 text-sm italic">
-              Поддерживаются также русские названия столбцов: Имя проекта,
-              Название задачи, Описание, Цена, Время и т.д.
-            </p>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </div>
+              </pre>
+            </section>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 };

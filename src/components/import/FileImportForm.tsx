@@ -11,11 +11,7 @@ import {
 import { Label } from "../ui/label";
 import { toast } from "sonner";
 import { Project } from "@/types/project";
-import {
-  parseCSVFile,
-  parseJSONFile,
-  parseExcelFile,
-} from "./fileParsingUtils";
+import { parseCSVFile, parseJSONFile } from "./fileParsingUtils";
 import { FileImportHelp } from "./FileImportHelp";
 import Icon from "../ui/icon";
 
@@ -48,31 +44,19 @@ export const FileImportForm: React.FC<FileImportFormProps> = ({ onImport }) => {
     }
 
     const fileExtension = file.name.split(".").pop()?.toLowerCase();
-    if (
-      fileExtension !== "csv" &&
-      fileExtension !== "json" &&
-      fileExtension !== "xlsx" &&
-      fileExtension !== "xls"
-    ) {
-      toast.error("Поддерживаются только файлы CSV, JSON или Excel (xlsx/xls)");
+    if (fileExtension !== "csv" && fileExtension !== "json") {
+      toast.error("Поддерживаются только файлы CSV или JSON");
       return;
     }
 
     setLoading(true);
     try {
-      if (fileExtension === "csv" || fileExtension === "json") {
-        // Текстовые форматы (CSV, JSON)
-        const fileContent = await readFileAsText(file);
+      const fileContent = await readFileAsText(file);
 
-        if (fileExtension === "csv") {
-          parseCSVFile(fileContent, onImport, resetForm);
-        } else if (fileExtension === "json") {
-          parseJSONFile(fileContent, onImport, resetForm);
-        }
-      } else if (fileExtension === "xlsx" || fileExtension === "xls") {
-        // Бинарные форматы (Excel)
-        const fileContent = await readFileAsArrayBuffer(file);
-        await parseExcelFile(fileContent, onImport, resetForm);
+      if (fileExtension === "csv") {
+        parseCSVFile(fileContent, onImport, resetForm);
+      } else if (fileExtension === "json") {
+        parseJSONFile(fileContent, onImport, resetForm);
       }
     } catch (error) {
       console.error("Ошибка при импорте файла:", error);
@@ -106,32 +90,12 @@ export const FileImportForm: React.FC<FileImportFormProps> = ({ onImport }) => {
     });
   };
 
-  const readFileAsArrayBuffer = (file: File): Promise<ArrayBuffer> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          resolve(event.target.result as ArrayBuffer);
-        } else {
-          reject(new Error("Не удалось прочитать файл"));
-        }
-      };
-
-      reader.onerror = () => {
-        reject(new Error("Ошибка при чтении файла"));
-      };
-
-      reader.readAsArrayBuffer(file);
-    });
-  };
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-xl">Импорт из файла</CardTitle>
         <CardDescription>
-          Загрузите CSV, JSON или Excel файл с данными проекта
+          Загрузите CSV или JSON файл с данными проекта
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -147,10 +111,14 @@ export const FileImportForm: React.FC<FileImportFormProps> = ({ onImport }) => {
               id="file-upload"
               ref={fileInputRef}
               type="file"
-              accept=".csv,.json,.xlsx,.xls"
+              accept=".csv,.json"
               onChange={handleFileChange}
               className="w-full"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Для Excel-файлов: сохраните таблицу как CSV в Excel и затем
+              загрузите полученный CSV-файл
+            </p>
           </div>
 
           {file && (

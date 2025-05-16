@@ -7,7 +7,6 @@ import {
   validateCSVHeaders,
   rowsToObjects,
 } from "./utils/csvUtils";
-import { parseExcelFile, normalizeExcelData } from "./utils/excelUtils";
 import {
   groupTasksByProject,
   convertProjectMapToArray,
@@ -88,51 +87,104 @@ export const parseJSONFile = (
   }
 };
 
-/**
- * Обрабатывает файл Excel (.xlsx, .xls)
- * @param fileContent - ArrayBuffer содержимого Excel файла
- * @param onImport - Callback для импорта проекта
- * @param resetForm - Функция для сброса формы
- */
-export const parseExcelFile = async (
-  fileContent: ArrayBuffer,
-  onImport: ImportCallback,
-  resetForm: ResetFormFunction,
-) => {
-  try {
-    // Парсим Excel и получаем данные
-    const data = await parseExcelFile(fileContent);
-
-    // Нормализуем имена полей
-    const normalizedData = normalizeExcelData(data);
-
-    // Группируем задачи по проектам
-    const projectsMap = groupTasksByProject(normalizedData);
-    validateProjectsMap(projectsMap);
-
-    // Создаем и импортируем проекты
-    importProjects(projectsMap, onImport);
-
-    // Очищаем форму и показываем сообщение об успехе
-    toast.success(
-      `Успешно импортировано проектов из Excel: ${projectsMap.size}`,
-    );
-    resetForm();
-  } catch (error) {
-    console.error("Ошибка при обработке Excel:", error);
-    throw error instanceof Error
-      ? error
-      : new Error("Ошибка при обработке Excel файла");
-  }
-};
-
 // Вспомогательные функции
 
 /**
  * Проверяет базовую валидность содержимого CSV
  */
 function validateCSVContent(csvContent: string): void {
-  // ... существующий код ...
+  if (!csvContent.trim()) {
+    throw new Error("Файл пуст");
+  }
+
+  const rows = csvContent.split("\n").filter((row) => row.trim());
+  if (rows.length < 2) {
+    throw new Error("Файл не содержит данных или заголовков");
+  }
 }
 
-// ... остальные вспомогательные функции ...
+/**
+ * Проверяет валидность заголовков CSV и выбрасывает ошибку если они невалидны
+ */
+function validateCSVHeadersAndThrow(headers: string[]): void {
+  const { isValid, missingHeaders } = validateCSVHeaders(headers);
+
+  if (!isValid) {
+    throw new Error(
+      `Отсутствуют обязательные заголовки: ${missingHeaders.join(", ")}`,
+    );
+  }
+}
+
+/**
+ * Проверяет, что карта проектов не пуста
+ */
+function validateProjectsMap(projectsMap: Map<string, any>): void {
+  if (projectsMap.size === 0) {
+    throw new Error("Не удалось извлечь данные о проектах из файла");
+  }
+}
+
+/**
+ * Преобразует карту проектов в массив и выполняет импорт
+ */
+function importProjects(
+  projectsMap: Map<string, any>,
+  onImport: ImportCallback,
+): void {
+  const projects = convertProjectMapToArray(projectsMap);
+  projects.forEach(onImport);
+}
+
+/**
+ * Проверяет валидность JSON данных
+ */
+function validateJSONData(data: any): void {
+  if (!data || typeof data !== "object") {
+    throw new Error("Неверный формат JSON файла");
+  }
+}
+
+/**
+ * Обрабатывает массив данных из JSON
+ */
+function handleJSONArray(
+  data: any[],
+  onImport: ImportCallback,
+  resetForm: ResetFormFunction,
+): void {
+  let importCount = 0;
+
+  data.forEach((item) => {
+    if (isValidProject(item)) {
+      const newProject = createProjectFromJSON(item);
+      onImport(newProject);
+      importCount++;
+    }
+  });
+
+  if (importCount > 0) {
+    toast.success(`Успешно импортировано проектов: ${importCount}`);
+    resetForm();
+  } else {
+    throw new Error("В файле не найдено действительных проектов");
+  }
+}
+
+/**
+ * Обрабатывает одиночный объект из JSON
+ */
+function handleJSONObject(
+  data: any,
+  onImport: ImportCallback,
+  resetForm: ResetFormFunction,
+): void {
+  if (isValidProject(data)) {
+    const newProject = createProjectFromJSON(data);
+    onImport(newProject);
+    toast.success(`Проект "${newProject.name}" успешно импортирован`);
+    resetForm();
+  } else {
+    throw new Error("В файле не найдено действительных проектов");
+  }
+}

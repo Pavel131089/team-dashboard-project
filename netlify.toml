@@ -3,5 +3,7 @@
   publish = "dist"
   command = "npm run build"
 
-[context.production]
-  branch = "main"  # Указываем основную ветку для продакшн-деплоя
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

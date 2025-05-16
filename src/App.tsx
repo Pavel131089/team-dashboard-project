@@ -11,6 +11,8 @@ import NotFound from "./pages/NotFound";
 import DatabaseStatus from "./pages/DatabaseStatus";
 import UserImportHandler from "./components/users/UserImportHandler";
 
+// Убедитесь, что BrowserRouter не содержит неправильный basename,
+// если вы не используете подпапку для деплоя
 const App = () => {
   return (
     <TooltipProvider delayDuration={0}>

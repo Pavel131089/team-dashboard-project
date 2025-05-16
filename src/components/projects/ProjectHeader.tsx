@@ -27,6 +27,22 @@ const calculateTotalTasksPrice = (project: Project): number => {
   return project.tasks.reduce((total, task) => total + (task.price || 0), 0);
 };
 
+// Функция для расчета количества дней, прошедших с начала проекта
+const calculateDaysElapsed = (startDate: string | null | undefined): number => {
+  if (!startDate) return 0;
+
+  const start = new Date(startDate);
+  const today = new Date();
+
+  // Если проект еще не начался, возвращаем 0
+  if (start > today) return 0;
+
+  // Разница в миллисекундах
+  const diffTime = Math.abs(today.getTime() - start.getTime());
+  // Конвертация в дни
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
 interface ProjectHeaderProps {
   project: Project;
 }
@@ -35,11 +51,8 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ project }) => {
   // Рассчитываем общую стоимость задач
   const totalTasksPrice = calculateTotalTasksPrice(project);
 
-  // Рассчитываем количество дней выполнения проекта
-  const projectDuration = calculateDaysBetween(
-    project.startDate,
-    project.endDate,
-  );
+  // Рассчитываем количество дней, прошедших с начала проекта
+  const daysElapsed = calculateDaysElapsed(project.startDate);
 
   // Количество задач в проекте
   const tasksCount = project.tasks.length;
@@ -80,12 +93,12 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ project }) => {
           </div>
           <div className="flex items-center gap-1.5">
             <Icon name="Clock" className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Длительность:</span>
+            <span className="text-sm text-muted-foreground">Прошло дней:</span>
             <span className="text-sm font-medium">
-              {projectDuration}{" "}
-              {projectDuration === 1
+              {daysElapsed}{" "}
+              {daysElapsed === 1
                 ? "день"
-                : projectDuration > 1 && projectDuration < 5
+                : daysElapsed > 1 && daysElapsed < 5
                   ? "дня"
                   : "дней"}
             </span>

@@ -2,11 +2,19 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Task } from "@/types/project";
 import { toast } from "@/components/ui/use-toast";
+
+// Импорт компонентов полей формы
+import TaskNameField from "./form-fields/TaskNameField";
+import TaskDescriptionField from "./form-fields/TaskDescriptionField";
+import TaskMetadataFields from "./form-fields/TaskMetadataFields";
+import TaskDateFields from "./form-fields/TaskDateFields";
+import TaskProgressField from "./form-fields/TaskProgressField";
+import TaskAssigneesField from "./form-fields/TaskAssigneesField";
+
+// Импорт утилит для работы с формой
+import { TaskFormData, prepareTaskDataFromForm, validateTaskForm, processInputValue } from "./TaskFormUtils";
 
 /**
  * Интерфейс пропсов для диалога редактирования задачи
@@ -17,6 +25,7 @@ interface TaskEditDialogProps {
   task: Task | null;
   projectId: string;
   onSave: (projectId: string, updatedTask: Task) => void;
+  isReadOnly?: boolean;
 }
 
 /**
@@ -28,13 +37,26 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
   task,
   projectId,
   onSave,
+  isReadOnly = false,
 }) => {
   // Состояние формы
-  const [formData, setFormData] = useState<Partial<Task>>({});
+  const [formData, setFormData] = useState<TaskFormData>({});
+  // Отдельное состояние для поля исполнителей (для упрощения ввода)
+  const [assigneeInput, setAssigneeInput] = useState("");
 
   // Загружаем данные задачи при открытии диалога
   useEffect(() => {
-    if (task) {
+    if (task && isOpen) {
+      // Преобразуем массив исполнителей в строку
+      const assigneesString = Array.isArray(task.assignedToNames) 
+        ? task.assignedToNames.join(", ") 
+        : typeof task.assignedToNames === 'string' 
+          ? task.assignedToNames 
+          : "";
+      
+      setAssigneeInput(assigneesString);
+      
+      // Инициализируем форму данными из задачи
       setFormData({
         name: task.name || "",
         description: task.description || "",
@@ -53,18 +75,23 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
   }, [task, isOpen]);
 
   /**
-   * Обработчик изменения текстовых и числовых полей
+   * Обработчик изменения полей формы
    */
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value, type } = e.target as HTMLInputElement;
+    const { name, value } = e.target;
     
-    let processedValue: string | number = value;
-    if (type === "number") {
-      processedValue = value === "" ? 0 : parseFloat(value);
+    // Особая обработка для поля исполнителей
+    if (name === "assignedToNames") {
+      setAssigneeInput(value);
+      return;
     }
     
+    // Преобразование значения в соответствующий тип
+    const processedValue = processInputValue(name, value);
+    
+    // Обновление состояния формы
     setFormData((prev) => ({
       ...prev,
       [name]: processedValue,
@@ -75,20 +102,35 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
    * Обработчик сохранения данных задачи
    */
   const handleSubmit = () => {
-    if (!task || !formData.name) {
+    if (!task) {
       toast({
         title: "Ошибка",
-        description: "Необходимо указать название задачи",
+        description: "Задача не найдена",
         variant: "destructive",
       });
       return;
     }
 
-    const updatedTask: Task = {
-      ...task,
+    // Проверяем валидность данных формы
+    const formDataWithAssignees: TaskFormData = {
       ...formData,
+      assigneeInput,
     };
+    
+    const validationError = validateTaskForm(formDataWithAssignees);
+    if (validationError) {
+      toast({
+        title: "Ошибка валидации",
+        description: validationError,
+        variant: "destructive",
+      });
+      return;
+    }
 
+    // Подготавливаем данные для сохранения
+    const updatedTask = prepareTaskDataFromForm(formDataWithAssignees, task);
+
+    // Сохраняем задачу
     onSave(projectId, updatedTask);
     onClose();
     
@@ -98,240 +140,72 @@ const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
     });
   };
 
+  // Если задача не передана, не отображаем диалог
   if (!task) return null;
+
+  // Формируем заголовок в зависимости от режима
+  const dialogTitle = isReadOnly ? "Просмотр задачи" : "Редактирование задачи";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Редактирование задачи</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
           <TaskNameField 
             value={formData.name || ""} 
-            onChange={handleInputChange} 
+            onChange={handleInputChange}
+            disabled={isReadOnly}
           />
           
           <TaskDescriptionField 
             value={formData.description || ""} 
-            onChange={handleInputChange} 
+            onChange={handleInputChange}
+            disabled={isReadOnly}
+          />
+          
+          <TaskAssigneesField
+            value={assigneeInput}
+            onChange={handleInputChange}
+            disabled={isReadOnly}
           />
           
           <TaskMetadataFields 
             price={formData.price} 
             estimatedTime={formData.estimatedTime}
             onChange={handleInputChange}
+            disabled={isReadOnly}
           />
           
           <TaskDateFields 
             startDate={formData.startDate}
             endDate={formData.endDate}
             onChange={handleInputChange}
+            disabled={isReadOnly}
           />
           
           <TaskProgressField 
             progress={formData.progress || 0}
             onChange={handleInputChange}
+            disabled={isReadOnly}
           />
         </div>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
-            Отмена
+            {isReadOnly ? "Закрыть" : "Отмена"}
           </Button>
-          <Button type="button" onClick={handleSubmit}>
-            Сохранить
-          </Button>
+          {!isReadOnly && (
+            <Button type="button" onClick={handleSubmit}>
+              Сохранить
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
-
-/**
- * Компонент поля имени задачи
- */
-interface InputFieldProps {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-}
-
-const TaskNameField: React.FC<InputFieldProps> = ({ value, onChange }) => (
-  <div className="grid grid-cols-4 items-center gap-4">
-    <Label htmlFor="name" className="text-right">
-      Название
-    </Label>
-    <Input
-      id="name"
-      name="name"
-      value={value}
-      onChange={onChange}
-      className="col-span-3"
-    />
-  </div>
-);
-
-/**
- * Компонент поля описания задачи
- */
-const TaskDescriptionField: React.FC<InputFieldProps> = ({ value, onChange }) => (
-  <div className="grid grid-cols-4 items-center gap-4">
-    <Label htmlFor="description" className="text-right">
-      Описание
-    </Label>
-    <Textarea
-      id="description"
-      name="description"
-      value={value}
-      onChange={onChange}
-      className="col-span-3"
-      rows={3}
-    />
-  </div>
-);
-
-/**
- * Компонент полей метаданных задачи (стоимость и время)
- */
-interface TaskMetadataFieldsProps {
-  price?: number;
-  estimatedTime?: number;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
-
-const TaskMetadataFields: React.FC<TaskMetadataFieldsProps> = ({ 
-  price = 0, 
-  estimatedTime = 0, 
-  onChange 
-}) => (
-  <>
-    <div className="grid grid-cols-4 items-center gap-4">
-      <Label htmlFor="price" className="text-right">
-        Стоимость (₽)
-      </Label>
-      <Input
-        id="price"
-        name="price"
-        type="number"
-        value={price || ""}
-        onChange={onChange}
-        className="col-span-3"
-      />
-    </div>
-    
-    <div className="grid grid-cols-4 items-center gap-4">
-      <Label htmlFor="estimatedTime" className="text-right">
-        Время (ч)
-      </Label>
-      <Input
-        id="estimatedTime"
-        name="estimatedTime"
-        type="number"
-        value={estimatedTime || ""}
-        onChange={onChange}
-        className="col-span-3"
-      />
-    </div>
-  </>
-);
-
-/**
- * Компонент полей дат задачи
- */
-interface TaskDateFieldsProps {
-  startDate?: string | null;
-  endDate?: string | null;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
-
-const TaskDateFields: React.FC<TaskDateFieldsProps> = ({ 
-  startDate, 
-  endDate, 
-  onChange 
-}) => {
-  /**
-   * Форматирует дату из ISO в формат для input[type="date"]
-   */
-  const formatDateForInput = (dateStr?: string | null): string => {
-    if (!dateStr) return "";
-    try {
-      return new Date(dateStr).toISOString().split('T')[0];
-    } catch {
-      return "";
-    }
-  };
-
-  return (
-    <>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="startDate" className="text-right">
-          Дата начала
-        </Label>
-        <Input
-          id="startDate"
-          name="startDate"
-          type="date"
-          value={formatDateForInput(startDate)}
-          onChange={onChange}
-          className="col-span-3"
-        />
-      </div>
-      
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="endDate" className="text-right">
-          Дата окончания
-        </Label>
-        <Input
-          id="endDate"
-          name="endDate"
-          type="date"
-          value={formatDateForInput(endDate)}
-          onChange={onChange}
-          className="col-span-3"
-        />
-      </div>
-    </>
-  );
-};
-
-/**
- * Компонент поля прогресса задачи
- */
-interface TaskProgressFieldProps {
-  progress: number;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
-
-const TaskProgressField: React.FC<TaskProgressFieldProps> = ({ progress, onChange }) => (
-  <div className="grid grid-cols-4 items-center gap-4">
-    <Label htmlFor="progress" className="text-right">
-      Прогресс (%)
-    </Label>
-    <div className="col-span-3 flex items-center gap-2">
-      <Input
-        id="progress"
-        name="progress"
-        type="number"
-        min="0"
-        max="100"
-        value={progress}
-        onChange={onChange}
-        className="w-20"
-      />
-      <input
-        type="range"
-        id="progress-range"
-        name="progress"
-        min="0"
-        max="100"
-        value={progress}
-        onChange={onChange}
-        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-      />
-      <span className="w-9 text-center">{progress}%</span>
-    </div>
-  </div>
-);
 
 export default TaskEditDialog;

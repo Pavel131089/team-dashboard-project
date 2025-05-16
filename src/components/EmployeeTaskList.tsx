@@ -49,6 +49,12 @@ const EmployeeTaskList: React.FC<EmployeeTaskListProps> = ({
     newProgress: number,
   ) => {
     const updatedTask = { ...task, progress: newProgress };
+    
+    // Если прогресс достиг 100%, устанавливаем дату завершения
+    if (newProgress === 100 && !updatedTask.actualEndDate) {
+      updatedTask.actualEndDate = new Date().toISOString();
+    }
+    
     onTaskUpdate(projectId, updatedTask);
   };
 
@@ -84,12 +90,14 @@ const EmployeeTaskList: React.FC<EmployeeTaskListProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[250px]">Задача</TableHead>
-            <TableHead className="w-[130px]">Проект</TableHead>
-            <TableHead className="w-[130px]">Дата начала</TableHead>
-            <TableHead className="w-[130px]">Дата окончания</TableHead>
-            <TableHead className="w-[200px]">Прогресс</TableHead>
-            <TableHead className="w-[80px]">Действия</TableHead>
+            <TableHead className="w-[200px]">Задача</TableHead>
+            <TableHead className="w-[120px]">Проект</TableHead>
+            <TableHead className="w-[120px]">План. начало</TableHead>
+            <TableHead className="w-[120px]">План. конец</TableHead>
+            <TableHead className="w-[120px]">Взята в работу</TableHead>
+            <TableHead className="w-[120px]">Выполнена</TableHead>
+            <TableHead className="w-[180px]">Прогресс</TableHead>
+            <TableHead className="w-[60px]">Действия</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -117,6 +125,12 @@ const EmployeeTaskList: React.FC<EmployeeTaskListProps> = ({
                 <TableCell>{formatDate(task.startDate)}</TableCell>
                 <TableCell>{formatDate(task.endDate)}</TableCell>
                 <TableCell>
+                  {formatDate(task.actualStartDate)}
+                </TableCell>
+                <TableCell>
+                  {formatDate(task.actualEndDate)}
+                </TableCell>
+                <TableCell>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="text-xs">{task.progress}%</span>
@@ -127,7 +141,7 @@ const EmployeeTaskList: React.FC<EmployeeTaskListProps> = ({
                         min={0}
                         max={100}
                         step={5}
-                        className="mr-2 mb-2"
+                        className="mb-2"
                         onValueChange={(values) =>
                           handleProgressChange(project.id, task, values[0])
                         }
@@ -161,7 +175,7 @@ const EmployeeTaskList: React.FC<EmployeeTaskListProps> = ({
               {/* Развернутая информация о задаче */}
               {expandedTaskId === task.id && (
                 <TableRow>
-                  <TableCell colSpan={6} className="bg-muted/30 px-4 py-3">
+                  <TableCell colSpan={8} className="bg-muted/30 px-4 py-3">
                     <div className="space-y-2">
                       {/* Дополнительная информация о задаче */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">

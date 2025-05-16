@@ -3,6 +3,7 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import EmployeeTaskList from "@/components/EmployeeTaskList";
 import { Task } from "@/types/project";
+import Icon from "@/components/ui/icon";
 
 interface EmployeeTasksCardProps {
   userTasks: {project: any, task: Task}[];
@@ -26,7 +27,10 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Мои задачи</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Icon name="CheckSquare" className="h-5 w-5 text-primary" />
+          Мои задачи
+        </CardTitle>
         <CardDescription>
           Задачи, назначенные на вас
         </CardDescription>

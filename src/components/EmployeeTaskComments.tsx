@@ -1,10 +1,9 @@
 
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import TaskComments from "@/components/employee/TaskComments";
-import TaskCommentForm from "@/components/employee/TaskCommentForm";
-import Icon from "@/components/ui/icon";
 import { Task } from "@/types/project";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import Icon from "@/components/ui/icon";
 
 interface EmployeeTaskCommentsProps {
   task: Task;
@@ -13,61 +12,75 @@ interface EmployeeTaskCommentsProps {
 
 const EmployeeTaskComments: React.FC<EmployeeTaskCommentsProps> = ({
   task,
-  onUpdateTask
+  onUpdateTask,
 }) => {
-  const [showCommentForm, setShowCommentForm] = useState(false);
   const [newComment, setNewComment] = useState("");
-  
-  // Проверяем, есть ли у задачи комментарии
-  const hasComments = task.comments && task.comments.length > 0;
-  
-  // Добавить новый комментарий
+
+  // Добавляем новый комментарий
   const handleAddComment = () => {
     if (!newComment.trim()) return;
+
+    // Форматируем комментарий с датой и временем
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString("ru-RU");
+    const formattedTime = now.toLocaleTimeString("ru-RU", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
     
-    // Создаем новый комментарий с текущей датой
-    const commentWithDate = `${new Date().toLocaleString('ru-RU')}: ${newComment}`;
+    const formattedComment = `${formattedDate}, ${formattedTime}: ${newComment}`;
     
-    // Создаем обновленную задачу с новым комментарием
-    const updatedTask = {
-      ...task,
-      comments: [...(task.comments || []), commentWithDate]
-    };
+    // Создаем обновленный массив комментариев
+    const updatedComments = task.comments 
+      ? [...task.comments, formattedComment] 
+      : [formattedComment];
     
     // Обновляем задачу
-    onUpdateTask(updatedTask);
+    onUpdateTask({
+      ...task,
+      comments: updatedComments,
+    });
     
-    // Сбрасываем форму
+    // Очищаем поле ввода
     setNewComment("");
-    setShowCommentForm(false);
   };
-  
+
   return (
-    <div className="mt-2 space-y-2">
-      {/* Отображаем комментарии, если они есть */}
-      {hasComments && (
-        <TaskComments comments={task.comments || []} />
+    <div className="space-y-3">
+      {/* Отображение существующих комментариев */}
+      {task.comments && task.comments.length > 0 && (
+        <div className="mt-2">
+          <h4 className="text-sm font-medium mb-2">Комментарии:</h4>
+          <ul className="space-y-1 text-sm">
+            {task.comments.map((comment, index) => (
+              <li key={index} className="pl-2 border-l-2 border-gray-200">
+                {comment}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
-      
-      {/* Отображаем форму добавления комментария или кнопку */}
-      {showCommentForm ? (
-        <TaskCommentForm
-          comment={newComment}
-          onCommentChange={setNewComment}
-          onSave={handleAddComment}
-          onCancel={() => setShowCommentForm(false)}
+
+      {/* Форма добавления комментария */}
+      <div className="flex flex-col space-y-2">
+        <Textarea
+          placeholder="Добавить комментарий..."
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          className="min-h-[60px]"
         />
-      ) : (
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => setShowCommentForm(true)}
-          className="text-xs h-8"
-        >
-          <Icon name="MessageSquarePlus" className="mr-1 h-3.5 w-3.5" />
-          {hasComments ? "Добавить комментарий" : "Написать комментарий"}
-        </Button>
-      )}
+        <div className="flex justify-end">
+          <Button 
+            onClick={handleAddComment} 
+            size="sm" 
+            disabled={!newComment.trim()}
+          >
+            <Icon name="MessageSquarePlus" className="h-4 w-4 mr-1" />
+            Добавить комментарий
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

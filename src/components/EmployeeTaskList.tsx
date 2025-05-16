@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
@@ -35,7 +36,7 @@ const EmployeeTaskList: React.FC<EmployeeTaskListProps> = ({
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return "—";
     try {
-      return format(new Date(dateStr), "dd MMM yyyy", { locale: ru });
+      return format(new Date(dateStr), "d MMMM yyyy", { locale: ru });
     } catch (e) {
       return dateStr;
     }
@@ -164,17 +165,17 @@ const EmployeeTaskList: React.FC<EmployeeTaskListProps> = ({
                     <div className="space-y-2">
                       {/* Дополнительная информация о задаче */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                        {task.price && (
+                        {task.price !== undefined && task.price !== null && (
                           <div className="flex items-center gap-1">
                             <Icon
                               name="CircleDollarSign"
                               className="h-4 w-4 text-muted-foreground"
                             />
                             <span className="text-muted-foreground">Цена:</span>
-                            <span>{task.price} 20</span>
+                            <span>{task.price} ₽</span>
                           </div>
                         )}
-                        {task.estimatedTime && (
+                        {task.estimatedTime !== undefined && task.estimatedTime !== null && (
                           <div className="flex items-center gap-1">
                             <Icon
                               name="Clock"
@@ -183,7 +184,7 @@ const EmployeeTaskList: React.FC<EmployeeTaskListProps> = ({
                             <span className="text-muted-foreground">
                               Оценка времени:
                             </span>
-                            <span>{task.estimatedTime} 47</span>
+                            <span>{task.estimatedTime} ч</span>
                           </div>
                         )}
                       </div>

@@ -1,5 +1,4 @@
 
-import * as XLSX from 'xlsx';
 import { Task } from '@/types/project';
 
 /**
@@ -7,8 +6,11 @@ import { Task } from '@/types/project';
  * @param fileContent - ArrayBuffer содержимого Excel-файла
  * @returns массив объектов, представляющих строки Excel
  */
-export const parseExcelFile = (fileContent: ArrayBuffer): Record<string, any>[] => {
+export const parseExcelFile = async (fileContent: ArrayBuffer): Promise<Record<string, any>[]> => {
   try {
+    // Динамический импорт xlsx для решения проблем совместимости
+    const XLSX = await import('xlsx');
+    
     // Читаем файл Excel
     const workbook = XLSX.read(fileContent, { type: 'array' });
     

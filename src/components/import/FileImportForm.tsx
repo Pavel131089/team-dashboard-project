@@ -41,11 +41,6 @@ export const FileImportForm: React.FC<FileImportFormProps> = ({ onImport }) => {
     }
   };
 
-  const isExcelFile = (fileName: string): boolean => {
-    const extension = fileName.split(".").pop()?.toLowerCase();
-    return extension === "xlsx" || extension === "xls";
-  };
-
   const handleImport = async () => {
     if (!file) {
       toast.error("Пожалуйста, выберите файл для импорта");
@@ -53,23 +48,20 @@ export const FileImportForm: React.FC<FileImportFormProps> = ({ onImport }) => {
     }
 
     const fileExtension = file.name.split(".").pop()?.toLowerCase();
-    const supportedFormats = ["csv", "json", "xlsx", "xls"];
-
-    if (!fileExtension || !supportedFormats.includes(fileExtension)) {
-      toast.error(
-        "Поддерживаются только файлы CSV, JSON или Excel (XLSX, XLS)",
-      );
+    if (
+      fileExtension !== "csv" &&
+      fileExtension !== "json" &&
+      fileExtension !== "xlsx" &&
+      fileExtension !== "xls"
+    ) {
+      toast.error("Поддерживаются только файлы CSV, JSON или Excel (xlsx/xls)");
       return;
     }
 
     setLoading(true);
     try {
-      if (isExcelFile(file.name)) {
-        // Для Excel файлов используем ArrayBuffer
-        const fileContent = await readFileAsArrayBuffer(file);
-        parseExcelFile(fileContent, onImport, resetForm);
-      } else {
-        // Для CSV и JSON используем текстовый формат
+      if (fileExtension === "csv" || fileExtension === "json") {
+        // Текстовые форматы (CSV, JSON)
         const fileContent = await readFileAsText(file);
 
         if (fileExtension === "csv") {
@@ -77,6 +69,10 @@ export const FileImportForm: React.FC<FileImportFormProps> = ({ onImport }) => {
         } else if (fileExtension === "json") {
           parseJSONFile(fileContent, onImport, resetForm);
         }
+      } else if (fileExtension === "xlsx" || fileExtension === "xls") {
+        // Бинарные форматы (Excel)
+        const fileContent = await readFileAsArrayBuffer(file);
+        await parseExcelFile(fileContent, onImport, resetForm);
       }
     } catch (error) {
       console.error("Ошибка при импорте файла:", error);
@@ -110,7 +106,6 @@ export const FileImportForm: React.FC<FileImportFormProps> = ({ onImport }) => {
     });
   };
 
-  // Добавляем функцию для чтения файла как ArrayBuffer (для Excel)
   const readFileAsArrayBuffer = (file: File): Promise<ArrayBuffer> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();

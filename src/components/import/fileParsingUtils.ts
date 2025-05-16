@@ -7,13 +7,13 @@ import {
   validateCSVHeaders,
   rowsToObjects,
 } from "./utils/csvUtils";
+import { parseExcelFile, normalizeExcelData } from "./utils/excelUtils";
 import {
   groupTasksByProject,
   convertProjectMapToArray,
   isValidProject,
   createProjectFromJSON,
 } from "./utils/projectUtils";
-import { parseExcelFile, normalizeExcelData } from "./utils/excelUtils";
 
 // Типы
 type ResetFormFunction = () => void;
@@ -89,22 +89,22 @@ export const parseJSONFile = (
 };
 
 /**
- * Обрабатывает файл Excel
- * @param excelContent - Содержимое Excel файла как ArrayBuffer
+ * Обрабатывает файл Excel (.xlsx, .xls)
+ * @param fileContent - ArrayBuffer содержимого Excel файла
  * @param onImport - Callback для импорта проекта
  * @param resetForm - Функция для сброса формы
  */
-export const parseExcelFile = (
-  excelContent: ArrayBuffer,
+export const parseExcelFile = async (
+  fileContent: ArrayBuffer,
   onImport: ImportCallback,
   resetForm: ResetFormFunction,
 ) => {
   try {
-    // Парсим Excel-файл в массив объектов
-    const excelData = parseExcelFile(excelContent);
+    // Парсим Excel и получаем данные
+    const data = await parseExcelFile(fileContent);
 
-    // Нормализуем имена полей (приводим к стандартным именам)
-    const normalizedData = normalizeExcelData(excelData);
+    // Нормализуем имена полей
+    const normalizedData = normalizeExcelData(data);
 
     // Группируем задачи по проектам
     const projectsMap = groupTasksByProject(normalizedData);
@@ -114,12 +114,25 @@ export const parseExcelFile = (
     importProjects(projectsMap, onImport);
 
     // Очищаем форму и показываем сообщение об успехе
-    toast.success(`Успешно импортировано проектов: ${projectsMap.size}`);
+    toast.success(
+      `Успешно импортировано проектов из Excel: ${projectsMap.size}`,
+    );
     resetForm();
   } catch (error) {
     console.error("Ошибка при обработке Excel:", error);
-    throw error;
+    throw error instanceof Error
+      ? error
+      : new Error("Ошибка при обработке Excel файла");
   }
 };
 
-// Остальные вспомогательные функции остаются без изменений...
+// Вспомогательные функции
+
+/**
+ * Проверяет базовую валидность содержимого CSV
+ */
+function validateCSVContent(csvContent: string): void {
+  // ... существующий код ...
+}
+
+// ... остальные вспомогательные функции ...

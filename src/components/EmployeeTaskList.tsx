@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
@@ -49,12 +48,12 @@ const EmployeeTaskList: React.FC<EmployeeTaskListProps> = ({
     newProgress: number,
   ) => {
     const updatedTask = { ...task, progress: newProgress };
-    
+
     // Если прогресс достиг 100%, устанавливаем дату завершения
     if (newProgress === 100 && !updatedTask.actualEndDate) {
       updatedTask.actualEndDate = new Date().toISOString();
     }
-    
+
     onTaskUpdate(projectId, updatedTask);
   };
 
@@ -124,12 +123,8 @@ const EmployeeTaskList: React.FC<EmployeeTaskListProps> = ({
                 </TableCell>
                 <TableCell>{formatDate(task.startDate)}</TableCell>
                 <TableCell>{formatDate(task.endDate)}</TableCell>
-                <TableCell>
-                  {formatDate(task.actualStartDate)}
-                </TableCell>
-                <TableCell>
-                  {formatDate(task.actualEndDate)}
-                </TableCell>
+                <TableCell>{formatDate(task.actualStartDate)}</TableCell>
+                <TableCell>{formatDate(task.actualEndDate)}</TableCell>
                 <TableCell>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
@@ -189,18 +184,19 @@ const EmployeeTaskList: React.FC<EmployeeTaskListProps> = ({
                             <span>{task.price} ₽</span>
                           </div>
                         )}
-                        {task.estimatedTime !== undefined && task.estimatedTime !== null && (
-                          <div className="flex items-center gap-1">
-                            <Icon
-                              name="Clock"
-                              className="h-4 w-4 text-muted-foreground"
-                            />
-                            <span className="text-muted-foreground">
-                              Оценка времени:
-                            </span>
-                            <span>{task.estimatedTime} ч</span>
-                          </div>
-                        )}
+                        {task.estimatedTime !== undefined &&
+                          task.estimatedTime !== null && (
+                            <div className="flex items-center gap-1">
+                              <Icon
+                                name="Clock"
+                                className="h-4 w-4 text-muted-foreground"
+                              />
+                              <span className="text-muted-foreground">
+                                Оценка времени:
+                              </span>
+                              <span>{task.estimatedTime} ч</span>
+                            </div>
+                          )}
                       </div>
 
                       {/* Компонент работы с комментариями */}

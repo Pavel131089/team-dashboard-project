@@ -10,11 +10,11 @@ interface TaskAssigneesFieldProps {
 }
 
 /**
- * Компонент поля для указания исполнителей задачи
+ * Компонент поля ввода исполнителей задачи
  */
 const TaskAssigneesField: React.FC<TaskAssigneesFieldProps> = ({ 
   value, 
-  onChange,
+  onChange, 
   disabled = false 
 }) => (
   <div className="grid grid-cols-4 items-center gap-4">
@@ -28,7 +28,7 @@ const TaskAssigneesField: React.FC<TaskAssigneesFieldProps> = ({
       onChange={onChange}
       className="col-span-3"
       disabled={disabled}
-      placeholder="Введите имена исполнителей через запятую"
+      placeholder="Введите имена через запятую"
     />
   </div>
 );

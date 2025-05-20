@@ -2,6 +2,7 @@
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 
 interface TaskProgressFieldProps {
   progress: number;
@@ -14,39 +15,57 @@ interface TaskProgressFieldProps {
  */
 const TaskProgressField: React.FC<TaskProgressFieldProps> = ({ 
   progress, 
-  onChange,
+  onChange, 
   disabled = false 
-}) => (
-  <div className="grid grid-cols-4 items-center gap-4">
-    <Label htmlFor="progress" className="text-right">
-      Прогресс (%)
-    </Label>
-    <div className="col-span-3 flex items-center gap-2">
-      <Input
-        id="progress"
-        name="progress"
-        type="number"
-        min="0"
-        max="100"
-        value={progress}
-        onChange={onChange}
-        className="w-20"
-        disabled={disabled}
-      />
-      <input
-        type="range"
-        id="progress-range"
-        name="progress"
-        min="0"
-        max="100"
-        value={progress}
-        onChange={onChange}
-        className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-        disabled={disabled}
-      />
-      <span className="w-9 text-center">{progress}%</span>
+}) => {
+  // Обработчик изменения слайдера
+  const handleSliderChange = (value: number[]) => {
+    const event = {
+      target: {
+        name: "progress",
+        value: value[0].toString()
+      }
+    } as React.ChangeEvent<HTMLInputElement>;
+    
+    onChange(event);
+  };
+  
+  return (
+    <div className="grid grid-cols-4 items-center gap-4">
+      <Label htmlFor="progress" className="text-right">
+        Прогресс (%)
+      </Label>
+      <div className="col-span-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <Input
+            id="progress"
+            name="progress"
+            type="number"
+            min="0"
+            max="100"
+            value={progress === 0 ? "" : progress}
+            onChange={onChange}
+            disabled={disabled}
+            placeholder="0"
+            className="w-24"
+          />
+          <span className="text-sm text-muted-foreground">
+            {progress}%
+          </span>
+        </div>
+        
+        <Slider
+          value={[progress]}
+          min={0}
+          max={100}
+          step={5}
+          onValueChange={handleSliderChange}
+          disabled={disabled}
+          className="w-full"
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default TaskProgressField;

@@ -1,100 +1,25 @@
 
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import DashboardTabs from "@/components/dashboard/DashboardTabs";
-import { useDashboardData } from "@/hooks/useDashboardData";
-import authService from "@/services/authService";
-import StorageDiagnostics from "@/components/dashboard/StorageDiagnostics";
+import * as React from "react";
+import { Routes, Route } from "react-router-dom";
 
-/**
- * Компонент Dashboard - главная страница руководителя
- * Позволяет управлять проектами, задачами, пользователями и экспортом/импортом данных
- */
-const Dashboard: React.FC = () => {
-  // Состояние активной вкладки
-  const [activeTab, setActiveTab] = useState("projects");
-  const navigate = useNavigate();
-  
-  // Получаем данные и обработчики из хука
-  const {
-    projects,
-    user,
-    isLoading,
-    handleImportProject,
-    handleUpdateProject,
-    handleDeleteProject,
-  } = useDashboardData(navigate);
-
-  // Функция выхода из системы с использованием сервиса авторизации
-  const logout = () => {
-    authService.logout();
-    navigate("/login");
-  };
-  
-  useEffect(() => {
-    // Логируем состояние проектов для отладки
-    console.log("Текущее состояние проектов:", projects);
-  }, [projects]);
-
-  // Показываем загрузку, если данные еще загружаются
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-          <p className="text-slate-600">Загрузка данных...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Показываем ошибку, если пользователь не загружен
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-red-50 p-6 rounded-lg border border-red-200 max-w-md">
-          <h2 className="text-lg text-red-600 font-medium mb-2">Ошибка аутентификации</h2>
-          <p className="text-slate-700 mb-4">
-            Не удалось загрузить данные пользователя. Пожалуйста, войдите снова.
-          </p>
-          <button 
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            onClick={() => navigate('/login')}
-          >
-            Вернуться на страницу входа
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Шапка страницы с именем пользователя и кнопкой выхода */}
-      <DashboardHeader
-        username={user.username || ""}
-        onLogout={logout}
-      />
-
-      {/* Основное содержимое с вкладками */}
-      <main className="container mx-auto px-4 py-6">
-        <DashboardTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          projects={projects}
-          onImportProject={handleImportProject}
-          onUpdateProject={handleUpdateProject}
-          onDeleteProject={handleDeleteProject}
-        />
-      </main>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Панель руководителя</h1>
+      <p>Добро пожаловать в панель управления!</p>
       
-      {/* Диагностический компонент для отладки хранилища */}
-      <StorageDiagnostics onReloadProjects={() => {
-        window.location.reload();
-      }} />
+      <Routes>
+        <Route index element={<DashboardIndex />} />
+        <Route path="projects" element={<DashboardProjects />} />
+        <Route path="users" element={<DashboardUsers />} />
+      </Routes>
     </div>
   );
 };
+
+// Вспомогательные компоненты для подмаршрутов
+const DashboardIndex = () => <div>Основная информация</div>;
+const DashboardProjects = () => <div>Управление проектами</div>;
+const DashboardUsers = () => <div>Управление пользователями</div>;
 
 export default Dashboard;

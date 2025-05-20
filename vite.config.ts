@@ -14,10 +14,6 @@ export default defineConfig({
       "@": resolve(__dirname, "./src"),
     },
   },
-  build: {
-    outDir: "dist", // Убедимся, что директория сборки соответствует настройкам Netlify
-    emptyOutDir: true,
-  },
   server: {
     host: "0.0.0.0",
     port: 5173,
@@ -26,4 +22,5 @@ export default defineConfig({
       overlay: false, // Disables the error overlay if you only want console errors
     },
   },
+  base: "/", // Убедимся, что базовый путь для скриптов - корень сайта
 });

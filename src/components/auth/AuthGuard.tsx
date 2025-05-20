@@ -12,7 +12,7 @@ interface AuthGuardProps {
  * Компонент для защиты маршрутов, требующих аутентификации
  * Проверяет наличие сессии пользователя и соответствие роли
  */
-export const AuthGuard = ({ children, requiredRole }: AuthGuardProps) => {
+const AuthGuard = ({ children, requiredRole }: AuthGuardProps) => {
   const { checkUserAuth } = useAuth();
   const location = useLocation();
   
@@ -34,3 +34,5 @@ export const AuthGuard = ({ children, requiredRole }: AuthGuardProps) => {
   // Если все проверки пройдены, рендерим защищенный контент
   return <>{children}</>;
 };
+
+export default AuthGuard;

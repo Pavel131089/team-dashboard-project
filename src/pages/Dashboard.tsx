@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardTabs from "@/components/dashboard/DashboardTabs";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = React.useState("projects");
+  const [shouldShowError, setShouldShowError] = useState(false);
 
   // Получаем данные и функции из хука
   const {
@@ -25,11 +26,17 @@ const Dashboard: React.FC = () => {
   // Проверка и восстановление данных при монтировании
   useEffect(() => {
     if (!isLoading && (!user || user.role !== "manager")) {
-      // Перенос вызова toast в useEffect
+      setShouldShowError(true);
+    }
+  }, [user, isLoading]);
+
+  // Отдельный useEffect для показа toast и перенаправления
+  useEffect(() => {
+    if (shouldShowError) {
       toast.error("Доступ запрещен. Перенаправление на страницу входа.");
       navigate("/login");
     }
-  }, [user, isLoading, navigate]);
+  }, [shouldShowError, navigate]);
 
   // Если данные загружаются, показываем заглушку
   if (isLoading) {

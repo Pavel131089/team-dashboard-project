@@ -12,6 +12,7 @@ import { initializeProjectsStorage } from "@/utils/storageUtils";
 const Employee: React.FC = () => {
   const navigate = useNavigate();
   const [initialized, setInitialized] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   // Инициализируем хранилище проектов при первой загрузке
   useEffect(() => {
@@ -36,6 +37,20 @@ const Employee: React.FC = () => {
     handleLogout,
   } = useEmployeeData(navigate);
 
+  // Обработка перенаправления, если нет пользователя
+  useEffect(() => {
+    if (!isLoading && !user) {
+      setShouldRedirect(true);
+    }
+  }, [isLoading, user]);
+
+  // Отдельный useEffect для навигации, чтобы избежать обновления состояния во время рендеринга
+  useEffect(() => {
+    if (shouldRedirect) {
+      navigate("/login");
+    }
+  }, [shouldRedirect, navigate]);
+
   // Если данные загружаются или хранилище еще не инициализировано, показываем заглушку
   if (isLoading || !initialized) {
     return (
@@ -52,11 +67,6 @@ const Employee: React.FC = () => {
 
   // Проверяем, что у нас есть пользователь перед рендерингом основного контента
   if (!user) {
-    // Используем useEffect для перенаправления вместо прямого вызова navigate
-    useEffect(() => {
-      navigate("/login");
-    }, []);
-
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -77,32 +87,13 @@ const Employee: React.FC = () => {
     : [];
   const safeProjects = Array.isArray(projects) ? projects : [];
 
-  // Убедимся, что все задачи имеют ссылку на правильные проекты
-  const assignedTasksWithProjects = safeAssignedTasks.map((task) => {
-    const projectId = task.projectId;
-    const fullProject = safeProjects.find((p) => p.id === projectId);
-    return {
-      ...task,
-      fullProject, // Добавляем ссылку на полный объект проекта
-    };
-  });
-
-  const availableTasksWithProjects = safeAvailableTasks.map((task) => {
-    const projectId = task.projectId;
-    const fullProject = safeProjects.find((p) => p.id === projectId);
-    return {
-      ...task,
-      fullProject, // Добавляем ссылку на полный объект проекта
-    };
-  });
-
   return (
     <EmployeeLayout userName={user.name || ""} onLogout={handleLogout}>
       <EmployeeContent>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Карточка с назначенными задачами */}
           <EmployeeTasksCard
-            tasks={assignedTasksWithProjects}
+            tasks={safeAssignedTasks}
             onUpdateProgress={handleUpdateTaskProgress}
             onAddComment={handleAddTaskComment}
             projects={safeProjects} // Передаем массив проектов для получения полных данных
@@ -110,7 +101,7 @@ const Employee: React.FC = () => {
 
           {/* Секция с доступными задачами */}
           <AvailableTasksSection
-            tasks={availableTasksWithProjects}
+            tasks={safeAvailableTasks}
             onTakeTask={handleTakeTask}
             projects={safeProjects} // Передаем все проекты для отображения дополнительной информации
           />

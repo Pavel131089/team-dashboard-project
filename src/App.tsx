@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import "./App.css";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -8,12 +8,38 @@ import NotFound from "./pages/NotFound";
 import DatabaseStatus from "./pages/DatabaseStatus";
 import AuthGuard from "./components/auth/AuthGuard";
 import { Toaster } from "sonner";
+import { sessionService } from "./services/auth/sessionService";
 
 function App() {
+  const navigate = useNavigate();
+
+  // Проверяем состояние сессии при загрузке приложения
+  useEffect(() => {
+    const checkSession = () => {
+      const session = sessionService.getCurrentSession();
+      if (session && session.isAuthenticated) {
+        // Перенаправляем пользователя на нужную страницу в зависимости от роли
+        if (session.role === "manager") {
+          // Проверяем, что пользователь не уже на странице dashboard
+          if (window.location.pathname !== "/dashboard") {
+            navigate("/dashboard");
+          }
+        } else if (session.role === "employee") {
+          // Проверяем, что пользователь не уже на странице employee
+          if (window.location.pathname !== "/employee") {
+            navigate("/employee");
+          }
+        }
+      }
+    };
+
+    checkSession();
+  }, [navigate]);
+
   return (
     <>
       {/* Добавляем Toaster для уведомлений */}
-      <Toaster position="top-right" closeButton />
+      <Toaster position="top-right" closeButton richColors />
 
       <Routes>
         {/* Публичные маршруты */}

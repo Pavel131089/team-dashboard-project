@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -39,41 +40,23 @@ const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // ИСПРАВЛЕНИЕ: Убедимся, что роль соответствует имени пользователя
-      let correctedRole = role;
-      if (username === "manager" && role !== "manager") {
-        correctedRole = "manager";
-        setRole("manager");
-        console.log("Скорректирована роль для пользователя manager");
-      } else if (username === "employee" && role !== "employee") {
-        correctedRole = "employee";
-        setRole("employee");
-        console.log("Скорректирована роль для пользователя employee");
-      }
-
       // Простая проверка учетных данных
       if (
         (username === "manager" &&
           password === "manager123" &&
-          correctedRole === "manager") ||
+          role === "manager") ||
         (username === "employee" &&
           password === "employee123" &&
-          correctedRole === "employee")
+          role === "employee")
       ) {
         // Создаем объект пользователя
         const user = {
-          id:
-            correctedRole === "manager"
-              ? "default-manager"
-              : "default-employee",
-          name: correctedRole === "manager" ? "Менеджер" : "Сотрудник",
+          id: role === "manager" ? "default-manager" : "default-employee",
+          name: role === "manager" ? "Менеджер" : "Сотрудник",
           username: username,
-          role: correctedRole,
+          role: role,
           isAuthenticated: true,
         };
-
-        // Принудительно очищаем localStorage перед установкой новой сессии
-        localStorage.clear();
 
         // Сохраняем в localStorage
         localStorage.setItem("user", JSON.stringify(user));
@@ -81,11 +64,8 @@ const Login: React.FC = () => {
         // Отображаем сообщение об успешном входе
         toast.success(`Добро пожаловать, ${user.name}!`);
 
-        // Добавляем небольшую задержку перед перенаправлением
-        setTimeout(() => {
-          // Перенаправляем на нужную страницу
-          navigate(correctedRole === "manager" ? "/dashboard" : "/employee");
-        }, 500);
+        // Перенаправляем на нужную страницу
+        navigate(role === "manager" ? "/dashboard" : "/employee");
       } else {
         setError("Неверное имя пользователя или пароль");
       }

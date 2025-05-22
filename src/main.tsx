@@ -1,7 +1,7 @@
 
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { HashRouter } from "react-router-dom"; // Используем HashRouter для лучшей совместимости
+import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 
@@ -9,14 +9,14 @@ import "./index.css";
 const rootElement = document.getElementById("root");
 
 if (rootElement) {
-  // Создаем корень React и рендерим приложение внутри HashRouter
+  // Создаем корень React и рендерим приложение внутри BrowserRouter
   const root = ReactDOM.createRoot(rootElement);
   
   root.render(
     <React.StrictMode>
-      <HashRouter>
+      <BrowserRouter>
         <App />
-      </HashRouter>
+      </BrowserRouter>
     </React.StrictMode>
   );
   

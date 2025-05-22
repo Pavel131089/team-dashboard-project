@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "sonner"; // Используем sonner вместо внутреннего компонента
+import { Toaster } from "sonner";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";

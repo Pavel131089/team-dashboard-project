@@ -1,104 +1,56 @@
 
 import { useState } from "react";
 import { Project, Task } from "@/types/project";
-import { toast } from "@/components/ui/use-toast";
-import { 
-  updateTaskInProjects, 
-  updateUserTasksList, 
-  removeTaskFromUserTasks,
-  removeUserFromTaskAssignees,
-  updateTaskCompletionDate
-} from "@/utils/taskUtils";
-import { saveProjectsToStorage } from "@/utils/storageUtils";
 
 /**
- * Хук для работы с задачами проектов
+ * Хук для управления задачами проектов
  */
 export function useProjectTasks(
-  initialProjects: Project[],
-  initialUserTasks: {project: Project; task: Task}[]
+  projects: Project[],
+  userTasks: { project: Project; task: Task }[]
 ) {
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const [userTasks, setUserTasks] = useState<{project: Project; task: Task}[]>(initialUserTasks);
-  
   /**
-   * Обработчик обновления задачи
+   * Обновляет задачу в проекте
    */
-  const updateTask = (projectId: string, updatedTask: Task, userId: string) => {
-    // Проверяем, не пытаемся ли "удалить" задачу (флаг _deleted)
-    if (updatedTask._deleted) {
-      deleteTask(projectId, updatedTask, userId);
-      return;
-    }
-    
-    // Обновляем дату окончания, если задача завершена
-    const taskWithCompletionDate = updateTaskCompletionDate(updatedTask);
-    
-    // Обновляем массив проектов
-    const updatedProjects = updateTaskInProjects(projects, projectId, taskWithCompletionDate);
-    setProjects(updatedProjects);
-    saveProjectsToStorage(updatedProjects);
-    
-    // Обновляем список задач сотрудника
-    const updatedUserTasks = updateUserTasksList(
-      userTasks, 
-      projectId, 
-      taskWithCompletionDate, 
-      updatedProjects
-    );
-    
-    setUserTasks(updatedUserTasks);
-    
-    toast({
-      title: "Задача обновлена",
-      description: `Прогресс задачи "${updatedTask.name}" установлен на ${updatedTask.progress}%`,
-    });
-  };
-  
-  /**
-   * Обработчик удаления задачи
-   */
-  const deleteTask = (projectId: string, taskToDelete: Task, userId: string) => {
-    // Удаляем задачу из списка задач пользователя
-    const updatedUserTasks = removeTaskFromUserTasks(
-      userTasks, 
-      projectId, 
-      taskToDelete.id
-    );
-    
-    setUserTasks(updatedUserTasks);
-    
-    // Обновляем проект, удаляя пользователя из списка исполнителей задачи
-    const project = projects.find(p => p.id === projectId);
-    
-    if (project) {
-      const task = project.tasks.find(t => t.id === taskToDelete.id);
-      
-      if (task) {
-        const taskWithoutUser = removeUserFromTaskAssignees(task, userId);
-        
-        // Обновляем проект
-        const updatedProjects = updateTaskInProjects(
-          projects, 
-          projectId, 
-          taskWithoutUser
-        );
-        
-        setProjects(updatedProjects);
-        saveProjectsToStorage(updatedProjects);
-        
-        toast({
-          title: "Задача удалена",
-          description: "Задача была успешно удалена из вашего списка",
-        });
+  const updateTask = (projectId: string, updatedTask: Task, userId?: string) => {
+    try {
+      // Получаем проекты из localStorage
+      const storedProjects = localStorage.getItem("projects");
+      if (!storedProjects) {
+        console.error("Проекты не найдены в localStorage");
+        return;
       }
+
+      // Парсим проекты
+      const parsedProjects: Project[] = JSON.parse(storedProjects);
+      
+      // Находим проект и обновляем задачу
+      const updatedProjects = parsedProjects.map(project => {
+        if (project.id === projectId) {
+          return {
+            ...project,
+            tasks: project.tasks.map(task => 
+              task.id === updatedTask.id ? updatedTask : task
+            )
+          };
+        }
+        return project;
+      });
+
+      // Сохраняем обновленные проекты
+      localStorage.setItem("projects", JSON.stringify(updatedProjects));
+      
+      // Обновляем состояние в родительском компоненте (если это нужно)
+      // В этом хуке мы не управляем состоянием projects, оно передается как параметр
+      
+      console.log(`Задача ${updatedTask.id} в проекте ${projectId} обновлена`);
+      
+    } catch (error) {
+      console.error("Ошибка при обновлении задачи:", error);
     }
   };
-  
+
   return {
-    projects,
-    userTasks,
-    updateTask,
-    deleteTask
+    updateTask
   };
 }

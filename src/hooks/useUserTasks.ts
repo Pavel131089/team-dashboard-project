@@ -1,42 +1,42 @@
-import { useState, useEffect } from "react";                                                                                                                                             
-import { Project, Task, User } from "@/types/project";                                                                                                                                                     
+
+import { useState, useEffect } from "react";
+import { Project, Task, User } from "@/types/project";
+
+/**
+ * Хук для получения задач, назначенных пользователю
+ */
 export function useUserTasks(
-  user: User | null, 
-  projects: Project[], 
+  user: User | null,
+  projects: Project[],
   userName: string
 ) {
-  const [userTasks, setUserTasks] = useState<{project: Project; task: Task}[]>([]);
-  
+  const [userTasks, setUserTasks] = useState<{ project: Project; task: Task }[]>([]);
+
+  // Обновляем список задач при изменении пользователя или проектов
   useEffect(() => {
-    if (!user) return;
-    
-    // Проверка на пустые проекты
-    if (!projects || projects.length === 0) {
+    if (!user) {
       setUserTasks([]);
       return;
     }
-    
-    // Находим задачи, назначенные на текущего пользователя
-    const tasks: {project: Project; task: Task}[] = [];
-    
-    projects.forEach(project => {
-      project.tasks.forEach(task => {
-        // Проверяем назначен ли этот пользователь на задачу:
-        // 1. По ID в массиве assignedTo
-        // 2. По имени пользователя в массиве assignedToNames
-        // 3. По прямому равенству assignedTo === user.id
-        const assignedById = Array.isArray(task.assignedTo) && task.assignedTo.includes(user.id);
-        const assignedByName = Array.isArray(task.assignedToNames) && task.assignedToNames.includes(userName);
-        const assignedBySingleId = task.assignedTo === user.id;
-        
-        if (assignedById || assignedByName || assignedBySingleId) {
-          tasks.push({project, task});
-        }
-      });
+
+    // Собираем все задачи из всех проектов, которые назначены текущему пользователю
+    const tasks = projects.flatMap(project => {
+      return project.tasks
+        .filter(task => {
+          // Проверяем, назначена ли задача текущему пользователю
+          if (task.assignedTo === user.id) return true;
+          if (task.assignedToNames?.includes(user.id)) return true;
+          
+          // Если userName передан и есть в списке назначенных имен
+          if (userName && task.assignedToNames?.includes(userName)) return true;
+          
+          return false;
+        })
+        .map(task => ({ project, task }));
     });
-    
+
     setUserTasks(tasks);
   }, [user, projects, userName]);
-  
-  return { userTasks, setUserTasks };
+
+  return { userTasks };
 }

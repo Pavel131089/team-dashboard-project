@@ -1,104 +1,105 @@
 
-import { Project, Task } from "@/types/project";
+import { Project } from "@/types/project";
 
 /**
- * Проверяет доступность localStorage
- * @returns true если localStorage доступен, иначе false
+ * Получает проекты из localStorage
+ * @returns массив проектов
  */
-export function testStorageAvailability(): boolean {
+export function getProjectsFromStorage(): Project[] {
   try {
-    const testKey = "__storage_test__";
-    localStorage.setItem(testKey, testKey);
-    const result = localStorage.getItem(testKey) === testKey;
-    localStorage.removeItem(testKey);
-    return result;
-  } catch (e) {
-    return false;
+    const storedProjects = localStorage.getItem('projects');
+    return storedProjects ? JSON.parse(storedProjects) : [];
+  } catch (error) {
+    console.error('Ошибка получения проектов из localStorage:', error);
+    return [];
   }
 }
 
 /**
- * Создает тестовый проект и добавляет его в localStorage
- * @returns true если операция успешна, иначе false
+ * Сохраняет проекты в localStorage
+ * @param projects массив проектов для сохранения
  */
-export function createSampleProject(): boolean {
+export function saveProjectsToStorage(projects: Project[]): void {
   try {
-    // Получаем существующие проекты
-    const existingProjects = localStorage.getItem('projects');
-    let projects: Project[] = [];
-    
-    if (existingProjects) {
-      projects = JSON.parse(existingProjects);
-    }
-    
-    // Создаем тестовый проект
-    const sampleTasks: Task[] = [
-      {
-        id: `task-${Date.now()}-1`,
-        name: "Разработка дизайна",
-        description: "Создание макетов и прототипов для основных страниц",
-        startDate: "2023-06-01",
-        endDate: "2023-06-15",
-        actualStartDate: "2023-06-02",
-        actualEndDate: null,
-        price: 25000,
-        estimatedTime: 40,
-        assignedTo: "Иванов И.И.",
-        assignedToNames: ["Иванов И.И."],
-        progress: 80
-      },
-      {
-        id: `task-${Date.now()}-2`,
-        name: "Верстка главной страницы",
-        description: "HTML/CSS реализация дизайна главной страницы",
-        startDate: "2023-06-16",
-        endDate: "2023-06-25",
-        actualStartDate: "2023-06-16",
-        actualEndDate: null,
-        price: 15000,
-        estimatedTime: 20,
-        assignedTo: "Петров П.П.",
-        assignedToNames: ["Петров П.П."],
-        progress: 50
-      }
-    ];
-    
-    const sampleProject: Project = {
-      id: `project-${Date.now()}`,
-      name: "Тестовый проект",
-      description: "Проект создан для тестирования функциональности системы",
-      startDate: "2023-06-01",
-      endDate: "2023-07-30",
-      status: "active",
-      budget: 100000,
-      manager: "Менеджер",
-      client: "ООО Тест",
-      tasks: sampleTasks
-    };
-    
-    // Добавляем тестовый проект к существующим проектам
-    projects.push(sampleProject);
-    
-    // Сохраняем обновленный список проектов
     localStorage.setItem('projects', JSON.stringify(projects));
-    
-    return true;
   } catch (error) {
-    console.error("Ошибка при создании тестового проекта:", error);
-    return false;
+    console.error('Ошибка сохранения проектов в localStorage:', error);
   }
 }
 
 /**
- * Удаляет все проекты из localStorage
- * @returns true если операция успешна, иначе false
+ * Инициализирует хранилище проектов, если оно пусто
  */
-export function resetProjectsStorage(): boolean {
+export function initializeProjectsStorage(): void {
   try {
-    localStorage.setItem('projects', JSON.stringify([]));
-    return true;
+    const projects = getProjectsFromStorage();
+    
+    if (projects.length === 0) {
+      // Создаем несколько демо-проектов
+      const demoProjects: Project[] = [
+        {
+          id: 'project-1',
+          name: 'Веб-сайт компании',
+          description: 'Разработка корпоративного веб-сайта',
+          createdAt: new Date().toISOString(),
+          createdBy: 'default-manager',
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          tasks: [
+            {
+              id: 'task-1',
+              name: 'Дизайн главной страницы',
+              description: 'Создание дизайна главной страницы сайта',
+              price: 10000,
+              estimatedTime: 16,
+              startDate: new Date().toISOString(),
+              endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+              assignedTo: '',
+              assignedToNames: [],
+              progress: 0,
+            },
+            {
+              id: 'task-2',
+              name: 'Вёрстка главной страницы',
+              description: 'HTML/CSS вёрстка по готовому дизайну',
+              price: 7000,
+              estimatedTime: 12,
+              startDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+              endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+              assignedTo: '',
+              assignedToNames: [],
+              progress: 0,
+            }
+          ]
+        },
+        {
+          id: 'project-2',
+          name: 'Мобильное приложение',
+          description: 'Разработка мобильного приложения для iOS и Android',
+          createdAt: new Date().toISOString(),
+          createdBy: 'default-manager',
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+          tasks: [
+            {
+              id: 'task-3',
+              name: 'Прототип интерфейса',
+              description: 'Создание прототипа интерфейса в Figma',
+              price: 15000,
+              estimatedTime: 24,
+              startDate: new Date().toISOString(),
+              endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+              assignedTo: '',
+              assignedToNames: [],
+              progress: 0,
+            }
+          ]
+        }
+      ];
+      
+      saveProjectsToStorage(demoProjects);
+    }
   } catch (error) {
-    console.error("Ошибка при сбросе хранилища проектов:", error);
-    return false;
+    console.error('Ошибка инициализации хранилища проектов:', error);
   }
 }

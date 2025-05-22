@@ -12,6 +12,7 @@ import Icon from "@/components/ui/icon";
 import { Progress } from "@/components/ui/progress";
 import { getProgressColorClass } from "@/utils/progressUtils";
 import EmptyAvailableTasks from "@/components/employee/EmptyAvailableTasks";
+import { getAssigneeNames } from "@/utils/userUtils"; // Добавляем импорт функции
 
 interface AvailableTasksSectionProps {
   tasks: any[];

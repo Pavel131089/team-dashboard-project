@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Task, Project } from "@/types/project";
@@ -35,21 +35,18 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>(
     {},
   );
-  const [projectsWithFullData, setProjectsWithFullData] = useState<
-    Record<string, Project>
-  >({});
 
-  // Создаем карту проектов для быстрого доступа
-  useEffect(() => {
-    if (Array.isArray(projects) && projects.length > 0) {
-      const projectMap: Record<string, Project> = {};
+  // Создаем карту проектов для быстрого доступа - используем useMemo вместо useState+useEffect
+  const projectsWithFullData = useMemo(() => {
+    const projectMap: Record<string, Project> = {};
+    if (Array.isArray(projects)) {
       projects.forEach((project) => {
-        if (project.id) {
+        if (project?.id) {
           projectMap[project.id] = project;
         }
       });
-      setProjectsWithFullData(projectMap);
     }
+    return projectMap;
   }, [projects]);
 
   // Убедимся, что tasks определен и является массивом
@@ -89,7 +86,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   };
 
   // Группируем задачи по проектам для отображения дополнительной информации
-  const groupTasksByProject = () => {
+  const projectGroups = useMemo(() => {
     const projectMap: Record<
       string,
       {
@@ -114,9 +111,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     });
 
     return Object.values(projectMap);
-  };
-
-  const projectGroups = groupTasksByProject();
+  }, [safeTasks]);
 
   // Компонент для отображения проекта с задачами
   const ProjectGroup = ({
@@ -149,22 +144,20 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
           </div>
 
           {/* Блок с датами проекта - делаем его более заметным */}
-          <div className="flex flex-wrap gap-x-4 text-xs mb-3 border-l-2 border-primary pl-2 py-1 bg-slate-100 rounded">
-            <div className="flex items-center gap-1 text-primary-foreground">
-              <Icon name="Calendar" className="h-3 w-3 text-primary" />
-              <span className="font-medium">Начало:</span>
-              <span>
-                {fullProject ? formatDate(fullProject.startDate) : "Не указано"}
-              </span>
+          {fullProject && (
+            <div className="flex flex-wrap gap-x-4 text-xs mb-3 border-l-2 border-primary pl-2 py-1 bg-slate-100 rounded">
+              <div className="flex items-center gap-1 text-primary-foreground">
+                <Icon name="Calendar" className="h-3 w-3 text-primary" />
+                <span className="font-medium">Начало:</span>
+                <span>{formatDate(fullProject.startDate)}</span>
+              </div>
+              <div className="flex items-center gap-1 text-primary-foreground">
+                <Icon name="CalendarCheck" className="h-3 w-3 text-primary" />
+                <span className="font-medium">Окончание:</span>
+                <span>{formatDate(fullProject.endDate)}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 text-primary-foreground">
-              <Icon name="CalendarCheck" className="h-3 w-3 text-primary" />
-              <span className="font-medium">Окончание:</span>
-              <span>
-                {fullProject ? formatDate(fullProject.endDate) : "Не указано"}
-              </span>
-            </div>
-          </div>
+          )}
 
           <Progress
             value={projectProgress}

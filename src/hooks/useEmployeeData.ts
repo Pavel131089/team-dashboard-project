@@ -44,36 +44,35 @@ export function useEmployeeData(navigate: NavigateFunction) {
       const otherTasks: TaskWithProject[] = [];
 
       try {
-        // Проверяем, что projectsList - массив
-        if (!Array.isArray(projectsList)) {
-          console.error("projectsList не является массивом");
-          return { userTasks, otherTasks };
-        }
-
         // Выводим информацию о всех проектах для отладки
         console.log(
-          "Processing projects:",
-          projectsList.map((p) => ({
-            id: p.id,
-            name: p.name,
-            startDate: p.startDate,
-            endDate: p.endDate,
-            tasksCount: p.tasks?.length || 0,
-          })),
+          "All projects data:",
+          JSON.stringify(projectsList, null, 2),
         );
 
         projectsList.forEach((project) => {
-          // Проверяем, что project существует и tasks - массив
-          if (!project || !Array.isArray(project.tasks)) {
+          // Проверяем наличие дат проекта
+          if (!project.startDate || !project.endDate) {
+            console.warn(`Project ${project.id} missing dates!`, project);
+            // Добавляем даты на месте, если их нет
+            project.startDate = project.startDate || new Date().toISOString();
+            project.endDate =
+              project.endDate ||
+              new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+          }
+
+          if (!Array.isArray(project.tasks)) {
+            console.warn(`Project ${project.id} has no tasks array!`);
             return;
           }
 
-          // Для каждой задачи в проекте
           project.tasks.forEach((task) => {
-            // Проверяем, что task существует
-            if (!task) return;
+            if (!task) {
+              console.warn(`Null task in project ${project.id}`);
+              return;
+            }
 
-            // Создаем копию задачи с дополнительными полями
+            // Создаем копию задачи с дополнительными полями и датами
             const taskWithProject: TaskWithProject = {
               ...task,
               projectId: project.id,
@@ -81,12 +80,26 @@ export function useEmployeeData(navigate: NavigateFunction) {
               // Явно добавляем даты проекта, если даты задачи отсутствуют
               startDate: task.startDate || project.startDate,
               endDate: task.endDate || project.endDate,
-              // Добавляем также ссылки на даты проекта для возможности их использования
+              // Добавляем также ссылки на даты проекта
               projectStartDate: project.startDate,
               projectEndDate: project.endDate,
-              // Добавляем ссылку на полный проект для доступа ко всем данным
+              // Добавляем ссылку на полный проект
               fullProject: project,
             };
+
+            // Отладка для первой задачи каждого проекта
+            if (project.tasks.indexOf(task) === 0) {
+              console.log(`First task in project ${project.id}:`, {
+                taskId: task.id,
+                taskName: task.name,
+                originalStartDate: task.startDate,
+                originalEndDate: task.endDate,
+                projectStartDate: project.startDate,
+                projectEndDate: project.endDate,
+                finalStartDate: taskWithProject.startDate,
+                finalEndDate: taskWithProject.endDate,
+              });
+            }
 
             // Проверка назначения задачи текущему пользователю
             let isAssigned = false;
@@ -130,28 +143,26 @@ export function useEmployeeData(navigate: NavigateFunction) {
               !task.assignedTo &&
               (!task.assignedToNames || task.assignedToNames.length === 0)
             ) {
-              // Если задача не назначена никому, она доступна
               otherTasks.push(taskWithProject);
             }
           });
         });
 
-        // Отладочная информация о первых нескольких задачах с полями дат
+        // Проверяем и выводим информацию о доступных задачах
         console.log(
-          "First available tasks processed:",
-          otherTasks.slice(0, 3).map((t) => ({
+          "Available tasks processed:",
+          otherTasks.map((t) => ({
             id: t.id,
             name: t.name,
-            // Показываем все возможные поля дат для отладки
             startDate: t.startDate,
             endDate: t.endDate,
             projectStartDate: t.projectStartDate,
             projectEndDate: t.projectEndDate,
-            // Проверяем, что полный проект доступен
-            hasFullProject: !!t.fullProject,
-            projectName: t.projectName,
           })),
         );
+
+        // ВАЖНО: Сохраняем обновленные проекты с фиксированными датами
+        localStorage.setItem("projects", JSON.stringify(projectsList));
       } catch (error) {
         console.error("Ошибка при обработке проектов:", error);
       }

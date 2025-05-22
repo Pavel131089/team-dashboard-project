@@ -14,27 +14,85 @@ const Employee: React.FC = () => {
   const [initialized, setInitialized] = useState(false);
   const [shouldRedirect, setShouldRedirect] = useState(false);
 
-  // Инициализируем хранилище проектов при первой загрузке
+  // Инициализируем хранилище
   useEffect(() => {
     try {
+      // Инициализируем хранилище
       initializeProjectsStorage();
       setInitialized(true);
 
-      // Проверяем, что проекты имеют корректные даты
-      const storedProjects = localStorage.getItem("projects");
-      if (storedProjects) {
-        const parsedProjects = JSON.parse(storedProjects);
-        console.log(
-          "Stored projects with dates:",
-          parsedProjects.map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            startDate: p.startDate,
-            endDate: p.endDate,
-            tasksCount: p.tasks?.length || 0,
-          })),
-        );
-      }
+      // Для дополнительной надежности - проверяем и обновляем даты проектов напрямую
+      const updateProjectDates = () => {
+        try {
+          const storedProjects = localStorage.getItem("projects");
+          if (storedProjects) {
+            const parsedProjects = JSON.parse(storedProjects);
+
+            // Проверяем, что это массив
+            if (!Array.isArray(parsedProjects)) {
+              console.error("Stored projects is not an array");
+              return;
+            }
+
+            // Обновляем проекты с отсутствующими датами
+            let updated = false;
+            const updatedProjects = parsedProjects.map((project) => {
+              // Если у проекта нет дат, добавляем их
+              if (!project.startDate || !project.endDate) {
+                updated = true;
+                console.log(`Adding missing dates to project ${project.id}`);
+                return {
+                  ...project,
+                  startDate: project.startDate || new Date().toISOString(),
+                  endDate:
+                    project.endDate ||
+                    new Date(
+                      Date.now() + 30 * 24 * 60 * 60 * 1000,
+                    ).toISOString(),
+                };
+              }
+
+              // Проверяем задачи проекта
+              if (Array.isArray(project.tasks)) {
+                const updatedTasks = project.tasks.map((task) => {
+                  if (!task.startDate || !task.endDate) {
+                    updated = true;
+                    console.log(
+                      `Adding missing dates to task ${task.id} in project ${project.id}`,
+                    );
+                    return {
+                      ...task,
+                      startDate: task.startDate || project.startDate,
+                      endDate: task.endDate || project.endDate,
+                    };
+                  }
+                  return task;
+                });
+
+                if (
+                  JSON.stringify(updatedTasks) !== JSON.stringify(project.tasks)
+                ) {
+                  updated = true;
+                  return { ...project, tasks: updatedTasks };
+                }
+              }
+
+              return project;
+            });
+
+            // Сохраняем обновленные проекты, если были изменения
+            if (updated) {
+              console.log("Saving projects with updated dates");
+              localStorage.setItem("projects", JSON.stringify(updatedProjects));
+            }
+          }
+        } catch (error) {
+          console.error("Error updating project dates:", error);
+        }
+      };
+
+      // Вызываем функцию обновления дат
+      updateProjectDates();
     } catch (error) {
       console.error("Ошибка при инициализации хранилища:", error);
     }

@@ -237,6 +237,76 @@ export function createSampleProject(): boolean {
 }
 
 /**
+ * Фиксирует отсутствующие даты проектов и задач в хранилище
+ * @returns true в случае успеха
+ */
+export function fixProjectDates(): boolean {
+  try {
+    // Получаем проекты из хранилища
+    const projectsStr = localStorage.getItem("projects");
+    if (!projectsStr) {
+      console.warn("No projects found in storage");
+      return false;
+    }
+
+    // Парсим проекты
+    const projects = JSON.parse(projectsStr);
+    if (!Array.isArray(projects)) {
+      console.error("Projects data is not an array");
+      return false;
+    }
+
+    let hasChanges = false;
+
+    // Обновляем даты проектов и задач
+    const updatedProjects = projects.map((project) => {
+      // Проверяем даты проекта
+      if (!project.startDate || !project.endDate) {
+        hasChanges = true;
+        console.log(
+          `Adding missing dates to project ${project.name || project.id}`,
+        );
+        project.startDate = project.startDate || new Date().toISOString();
+        project.endDate =
+          project.endDate ||
+          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      }
+
+      // Проверяем задачи проекта
+      if (Array.isArray(project.tasks)) {
+        project.tasks = project.tasks.map((task) => {
+          if (!task.startDate || !task.endDate) {
+            hasChanges = true;
+            console.log(`Adding missing dates to task ${task.name || task.id}`);
+            return {
+              ...task,
+              startDate: task.startDate || project.startDate,
+              endDate: task.endDate || project.endDate,
+            };
+          }
+          return task;
+        });
+      }
+
+      return project;
+    });
+
+    // Сохраняем обновленные проекты, если были изменения
+    if (hasChanges) {
+      localStorage.setItem("projects", JSON.stringify(updatedProjects));
+      console.log("Projects updated with fixed dates");
+    } else {
+      console.log("No date fixes needed for projects");
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error fixing project dates:", error);
+    return false;
+  }
+}
+
+/**
  * Сбрасывает все данные проектов
  * @returns true в случае успеха
  */

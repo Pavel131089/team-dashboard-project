@@ -57,6 +57,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
       tasks.forEach((task) => {
         // Пропускаем задачи без projectId
         if (!task?.projectId) {
+          console.warn("Task without projectId:", task);
           return;
         }
 
@@ -67,6 +68,13 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
         if (!projectMap[projectId]) {
           // Находим полную информацию о проекте из нашей карте
           const fullProject = projectsMap[projectId];
+
+          console.log(`Project info for ${projectId}:`, {
+            name: projectName,
+            hasFullProject: !!fullProject,
+            startDate: fullProject?.startDate,
+            endDate: fullProject?.endDate,
+          });
 
           projectMap[projectId] = {
             projectId,
@@ -79,14 +87,32 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
         // Добавляем задачу в соответствующий проект с датами проекта
         const projectDates = projectMap[projectId].project || {};
 
-        // Создаем задачу с информацией о проекте
-        const taskWithProjectInfo = {
+        // Явно указываем даты для задачи из обоих источников
+        const taskWithDates = {
           ...task,
-          projectStartDate: projectDates.startDate || task.projectStartDate,
-          projectEndDate: projectDates.endDate || task.projectEndDate,
+          // Если у задачи нет дат, берем их из проекта
+          startDate: task.startDate || projectDates.startDate,
+          endDate: task.endDate || projectDates.endDate,
+          // Сохраняем также исходные даты проекта для справки
+          projectStartDate: projectDates.startDate,
+          projectEndDate: projectDates.endDate,
         };
 
-        projectMap[projectId].tasks.push(taskWithProjectInfo);
+        // Отладка для первой задачи
+        if (projectMap[projectId].tasks.length === 0) {
+          console.log(`First task in ${projectName}:`, {
+            id: task.id,
+            name: task.name,
+            originalStartDate: task.startDate,
+            originalEndDate: task.endDate,
+            projectStartDate: projectDates.startDate,
+            projectEndDate: projectDates.endDate,
+            finalStartDate: taskWithDates.startDate,
+            finalEndDate: taskWithDates.endDate,
+          });
+        }
+
+        projectMap[projectId].tasks.push(taskWithDates);
       });
 
       // Преобразуем объект в массив для отображения

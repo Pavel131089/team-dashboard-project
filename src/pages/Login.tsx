@@ -6,8 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const [shouldRedirect, setShouldRedirect] = useState<boolean>(false);
-  const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const {
     formData,
@@ -20,23 +19,36 @@ const Login: React.FC = () => {
 
   // Проверяем существующую сессию при монтировании компонента
   useEffect(() => {
-    const sessionInfo = checkExistingSession();
+    const checkSession = () => {
+      try {
+        const sessionInfo = checkExistingSession();
 
-    if (sessionInfo.authenticated && sessionInfo.role) {
-      // Определяем цель перенаправления на основе роли
-      const target =
-        sessionInfo.role === "manager" ? "/dashboard" : "/employee";
-      setRedirectTarget(target);
-      setShouldRedirect(true);
-    }
-  }, [checkExistingSession]);
+        if (sessionInfo.authenticated && sessionInfo.role) {
+          setIsRedirecting(true);
+          // Определяем цель перенаправления на основе роли
+          const target =
+            sessionInfo.role === "manager" ? "/dashboard" : "/employee";
+          // Используем setTimeout, чтобы избежать ошибок с обновлением состояния
+          setTimeout(() => {
+            navigate(target, { replace: true });
+          }, 0);
+        }
+      } catch (error) {
+        console.error("Ошибка при проверке сессии:", error);
+      }
+    };
 
-  // Отдельный useEffect для перенаправления
-  useEffect(() => {
-    if (shouldRedirect && redirectTarget) {
-      navigate(redirectTarget);
-    }
-  }, [shouldRedirect, redirectTarget, navigate]);
+    checkSession();
+  }, [checkExistingSession, navigate]);
+
+  // Если происходит перенаправление, показываем индикатор загрузки
+  if (isRedirecting) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <div className="animate-pulse text-gray-500">Перенаправление...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">

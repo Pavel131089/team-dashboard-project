@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import "./App.css";
@@ -13,7 +12,6 @@ import { sessionService } from "./services/auth/sessionService";
 
 function App() {
   const navigate = useNavigate();
-  // Добавляем состояние для отслеживания инициализации сессии
   const [sessionChecked, setSessionChecked] = useState(false);
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
 
@@ -46,22 +44,24 @@ function App() {
       // Проверяем, что текущий путь не совпадает с целевым,
       // чтобы избежать ненужных перенаправлений
       const currentPath = window.location.pathname;
-      if (currentPath !== initialRoute && 
-          currentPath === "/" || 
-          currentPath === "/login") {
-        navigate(initialRoute);
+      if (currentPath === "/" || currentPath === "/login") {
+        navigate(initialRoute, { replace: true });
       }
     }
   }, [sessionChecked, initialRoute, navigate]);
 
   // Если сессия еще не проверена, показываем пустой div или лоадер
   if (!sessionChecked) {
-    return <div className="min-h-screen bg-gray-50"></div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-pulse">Загрузка...</div>
+      </div>
+    );
   }
 
   return (
     <>
-      {/* Определяем Toaster вне маршрутов */}
+      {/* Toaster компонент для уведомлений */}
       <Toaster position="top-right" closeButton richColors />
 
       <Routes>

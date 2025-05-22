@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import EmployeeLayout from "@/components/employee/EmployeeLayout";
@@ -25,17 +26,7 @@ const Employee: React.FC = () => {
     handleUpdateTaskProgress,
     handleAddTaskComment,
     handleLogout,
-    loadTasks,
   } = useEmployeeData(navigate);
-
-  // Загружаем задачи только один раз при монтировании компонента
-  useEffect(() => {
-    // Явно вызываем loadTasks при монтировании
-    if (!isLoading) {
-      loadTasks();
-    }
-    // Не включаем loadTasks в зависимости, чтобы избежать бесконечного цикла
-  }, [isLoading]); // Зависим только от isLoading
 
   // Если данные загружаются, показываем заглушку
   if (isLoading) {
@@ -52,7 +43,10 @@ const Employee: React.FC = () => {
   }
 
   return (
-    <EmployeeLayout userName={user?.name || ""} onLogout={handleLogout}>
+    <EmployeeLayout
+      userName={user?.name || ""}
+      onLogout={handleLogout}
+    >
       <EmployeeContent>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Карточка с назначенными задачами */}

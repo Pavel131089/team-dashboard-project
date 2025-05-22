@@ -1,14 +1,13 @@
 
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Task } from "@/types/project";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
-import { Task } from "@/types/project";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface AvailableTaskItemProps {
-  task: Task & { projectId?: string; projectName?: string };
+  task: Task;
   projectName: string;
   onTakeTask: () => void;
 }
@@ -18,56 +17,51 @@ const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
   projectName,
   onTakeTask,
 }) => {
-  // Форматирование даты
+  // Функция для форматирования даты
   const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd.MM.yyyy", { locale: ru });
-    } catch (e) {
-      return "Дата не указана";
-    }
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
   };
 
-  // Получаем сроки
-  const startDate = task.startDate ? formatDate(task.startDate) : "Не указана";
-  const endDate = task.endDate ? formatDate(task.endDate) : "Не указана";
+  // Функция для форматирования стоимости
+  const formatPrice = (price: number) => {
+    return price.toLocaleString('ru-RU') + ' ₽';
+  };
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <CardContent className="p-0">
-        <div className="border-b p-4">
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex flex-col space-y-3">
           <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-medium text-lg">{task.name}</h3>
-              <p className="text-sm text-muted-foreground mb-2">
-                Проект: {projectName}
-              </p>
+            <h3 className="font-medium text-base">{task.name}</h3>
+            <Badge variant="outline" className="ml-2">{projectName}</Badge>
+          </div>
+          
+          <p className="text-sm text-slate-600">{task.description}</p>
+          
+          <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
+            <div className="flex items-center">
+              <Icon name="Calendar" className="h-3 w-3 mr-1" />
+              <span>Сроки: {formatDate(task.startDate)} - {formatDate(task.endDate)}</span>
             </div>
-            <Button
-              onClick={onTakeTask}
-              className="ml-4 mt-1"
-              size="sm"
-            >
-              <Icon name="CheckCircle" className="mr-1 h-4 w-4" />
-              Взять в работу
-            </Button>
+            <div className="flex items-center">
+              <Icon name="Clock" className="h-3 w-3 mr-1" />
+              <span>Оценка времени: {task.estimatedTime} ч.</span>
+            </div>
+            <div className="flex items-center">
+              <Icon name="DollarSign" className="h-3 w-3 mr-1" />
+              <span>Стоимость: {formatPrice(task.price)}</span>
+            </div>
           </div>
-          <p className="text-sm mt-1 line-clamp-2">{task.description}</p>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 text-sm">
-          <div>
-            <p className="text-muted-foreground">Сроки</p>
-            <p>
-              {startDate} — {endDate}
-            </p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Стоимость</p>
-            <p>{task.price ? `${task.price.toLocaleString()} ₽` : "Не указана"}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Оценка времени</p>
-            <p>{task.estimatedTime ? `${task.estimatedTime} ч.` : "Не указана"}</p>
-          </div>
+          
+          <Button 
+            onClick={onTakeTask} 
+            className="w-full mt-2"
+            size="sm"
+          >
+            <Icon name="CheckCircle" className="mr-2 h-4 w-4" />
+            Взять в работу
+          </Button>
         </div>
       </CardContent>
     </Card>

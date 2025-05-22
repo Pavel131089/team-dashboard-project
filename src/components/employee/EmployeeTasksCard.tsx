@@ -1,202 +1,194 @@
 
 import React, { useState } from "react";
-import { Project, Task } from "@/types/project";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Task } from "@/types/project";
 import Icon from "@/components/ui/icon";
-import { formatDate } from "@/utils/dateUtils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 
-interface EmployeeTasksCardProps {
-  userTasks: { project: Project; task: Task }[];
-  userId: string;
-  onTaskUpdate: (projectId: string, task: Task) => void;
+interface TaskWithProject extends Task {
+  projectId: string;
+  projectName: string;
 }
 
-const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({ userTasks, userId, onTaskUpdate }) => {
-  const [expandedTask, setExpandedTask] = useState<string | null>(null);
+interface EmployeeTasksCardProps {
+  tasks: TaskWithProject[];
+  onUpdateProgress: (taskId: string, projectId: string, progress: number) => void;
+  onAddComment: (taskId: string, projectId: string, comment: string) => void;
+}
 
-  // Функция для обновления прогресса задачи
-  const handleProgressUpdate = (projectId: string, task: Task, newProgress: number) => {
-    const updatedTask: Task = {
-      ...task,
-      progress: newProgress,
-    };
-    
-    onTaskUpdate(projectId, updatedTask);
-    toast.success(`Прогресс задачи "${task.name}" обновлен до ${newProgress}%`);
+const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({ 
+  tasks, 
+  onUpdateProgress, 
+  onAddComment 
+}) => {
+  const [activeTask, setActiveTask] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState<string>("");
+
+  // Разделяем задачи на активные и завершенные
+  const activeTasks = tasks.filter(task => task.progress < 100);
+  const completedTasks = tasks.filter(task => task.progress === 100);
+
+  // Обработчик отправки комментария
+  const handleSubmitComment = (taskId: string, projectId: string) => {
+    if (commentText.trim()) {
+      onAddComment(taskId, projectId, commentText);
+      setCommentText("");
+    }
   };
 
-  // Функция для добавления комментария к задаче
-  const handleAddComment = (projectId: string, task: Task, comment: string) => {
-    if (!comment.trim()) return;
-    
-    const now = new Date();
-    const updatedTask: Task = {
-      ...task,
-      comments: [...(task.comments || []), {
-        id: Date.now().toString(),
-        text: comment,
-        userId,
-        userName: "Вы",
-        date: now.toISOString(),
-      }],
-    };
-    
-    onTaskUpdate(projectId, updatedTask);
-    toast.success("Комментарий добавлен");
+  // Функция для отображения дат
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
   };
 
-  // Если нет задач, показываем пустое состояние
-  if (userTasks.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Мои задачи</CardTitle>
-          <CardDescription>Список назначенных вам задач</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center p-10 text-center">
-            <Icon
-              name="ClipboardList"
-              className="h-16 w-16 text-slate-200 mb-4"
-            />
-            <p className="text-slate-500 mb-1">У вас пока нет назначенных задач</p>
-            <p className="text-sm text-slate-400">
-              Задачи появятся здесь, когда руководитель назначит их вам
-            </p>
+  // Компонент для отображения одной задачи
+  const TaskItem = ({ task }: { task: TaskWithProject }) => (
+    <AccordionItem value={task.id} className="border rounded-md mb-3 bg-white">
+      <AccordionTrigger className="px-4 py-3 hover:no-underline">
+        <div className="flex flex-col items-start w-full text-left">
+          <div className="flex justify-between w-full">
+            <div className="font-medium">{task.name}</div>
+            <Badge variant="outline" className="ml-2">
+              {task.projectName}
+            </Badge>
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
+          <Progress value={task.progress} className="h-2 mt-2 w-full" />
+        </div>
+      </AccordionTrigger>
+      <AccordionContent className="px-4 pb-4">
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm text-slate-600 mb-2">{task.description}</p>
+            <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
+              <div>Сроки: {formatDate(task.startDate)} - {formatDate(task.endDate)}</div>
+              <div>Оценка времени: {task.estimatedTime} ч.</div>
+              <div>Стоимость: {task.price.toLocaleString()} ₽</div>
+            </div>
+          </div>
+          
+          <div>
+            <p className="text-sm font-medium mb-2">Прогресс выполнения</p>
+            <div className="flex items-center space-x-2 mb-3">
+              <Progress value={task.progress} className="h-2 flex-1" />
+              <span className="text-sm">{task.progress}%</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[0, 25, 50, 75, 100].map(value => (
+                <Button 
+                  key={value} 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => onUpdateProgress(task.id, task.projectId, value)}
+                  className={task.progress === value ? "bg-primary text-primary-foreground" : ""}
+                >
+                  {value}%
+                </Button>
+              ))}
+            </div>
+          </div>
+          
+          <div>
+            <p className="text-sm font-medium mb-2">Комментарии</p>
+            <div className="bg-slate-50 p-3 rounded-md mb-3 max-h-40 overflow-y-auto">
+              {task.comments && task.comments.length > 0 ? (
+                <div className="space-y-2">
+                  {task.comments.map(comment => (
+                    <div key={comment.id} className="text-sm border-l-2 border-slate-300 pl-2">
+                      <p className="text-xs text-slate-500">
+                        {comment.author} • {new Date(comment.date).toLocaleString('ru-RU')}
+                      </p>
+                      <p>{comment.text}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">Нет комментариев</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Textarea 
+                placeholder="Добавить комментарий..." 
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                className="w-full h-20 resize-none"
+              />
+              <Button 
+                onClick={() => handleSubmitComment(task.id, task.projectId)}
+                disabled={!commentText.trim()}
+                size="sm"
+                className="w-full"
+              >
+                Отправить
+              </Button>
+            </div>
+          </div>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+  );
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle>Мои задачи</CardTitle>
-        <CardDescription>Список назначенных вам задач</CardDescription>
+        <CardTitle className="text-xl">Мои задачи</CardTitle>
       </CardHeader>
       <CardContent>
-        <Accordion
-          type="single"
-          collapsible
-          value={expandedTask}
-          onValueChange={setExpandedTask}
-        >
-          {userTasks.map(({ project, task }) => (
-            <AccordionItem key={task.id} value={task.id}>
-              <AccordionTrigger className="hover:bg-slate-50 px-3 rounded-md">
-                <div className="flex items-center justify-between w-full pr-4">
-                  <div className="flex items-center">
-                    <span className="font-medium">{task.name}</span>
-                    <Badge variant="outline" className="ml-2 text-xs">
-                      {project.name}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Progress value={task.progress} className="w-24 h-2" />
-                    <span className="text-xs text-slate-500">{task.progress}%</span>
-                  </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-3 pb-3">
-                <div className="space-y-4">
-                  {/* Описание задачи */}
-                  {task.description && (
-                    <div className="bg-slate-50 p-3 rounded-md">
-                      <p className="text-sm">{task.description}</p>
-                    </div>
-                  )}
-                  
-                  {/* Информация о задаче */}
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-slate-500 block">Сроки:</span>
-                      <span className="font-medium">
-                        {task.startDate ? formatDate(task.startDate) : "Не указано"} - {task.endDate ? formatDate(task.endDate) : "Не указано"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">Оценка времени:</span>
-                      <span className="font-medium">{task.estimatedTime || 0} ч.</span>
-                    </div>
-                  </div>
-                  
-                  {/* Управление прогрессом */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Прогресс выполнения:</span>
-                      <span className="text-sm">{task.progress}%</span>
-                    </div>
-                    <Progress value={task.progress} className="h-2 w-full" />
-                    <div className="flex justify-between mt-2">
-                      {[0, 25, 50, 75, 100].map((progress) => (
-                        <Button
-                          key={progress}
-                          variant={task.progress === progress ? "default" : "outline"}
-                          size="sm"
-                          className="text-xs py-1 px-2 h-auto"
-                          onClick={() => handleProgressUpdate(project.id, task, progress)}
-                        >
-                          {progress}%
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Комментарии */}
-                  <div className="space-y-2 border-t pt-3 mt-3">
-                    <h4 className="text-sm font-medium">Комментарии:</h4>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {task.comments && task.comments.length > 0 ? (
-                        task.comments.map((comment) => (
-                          <div key={comment.id} className="bg-slate-50 p-2 rounded-md">
-                            <div className="flex justify-between text-xs text-slate-500">
-                              <span>{comment.userName}</span>
-                              <span>{formatDate(comment.date)}</span>
-                            </div>
-                            <p className="text-sm mt-1">{comment.text}</p>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-slate-500">Нет комментариев</p>
-                      )}
-                    </div>
-                    
-                    {/* Форма добавления комментария */}
-                    <div className="mt-2 flex items-center space-x-2">
-                      <input
-                        type="text"
-                        placeholder="Добавить комментарий..."
-                        className="flex-1 text-sm py-1 px-2 border rounded-md"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            handleAddComment(project.id, task, e.currentTarget.value);
-                            e.currentTarget.value = "";
-                          }
-                        }}
-                      />
-                      <Button 
-                        size="sm"
-                        onClick={(e) => {
-                          const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                          handleAddComment(project.id, task, input.value);
-                          input.value = "";
-                        }}
-                      >
-                        <Icon name="Send" className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        <Tabs defaultValue="active">
+          <TabsList className="w-full mb-4">
+            <TabsTrigger value="active" className="flex-1">
+              Активные <Badge className="ml-2 bg-primary">{activeTasks.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="flex-1">
+              Завершенные <Badge className="ml-2 bg-green-600">{completedTasks.length}</Badge>
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="active">
+            {activeTasks.length === 0 ? (
+              <div className="text-center py-8">
+                <Icon name="ClipboardList" className="mx-auto h-12 w-12 text-slate-300" />
+                <p className="mt-2 text-slate-500">У вас нет активных задач</p>
+              </div>
+            ) : (
+              <Accordion 
+                type="single" 
+                collapsible 
+                value={activeTask || undefined}
+                onValueChange={(value) => setActiveTask(value)}
+              >
+                {activeTasks.map(task => (
+                  <TaskItem key={task.id} task={task} />
+                ))}
+              </Accordion>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="completed">
+            {completedTasks.length === 0 ? (
+              <div className="text-center py-8">
+                <Icon name="CheckCircle" className="mx-auto h-12 w-12 text-slate-300" />
+                <p className="mt-2 text-slate-500">У вас нет завершенных задач</p>
+              </div>
+            ) : (
+              <Accordion 
+                type="single" 
+                collapsible 
+                value={activeTask || undefined}
+                onValueChange={(value) => setActiveTask(value)}
+              >
+                {completedTasks.map(task => (
+                  <TaskItem key={task.id} task={task} />
+                ))}
+              </Accordion>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

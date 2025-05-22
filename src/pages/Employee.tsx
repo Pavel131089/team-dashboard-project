@@ -28,10 +28,14 @@ const Employee: React.FC = () => {
     loadTasks,
   } = useEmployeeData(navigate);
 
-  // Перезагружаем данные задач при изменении
+  // Загружаем задачи только один раз при монтировании компонента
   useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+    // Явно вызываем loadTasks при монтировании
+    if (!isLoading) {
+      loadTasks();
+    }
+    // Не включаем loadTasks в зависимости, чтобы избежать бесконечного цикла
+  }, [isLoading]); // Зависим только от isLoading
 
   // Если данные загружаются, показываем заглушку
   if (isLoading) {

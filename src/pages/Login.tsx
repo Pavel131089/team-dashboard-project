@@ -1,73 +1,75 @@
-import { useEffect } from "react";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import LoginForm from "@/components/auth/LoginForm";
-import { useAuth } from "@/hooks/useAuth";
 
-/**
- * Компонент страницы входа в систему
- * Позволяет пользователям авторизоваться с указанной ролью
- */
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+
 const Login = () => {
-  // Получаем состояние и обработчики из хука авторизации
-  const {
-    formData,
-    error,
-    handleInputChange,
-    handleRoleChange,
-    handleSubmit,
-    checkExistingSession,
-    initializeDefaultUsers,
-  } = useAuth();
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const navigate = useNavigate()
 
-  // При загрузке компонента
-  useEffect(() => {
-    console.log("Инициализация страницы входа");
-
-    // Инициализируем дефолтных пользователей
-    initializeDefaultUsers();
-
-    // Проверяем текущую сессию
-    checkExistingSession();
-
-    // Проверяем наличие пользователей
-    const usersStr = localStorage.getItem("users");
-    if (usersStr) {
-      try {
-        const users = JSON.parse(usersStr);
-        console.log(`Найдено ${users.length} пользователей в хранилище`);
-      } catch (error) {
-        console.error("Ошибка при проверке пользователей:", error);
-      }
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Здесь будет логика аутентификации
+    console.log('Logging in with:', username, password)
+    
+    // Простое перенаправление для демонстрации
+    if (username.toLowerCase() === 'admin') {
+      navigate('/dashboard')
     } else {
-      console.log("Пользователи не найдены в хранилище");
+      navigate('/employee')
     }
-  }, []);
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Вход в систему</CardTitle>
-          <CardDescription>
-            Войдите для доступа к управлению проектами
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center">Вход в систему</CardTitle>
+          <CardDescription className="text-center">
+            Введите свои учетные данные для входа
           </CardDescription>
         </CardHeader>
-
-        <LoginForm
-          formData={formData}
-          error={error}
-          onInputChange={handleInputChange}
-          onRoleChange={handleRoleChange}
-          onSubmit={handleSubmit}
-        />
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="username" className="text-sm font-medium">
+                Имя пользователя
+              </label>
+              <Input
+                id="username"
+                placeholder="Введите имя пользователя"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium">
+                Пароль
+              </label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Введите пароль"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              Войти
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="flex justify-center text-sm text-gray-500">
+          Тестовые пользователи: admin / employee
+        </CardFooter>
       </Card>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login

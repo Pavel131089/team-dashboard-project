@@ -13,6 +13,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { getProgressColorClass } from "@/utils/progressUtils";
 
 interface TaskWithProject extends Task {
   projectId: string;
@@ -54,7 +55,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     }
   };
 
-  // Безопасная функция для отображения дат
+  // Функция для отображения дат
   const formatDate = (dateString: string | undefined | null) => {
     if (!dateString) return "Не указано";
     try {
@@ -66,105 +67,123 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   };
 
   // Компонент для отображения одной задачи
-  const TaskItem = ({ task }: { task: TaskWithProject }) => (
-    <AccordionItem value={task.id} className="border rounded-md mb-3 bg-white">
-      <AccordionTrigger className="px-4 py-3 hover:no-underline">
-        <div className="flex flex-col items-start w-full text-left">
-          <div className="flex justify-between w-full">
-            <div className="font-medium">{task.name}</div>
-            <Badge variant="outline" className="ml-2">
-              {task.projectName}
-            </Badge>
-          </div>
-          <Progress
-            value={task.progress || 0}
-            className="h-2 mt-2 w-full"
-            indicatorClassName={getProgressColorClass(task.progress || 0)}
-          />
-        </div>
-      </AccordionTrigger>
-      <AccordionContent className="px-4 pb-4">
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm text-slate-600 mb-2">{task.description}</p>
-            <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
-              <div>
-                Сроки: {formatDate(task.startDate)} - {formatDate(task.endDate)}
-              </div>
-              <div>Оценка времени: {task.estimatedTime} ч.</div>
-              <div>Стоимость: {task.price?.toLocaleString() || 0} ₽</div>
-            </div>
-          </div>
+  const TaskItem = ({ task }: { task: TaskWithProject }) => {
+    // Проверяем, что задача существует и имеет id
+    if (!task || !task.id) {
+      return null;
+    }
 
-          <div>
-            <p className="text-sm font-medium mb-2">Прогресс выполнения</p>
-            <div className="flex items-center space-x-2 mb-3">
-              <span className="text-sm">{task.progress || 0}%</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {[0, 25, 50, 75, 100].map((value) => (
-                <Button
-                  key={value}
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    onUpdateProgress(task.id, task.projectId, value)
-                  }
-                  className={
-                    (task.progress || 0) === value
-                      ? "bg-primary text-primary-foreground"
-                      : ""
-                  }
-                >
-                  {value}%
-                </Button>
-              ))}
-            </div>
-          </div>
+    // Безопасно получаем progress
+    const progress = typeof task.progress === "number" ? task.progress : 0;
 
-          <div>
-            <p className="text-sm font-medium mb-2">Комментарии</p>
-            <div className="bg-slate-50 p-3 rounded-md mb-3 max-h-40 overflow-y-auto">
-              {task.comments && task.comments.length > 0 ? (
-                <div className="space-y-2">
-                  {task.comments.map((comment, index) => (
-                    <div
-                      key={comment.id || index}
-                      className="text-sm border-l-2 border-slate-300 pl-2"
-                    >
-                      <p className="text-xs text-slate-500">
-                        {comment.author || "Система"} •{" "}
-                        {formatDate(comment.date)}
-                      </p>
-                      <p>{comment.text}</p>
-                    </div>
-                  ))}
+    return (
+      <AccordionItem
+        value={task.id}
+        className="border rounded-md mb-3 bg-white"
+      >
+        <AccordionTrigger className="px-4 py-3 hover:no-underline">
+          <div className="flex flex-col items-start w-full text-left">
+            <div className="flex justify-between w-full">
+              <div className="font-medium">{task.name || "Без названия"}</div>
+              <Badge variant="outline" className="ml-2">
+                {task.projectName || "Проект"}
+              </Badge>
+            </div>
+            <Progress value={progress} className="h-2 mt-2 w-full" />
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="px-4 pb-4">
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-slate-600 mb-2">
+                {task.description || "Без описания"}
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
+                <div>
+                  Сроки: {formatDate(task.startDate)} -{" "}
+                  {formatDate(task.endDate)}
                 </div>
-              ) : (
-                <p className="text-sm text-slate-500">Нет комментариев</p>
-              )}
+                <div>Оценка времени: {task.estimatedTime || 0} ч.</div>
+                <div>
+                  Стоимость:{" "}
+                  {typeof task.price === "number"
+                    ? task.price.toLocaleString()
+                    : 0}{" "}
+                  ₽
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Textarea
-                placeholder="Добавить комментарий..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                className="w-full h-20 resize-none"
-              />
-              <Button
-                onClick={() => handleSubmitComment(task.id, task.projectId)}
-                disabled={!commentText.trim()}
-                size="sm"
-                className="w-full"
-              >
-                Отправить
-              </Button>
+
+            <div>
+              <p className="text-sm font-medium mb-2">Прогресс выполнения</p>
+              <div className="flex items-center space-x-2 mb-3">
+                <span className="text-sm">{progress}%</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[0, 25, 50, 75, 100].map((value) => (
+                  <Button
+                    key={value}
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      onUpdateProgress(task.id, task.projectId, value)
+                    }
+                    className={
+                      progress === value
+                        ? "bg-primary text-primary-foreground"
+                        : ""
+                    }
+                  >
+                    {value}%
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-2">Комментарии</p>
+              <div className="bg-slate-50 p-3 rounded-md mb-3 max-h-40 overflow-y-auto">
+                {task.comments && task.comments.length > 0 ? (
+                  <div className="space-y-2">
+                    {task.comments.map((comment, index) => (
+                      <div
+                        key={comment?.id || index}
+                        className="text-sm border-l-2 border-slate-300 pl-2"
+                      >
+                        <p className="text-xs text-slate-500">
+                          {comment?.author || "Система"} •{" "}
+                          {formatDate(comment?.date)}
+                        </p>
+                        <p>{comment?.text || ""}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">Нет комментариев</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Textarea
+                  placeholder="Добавить комментарий..."
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  className="w-full h-20 resize-none"
+                />
+                <Button
+                  onClick={() => handleSubmitComment(task.id, task.projectId)}
+                  disabled={!commentText.trim()}
+                  size="sm"
+                  className="w-full"
+                >
+                  Отправить
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </AccordionContent>
-    </AccordionItem>
-  );
+        </AccordionContent>
+      </AccordionItem>
+    );
+  };
 
   return (
     <Card className="w-full">

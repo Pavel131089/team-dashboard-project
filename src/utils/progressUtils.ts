@@ -5,7 +5,8 @@
  */
 export const getProgressColorClass = (percent: number): string => {
   // Проверяем, что передано числовое значение
-  const validPercent = typeof percent === "number" ? percent : 0;
+  const validPercent =
+    typeof percent === "number" && !isNaN(percent) ? percent : 0;
 
   if (validPercent >= 75) return "bg-green-500";
   if (validPercent >= 50) return "bg-blue-500";
@@ -24,7 +25,8 @@ export const processProgressChange = (task: any, newProgress: number): any => {
   if (!task) return null;
 
   // Убедимся, что передано числовое значение прогресса
-  const validProgress = typeof newProgress === "number" ? newProgress : 0;
+  const validProgress =
+    typeof newProgress === "number" && !isNaN(newProgress) ? newProgress : 0;
 
   const updatedTask = { ...task, progress: validProgress };
 
@@ -37,11 +39,12 @@ export const processProgressChange = (task: any, newProgress: number): any => {
   }
 
   // Если прогресс изменился с 0%, и нет даты начала, устанавливаем ее
-  if (
-    validProgress > 0 &&
-    (!task.progress || task.progress === 0) &&
-    !updatedTask.actualStartDate
-  ) {
+  const oldProgress =
+    typeof task.progress === "number" && !isNaN(task.progress)
+      ? task.progress
+      : 0;
+
+  if (validProgress > 0 && oldProgress === 0 && !updatedTask.actualStartDate) {
     updatedTask.actualStartDate = new Date().toISOString();
   }
 

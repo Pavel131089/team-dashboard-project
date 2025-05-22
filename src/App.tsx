@@ -14,12 +14,27 @@ function App() {
   const navigate = useNavigate();
   const [sessionChecked, setSessionChecked] = useState(false);
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+
+  // Перехватчик ошибок
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error("Глобальная ошибка приложения:", event.error);
+      setError(event.error);
+    };
+
+    window.addEventListener("error", handleError);
+    return () => window.removeEventListener("error", handleError);
+  }, []);
 
   // Проверяем состояние сессии при загрузке приложения
   useEffect(() => {
     const checkSession = () => {
       try {
+        console.log("Проверка сессии...");
         const session = sessionService.getCurrentSession();
+        console.log("Результат проверки сессии:", session);
+
         if (session && session.isAuthenticated) {
           // Определяем начальный маршрут на основе роли
           if (session.role === "manager") {
@@ -29,7 +44,8 @@ function App() {
           }
         }
       } catch (error) {
-        console.error("Error checking session:", error);
+        console.error("Ошибка при проверке сессии:", error);
+        setError(error instanceof Error ? error : new Error(String(error)));
       } finally {
         setSessionChecked(true);
       }
@@ -50,11 +66,40 @@ function App() {
     }
   }, [sessionChecked, initialRoute, navigate]);
 
+  // Если произошла ошибка, показываем информацию об ошибке
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white p-6 rounded-lg shadow-md">
+          <h1 className="text-xl font-bold text-red-600 mb-4">
+            Ошибка загрузки приложения
+          </h1>
+          <p className="text-gray-700 mb-4">
+            Произошла ошибка при загрузке приложения. Пожалуйста, попробуйте
+            обновить страницу.
+          </p>
+          <pre className="bg-gray-100 p-3 rounded text-xs overflow-auto max-h-40 mb-4">
+            {error.message}
+          </pre>
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+          >
+            Обновить страницу
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Если сессия еще не проверена, показываем пустой div или лоадер
   if (!sessionChecked) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-pulse">Загрузка...</div>
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-700">Загрузка приложения...</p>
+        </div>
       </div>
     );
   }

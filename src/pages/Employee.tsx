@@ -62,7 +62,11 @@ const Employee: React.FC = () => {
   // Обработчик для принятия задачи с последующим уведомлением
   const handleTaskTake = useCallback(
     (taskId: string, projectId: string) => {
+      console.log("Попытка взять задачу в работу:", { taskId, projectId });
       const result = handleTakeTask(taskId, projectId);
+
+      // Выводим в консоль результат для отладки
+      console.log("Результат взятия задачи:", result);
 
       // Отложенное уведомление для предотвращения обновления состояния во время рендеринга
       setTimeout(() => {

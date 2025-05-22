@@ -24,21 +24,31 @@ const AuthGuard = ({ children, requiredRole }: AuthGuardProps) => {
     const checkAuth = () => {
       try {
         const session = sessionService.getCurrentSession();
+        console.log("AuthGuard: проверка сессии", session);
 
         if (!session || !session.isAuthenticated) {
+          console.log("AuthGuard: пользователь не аутентифицирован");
           setIsAuthenticated(false);
           setRedirectPath("/login");
           return;
         }
 
+        console.log(
+          "AuthGuard: пользователь аутентифицирован, роль:",
+          session.role,
+        );
         setIsAuthenticated(true);
         setUserRole(session.role as UserRole);
 
         // Проверяем соответствие роли
         if (session.role !== requiredRole) {
+          console.log(
+            `AuthGuard: роль не соответствует требуемой (${requiredRole})`,
+          );
           const path = session.role === "manager" ? "/dashboard" : "/employee";
           setRedirectPath(path);
         } else {
+          console.log("AuthGuard: роль соответствует требуемой");
           // Если роль соответствует, обнуляем путь перенаправления
           setRedirectPath(null);
         }
@@ -50,16 +60,17 @@ const AuthGuard = ({ children, requiredRole }: AuthGuardProps) => {
     };
 
     checkAuth();
-  }, [requiredRole, location.pathname]);
+  }, [requiredRole]);
 
   // Выполняем перенаправление через императивный navigate вместо Navigate
   useEffect(() => {
     if (redirectPath) {
+      console.log("AuthGuard: перенаправление на", redirectPath);
       navigate(redirectPath, { replace: true });
     }
   }, [redirectPath, navigate]);
 
-  // Если проверка еще не завершена, возвращаем null или лоадер
+  // Если проверка еще не завершена, возвращаем индикатор загрузки
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -70,11 +81,17 @@ const AuthGuard = ({ children, requiredRole }: AuthGuardProps) => {
 
   // Если пользователь аутентифицирован и имеет нужную роль, показываем защищенный контент
   if (isAuthenticated && userRole === requiredRole) {
+    console.log("AuthGuard: показываем защищенный контент");
     return <>{children}</>;
   }
 
-  // По умолчанию ничего не рендерим, т.к. перенаправление выполняется через useEffect
-  return null;
+  // По умолчанию показываем индикатор загрузки,
+  // т.к. перенаправление выполняется через useEffect
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-pulse">Перенаправление...</div>
+    </div>
+  );
 };
 
 export default AuthGuard;

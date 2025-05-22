@@ -72,42 +72,45 @@ export function useEmployeeData(navigate: NavigateFunction) {
             // Проверка назначения задачи текущему пользователю
             let isAssigned = false;
 
-            // Проверяем, назначена ли задача текущему пользователю
-            if (Array.isArray(task.assignedToNames)) {
-              isAssigned = task.assignedToNames.some((name) => {
-                if (!name) return false;
-                const nameStr = String(name).toLowerCase();
-                const userName = userData.name
-                  ? String(userData.name).toLowerCase()
-                  : "";
-                const userUsername = userData.username
-                  ? String(userData.username).toLowerCase()
-                  : "";
-                const userEmail = userData.email
-                  ? String(userData.email).toLowerCase()
-                  : "";
-                const userId = userData.id
-                  ? String(userData.id).toLowerCase()
-                  : "";
-                return (
-                  nameStr === userName ||
-                  nameStr === userUsername ||
-                  nameStr === userEmail ||
-                  nameStr === userId
-                );
-              });
-            } else if (task.assignedTo === userData.id) {
+            // Проверяем assignedTo (ID пользователя)
+            if (
+              task.assignedTo &&
+              userData.id &&
+              task.assignedTo === userData.id
+            ) {
               isAssigned = true;
             }
 
-            if (isAssigned) {
-              userTasks.push(taskWithProject);
+            // Проверяем assignedToNames (массив имен или ID)
+            if (!isAssigned && Array.isArray(task.assignedToNames)) {
+              isAssigned = task.assignedToNames.some((name) => {
+                if (!name) return false;
+
+                // Приводим значения к строкам для сравнения
+                const nameStr = String(name).toLowerCase();
+                const userIdStr = userData.id
+                  ? String(userData.id).toLowerCase()
+                  : "";
+                const userNameStr = userData.name
+                  ? String(userData.name).toLowerCase()
+                  : "";
+                const userUsernameStr = userData.username
+                  ? String(userData.username).toLowerCase()
+                  : "";
+
+                // Проверяем совпадение с любым из идентификаторов пользователя
+                return (
+                  nameStr === userIdStr ||
+                  nameStr === userNameStr ||
+                  nameStr === userUsernameStr
+                );
+              });
             }
 
-            // Добавляем задачу в список доступных для всех,
-            // даже если она уже назначена другим сотрудникам,
-            // но не текущему пользователю
-            if (!isAssigned) {
+            // Добавляем в соответствующий список
+            if (isAssigned) {
+              userTasks.push(taskWithProject);
+            } else {
               otherTasks.push(taskWithProject);
             }
           });
@@ -272,7 +275,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
     // после изменения состояния компонента
   }, [assignedTasks, availableTasks]);
 
-  // Обработчик для принятия задачи в работу
+  // Обработчик принятия задачи в работу
   const handleTakeTask = useCallback(
     (taskId: string, projectId: string) => {
       if (!user) {
@@ -299,15 +302,22 @@ export function useEmployeeData(navigate: NavigateFunction) {
           return false;
         }
 
-        // Не заменяем текущих исполнителей, а добавляем нового
+        // Определение существующих значений или инициализация пустыми массивами
         const currentAssignedToNames = Array.isArray(task.assignedToNames)
-          ? task.assignedToNames
+          ? [...task.assignedToNames]
           : [];
 
+        // Создаем идентификаторы пользователя для проверки
+        const userIdentifiers = [user.id, user.name, user.username]
+          .filter(Boolean)
+          .map((id) => String(id).toLowerCase());
+
         // Проверяем, не назначена ли задача уже этому пользователю
-        const isAlreadyAssigned = currentAssignedToNames.some(
-          (name) => name === user.name || name === user.id,
-        );
+        const isAlreadyAssigned = currentAssignedToNames.some((name) => {
+          if (!name) return false;
+          const nameStr = String(name).toLowerCase();
+          return userIdentifiers.includes(nameStr);
+        });
 
         if (isAlreadyAssigned) {
           setTimeout(() => {
@@ -316,11 +326,21 @@ export function useEmployeeData(navigate: NavigateFunction) {
           return true; // Возвращаем true, т.к. фактически задача уже назначена
         }
 
-        // Добавляем текущего пользователя к списку исполнителей
-        const newAssignedToNames = [...currentAssignedToNames, user.name];
+        // Подготавливаем идентификатор пользователя для добавления в список
+        const userIdentifier = user.name || user.id || user.username;
 
-        // Обновляем список исполнителей и поле assignedTo
-        // assignedTo содержит ID последнего назначенного пользователя
+        // Формируем новый список исполнителей с текущим пользователем
+        const newAssignedToNames = [...currentAssignedToNames, userIdentifier];
+
+        console.log("Обновление задачи:", {
+          taskId,
+          currentAssignedToNames,
+          newAssignedToNames,
+          userId: user.id,
+          userName: user.name,
+        });
+
+        // Обновляем задачу
         const updatedTask: Task = {
           ...task,
           assignedTo: user.id,
@@ -328,6 +348,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
           actualStartDate: task.actualStartDate || new Date().toISOString(),
         };
 
+        // Обновляем проект с обновленной задачей
         const updatedProjects = projects.map((p) => {
           if (p.id === projectId) {
             return {
@@ -338,16 +359,23 @@ export function useEmployeeData(navigate: NavigateFunction) {
           return p;
         });
 
+        // Сохраняем обновленные проекты в localStorage
         localStorage.setItem("projects", JSON.stringify(updatedProjects));
+
+        // Обновляем состояние проектов
         setProjects(updatedProjects);
 
+        // Обрабатываем обновленные проекты для получения списков задач
         const { userTasks, otherTasks } = processProjects(
           updatedProjects,
           user,
         );
+
+        // Обновляем состояния списков задач
         setAssignedTasks(userTasks);
         setAvailableTasks(otherTasks);
 
+        // Показываем уведомление об успешном назначении задачи
         setTimeout(() => {
           toast.success("Задача принята в работу");
         }, 0);

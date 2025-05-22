@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Task } from "@/types/project";
+import { Task, Project } from "@/types/project";
 import Icon from "@/components/ui/icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -22,12 +22,14 @@ interface EmployeeTasksCardProps {
     progress: number,
   ) => void;
   onAddComment: (taskId: string, projectId: string, comment: string) => void;
+  projects?: Project[];
 }
 
 const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   tasks,
   onUpdateProgress,
   onAddComment,
+  projects = [],
 }) => {
   const [commentText, setCommentText] = useState<string>("");
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>(
@@ -104,9 +106,11 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   const ProjectGroup = ({
     projectInfo,
   }: {
-    projectId: string;
-    projectName: string;
-    tasks: TaskWithProject[];
+    projectInfo: {
+      projectId: string;
+      projectName: string;
+      tasks: TaskWithProject[];
+    };
   }) => {
     // Вычисляем прогресс проекта
     const projectProgress = Math.round(

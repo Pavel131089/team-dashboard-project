@@ -86,6 +86,7 @@ const Employee: React.FC = () => {
             tasks={safeAssignedTasks}
             onUpdateProgress={handleUpdateTaskProgress}
             onAddComment={handleAddTaskComment}
+            projects={projects} // Передаем массив проектов для получения полных данных
           />
 
           {/* Секция с доступными задачами */}

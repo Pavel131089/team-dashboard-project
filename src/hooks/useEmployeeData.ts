@@ -13,6 +13,7 @@ interface TaskWithProject extends Task {
  * Хук для работы с данными сотрудника
  */
 export function useEmployeeData(navigate: NavigateFunction) {
+  // Все состояния объявлены на верхнем уровне, без условий
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [assignedTasks, setAssignedTasks] = useState<TaskWithProject[]>([]);
@@ -31,7 +32,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
     [navigate],
   );
 
-  // Обработка проектов для получения задач
+  // Обработка проектов для получения задач - без условных хуков внутри
   const processProjects = useCallback(
     (
       projectsList: Project[],
@@ -44,67 +45,33 @@ export function useEmployeeData(navigate: NavigateFunction) {
       const otherTasks: TaskWithProject[] = [];
 
       try {
-        // Выводим информацию о всех проектах для отладки
-        console.log(
-          "All projects data:",
-          JSON.stringify(projectsList, null, 2),
-        );
+        if (!Array.isArray(projectsList)) {
+          console.error("projectsList не является массивом");
+          return { userTasks, otherTasks };
+        }
 
         projectsList.forEach((project) => {
-          // Проверяем наличие дат проекта
-          if (!project.startDate || !project.endDate) {
-            console.warn(`Project ${project.id} missing dates!`, project);
-            // Добавляем даты на месте, если их нет
-            project.startDate = project.startDate || new Date().toISOString();
-            project.endDate =
-              project.endDate ||
-              new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-          }
-
-          if (!Array.isArray(project.tasks)) {
-            console.warn(`Project ${project.id} has no tasks array!`);
+          if (!project || !Array.isArray(project.tasks)) {
             return;
           }
 
           project.tasks.forEach((task) => {
-            if (!task) {
-              console.warn(`Null task in project ${project.id}`);
-              return;
-            }
+            if (!task) return;
 
-            // Создаем копию задачи с дополнительными полями и датами
+            // Создаем копию задачи с дополнительными полями
             const taskWithProject: TaskWithProject = {
               ...task,
               projectId: project.id,
               projectName: project.name || "Без названия",
-              // Явно добавляем даты проекта, если даты задачи отсутствуют
               startDate: task.startDate || project.startDate,
               endDate: task.endDate || project.endDate,
-              // Добавляем также ссылки на даты проекта
               projectStartDate: project.startDate,
               projectEndDate: project.endDate,
-              // Добавляем ссылку на полный проект
-              fullProject: project,
             };
-
-            // Отладка для первой задачи каждого проекта
-            if (project.tasks.indexOf(task) === 0) {
-              console.log(`First task in project ${project.id}:`, {
-                taskId: task.id,
-                taskName: task.name,
-                originalStartDate: task.startDate,
-                originalEndDate: task.endDate,
-                projectStartDate: project.startDate,
-                projectEndDate: project.endDate,
-                finalStartDate: taskWithProject.startDate,
-                finalEndDate: taskWithProject.endDate,
-              });
-            }
 
             // Проверка назначения задачи текущему пользователю
             let isAssigned = false;
 
-            // Проверяем по ID пользователя
             if (
               task.assignedTo &&
               userData.id &&
@@ -113,11 +80,9 @@ export function useEmployeeData(navigate: NavigateFunction) {
               isAssigned = true;
             }
 
-            // Проверяем по имени, имени пользователя или email
             if (!isAssigned && Array.isArray(task.assignedToNames)) {
               isAssigned = task.assignedToNames.some((name) => {
                 if (!name) return false;
-
                 const nameStr = String(name).toLowerCase();
                 const userName = userData.name
                   ? String(userData.name).toLowerCase()
@@ -128,7 +93,6 @@ export function useEmployeeData(navigate: NavigateFunction) {
                 const userEmail = userData.email
                   ? String(userData.email).toLowerCase()
                   : "";
-
                 return (
                   nameStr === userName ||
                   nameStr === userUsername ||
@@ -147,22 +111,6 @@ export function useEmployeeData(navigate: NavigateFunction) {
             }
           });
         });
-
-        // Проверяем и выводим информацию о доступных задачах
-        console.log(
-          "Available tasks processed:",
-          otherTasks.map((t) => ({
-            id: t.id,
-            name: t.name,
-            startDate: t.startDate,
-            endDate: t.endDate,
-            projectStartDate: t.projectStartDate,
-            projectEndDate: t.projectEndDate,
-          })),
-        );
-
-        // ВАЖНО: Сохраняем обновленные проекты с фиксированными датами
-        localStorage.setItem("projects", JSON.stringify(projectsList));
       } catch (error) {
         console.error("Ошибка при обработке проектов:", error);
       }
@@ -172,10 +120,9 @@ export function useEmployeeData(navigate: NavigateFunction) {
     [],
   );
 
-  // Загрузка данных
+  // Загрузка данных пользователя и проектов - вызываем один раз, без условий
   useEffect(() => {
-    // Функция для загрузки пользователя и проектов
-    const loadData = () => {
+    const loadData = async () => {
       setIsLoading(true);
       try {
         // Загрузка пользователя из localStorage
@@ -207,49 +154,15 @@ export function useEmployeeData(navigate: NavigateFunction) {
 
         setUser(userData);
 
-        // Загрузка проектов с обработкой дат
+        // Загрузка проектов
         let projectsList = [];
         try {
           const projectsData = localStorage.getItem("projects");
-          if (projectsData) {
-            projectsList = JSON.parse(projectsData);
+          projectsList = projectsData ? JSON.parse(projectsData) : [];
 
-            // Проверяем, что projectsList действительно массив
-            if (!Array.isArray(projectsList)) {
-              console.error("Данные проектов не являются массивом");
-              projectsList = [];
-            } else {
-              // Для каждого проекта проверяем даты
-              projectsList = projectsList.map((project) => {
-                // Если у проекта нет дат, добавляем их
-                if (!project.startDate || !project.endDate) {
-                  return {
-                    ...project,
-                    startDate: project.startDate || new Date().toISOString(),
-                    endDate:
-                      project.endDate ||
-                      new Date(
-                        Date.now() + 30 * 24 * 60 * 60 * 1000,
-                      ).toISOString(),
-                  };
-                }
-                return project;
-              });
-
-              // Сохраняем проекты с исправленными датами
-              localStorage.setItem("projects", JSON.stringify(projectsList));
-            }
-
-            // Отладка - выводим проекты с их ID и датами
-            console.log(
-              "Projects loaded:",
-              projectsList.map((p) => ({
-                id: p.id,
-                name: p.name,
-                startDate: p.startDate,
-                endDate: p.endDate,
-              })),
-            );
+          if (!Array.isArray(projectsList)) {
+            console.error("Данные проектов не являются массивом");
+            projectsList = [];
           }
         } catch (error) {
           console.error("Ошибка при загрузке проектов:", error);
@@ -258,58 +171,15 @@ export function useEmployeeData(navigate: NavigateFunction) {
 
         setProjects(projectsList);
 
-        // Для отладки - выводим полную информацию о проектах перед обработкой
-        console.log(
-          "Full projects before processing:",
-          JSON.stringify(projectsList, null, 2),
-        );
-
-        // Измененная обработка проектов - создаем структуру для доступных задач
+        // Обработка проектов для получения задач
         const { userTasks, otherTasks } = processProjects(
           projectsList,
           userData,
         );
-
-        // ВАЖНОЕ ИЗМЕНЕНИЕ - меняем формат otherTasks для передачи в компонент
-        // Преобразуем otherTasks в формат, ожидаемый компонентом AvailableTasksSection
-        const formattedOtherTasks = otherTasks.map((task) => {
-          // Находим полную информацию о проекте для каждой задачи
-          const projectId = task.projectId;
-          const fullProject =
-            projectsList.find((p) => p.id === projectId) || null;
-
-          return {
-            task: task,
-            project: fullProject || {
-              id: projectId,
-              name: task.projectName || "Проект",
-              startDate: task.projectStartDate,
-              endDate: task.projectEndDate,
-            },
-          };
-        });
-
-        // Для отладки - выводим информацию о задачах после обработки
-        console.log(
-          "Available tasks after processing:",
-          formattedOtherTasks.map((t) => ({
-            taskId: t.task.id,
-            taskName: t.task.name,
-            hasProject: !!t.project,
-            projectId: t.project?.id,
-            projectStartDate: t.project?.startDate,
-            projectEndDate: t.project?.endDate,
-          })),
-        );
-
         setAssignedTasks(userTasks);
-        setAvailableTasks(formattedOtherTasks);
+        setAvailableTasks(otherTasks);
       } catch (error) {
         console.error("Ошибка при загрузке данных:", error);
-        // Используем setTimeout для вызова toast, чтобы избежать проблем с рендерингом
-        setTimeout(() => {
-          toast.error("Произошла ошибка при загрузке данных");
-        }, 0);
       } finally {
         setIsLoading(false);
       }
@@ -318,17 +188,17 @@ export function useEmployeeData(navigate: NavigateFunction) {
     loadData();
   }, [navigate, processProjects, redirectToLogin]);
 
+  // Остальные функции объявлены с useCallback, чтобы избежать лишних ререндеров
+
   // Обработчик обновления прогресса задачи
   const handleUpdateTaskProgress = useCallback(
     (taskId: string, projectId: string, progress: number) => {
       try {
-        // Проверяем, что у нас есть валидные проекты
         if (!Array.isArray(projects) || projects.length === 0) {
           console.error("Проекты отсутствуют или не являются массивом");
           return false;
         }
 
-        // Находим проект и задачу
         const project = projects.find((p) => p.id === projectId);
         if (!project) {
           console.error(`Проект с ID ${projectId} не найден`);
@@ -341,12 +211,10 @@ export function useEmployeeData(navigate: NavigateFunction) {
           return false;
         }
 
-        // Обновляем данные задачи
         const updatedTask: Task = {
           ...task,
           progress,
           actualStartDate: task.actualStartDate || new Date().toISOString(),
-          // Если прогресс 100%, устанавливаем дату завершения, иначе убираем её
           actualEndDate:
             progress === 100
               ? task.actualEndDate || new Date().toISOString()
@@ -355,7 +223,6 @@ export function useEmployeeData(navigate: NavigateFunction) {
                 : task.actualEndDate,
         };
 
-        // Создаем новый массив проектов с обновленной задачей
         const updatedProjects = projects.map((p) => {
           if (p.id === projectId) {
             return {
@@ -366,13 +233,9 @@ export function useEmployeeData(navigate: NavigateFunction) {
           return p;
         });
 
-        // Сохраняем изменения в localStorage
         localStorage.setItem("projects", JSON.stringify(updatedProjects));
-
-        // Обновляем состояние проектов
         setProjects(updatedProjects);
 
-        // Обновляем списки задач
         if (user) {
           const { userTasks, otherTasks } = processProjects(
             updatedProjects,
@@ -382,7 +245,6 @@ export function useEmployeeData(navigate: NavigateFunction) {
           setAvailableTasks(otherTasks);
         }
 
-        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.success(`Прогресс обновлен: ${progress}%`);
         }, 0);
@@ -390,12 +252,9 @@ export function useEmployeeData(navigate: NavigateFunction) {
         return true;
       } catch (error) {
         console.error("Ошибка при обновлении прогресса:", error);
-
-        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.error("Ошибка при обновлении прогресса");
         }, 0);
-
         return false;
       }
     },
@@ -406,7 +265,6 @@ export function useEmployeeData(navigate: NavigateFunction) {
   const handleTakeTask = useCallback(
     (taskId: string, projectId: string) => {
       if (!user) {
-        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.error("Необходимо войти в систему");
         }, 0);
@@ -414,10 +272,8 @@ export function useEmployeeData(navigate: NavigateFunction) {
       }
 
       try {
-        // Находим проект и задачу
         const project = projects.find((p) => p.id === projectId);
         if (!project) {
-          // Используем отложенный вызов toast вместо прямого
           setTimeout(() => {
             toast.error("Проект не найден");
           }, 0);
@@ -426,14 +282,12 @@ export function useEmployeeData(navigate: NavigateFunction) {
 
         const task = project.tasks.find((t) => t.id === taskId);
         if (!task) {
-          // Используем отложенный вызов toast вместо прямого
           setTimeout(() => {
             toast.error("Задача не найдена");
           }, 0);
           return false;
         }
 
-        // Обновляем данные задачи
         const updatedTask: Task = {
           ...task,
           assignedTo: user.id,
@@ -441,7 +295,6 @@ export function useEmployeeData(navigate: NavigateFunction) {
           actualStartDate: task.actualStartDate || new Date().toISOString(),
         };
 
-        // Обновляем проекты
         const updatedProjects = projects.map((p) => {
           if (p.id === projectId) {
             return {
@@ -452,13 +305,9 @@ export function useEmployeeData(navigate: NavigateFunction) {
           return p;
         });
 
-        // Сохраняем изменения в localStorage
         localStorage.setItem("projects", JSON.stringify(updatedProjects));
-
-        // Обновляем состояние проектов
         setProjects(updatedProjects);
 
-        // Обновляем списки задач
         const { userTasks, otherTasks } = processProjects(
           updatedProjects,
           user,
@@ -466,7 +315,6 @@ export function useEmployeeData(navigate: NavigateFunction) {
         setAssignedTasks(userTasks);
         setAvailableTasks(otherTasks);
 
-        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.success("Задача принята в работу");
         }, 0);
@@ -474,12 +322,9 @@ export function useEmployeeData(navigate: NavigateFunction) {
         return true;
       } catch (error) {
         console.error("Ошибка при принятии задачи:", error);
-
-        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.error("Ошибка при принятии задачи");
         }, 0);
-
         return false;
       }
     },
@@ -494,10 +339,8 @@ export function useEmployeeData(navigate: NavigateFunction) {
       }
 
       try {
-        // Находим проект и задачу
         const project = projects.find((p) => p.id === projectId);
         if (!project) {
-          // Используем отложенный вызов toast вместо прямого
           setTimeout(() => {
             toast.error("Проект не найден");
           }, 0);
@@ -506,14 +349,12 @@ export function useEmployeeData(navigate: NavigateFunction) {
 
         const task = project.tasks.find((t) => t.id === taskId);
         if (!task) {
-          // Используем отложенный вызов toast вместо прямого
           setTimeout(() => {
             toast.error("Задача не найдена");
           }, 0);
           return false;
         }
 
-        // Создаем новый комментарий
         const newComment = {
           id: `comment-${Date.now()}`,
           text: commentText,
@@ -521,7 +362,6 @@ export function useEmployeeData(navigate: NavigateFunction) {
           date: new Date().toISOString(),
         };
 
-        // Обновляем данные задачи
         const updatedTask: Task = {
           ...task,
           comments: [
@@ -530,7 +370,6 @@ export function useEmployeeData(navigate: NavigateFunction) {
           ],
         };
 
-        // Обновляем проекты
         const updatedProjects = projects.map((p) => {
           if (p.id === projectId) {
             return {
@@ -541,13 +380,9 @@ export function useEmployeeData(navigate: NavigateFunction) {
           return p;
         });
 
-        // Сохраняем изменения в localStorage
         localStorage.setItem("projects", JSON.stringify(updatedProjects));
-
-        // Обновляем состояние проектов
         setProjects(updatedProjects);
 
-        // Обновляем списки задач
         const { userTasks, otherTasks } = processProjects(
           updatedProjects,
           user,
@@ -555,7 +390,6 @@ export function useEmployeeData(navigate: NavigateFunction) {
         setAssignedTasks(userTasks);
         setAvailableTasks(otherTasks);
 
-        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.success("Комментарий добавлен");
         }, 0);
@@ -563,12 +397,9 @@ export function useEmployeeData(navigate: NavigateFunction) {
         return true;
       } catch (error) {
         console.error("Ошибка при добавлении комментария:", error);
-
-        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.error("Ошибка при добавлении комментария");
         }, 0);
-
         return false;
       }
     },
@@ -585,6 +416,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
     user,
     assignedTasks,
     availableTasks,
+    projects,
     isLoading,
     handleTakeTask,
     handleUpdateTaskProgress,

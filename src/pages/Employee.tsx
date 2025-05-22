@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import EmployeeLayout from "@/components/employee/EmployeeLayout";
@@ -10,99 +10,16 @@ import { useEmployeeData } from "@/hooks/useEmployeeData";
 import { initializeProjectsStorage } from "@/utils/storageUtils";
 
 const Employee: React.FC = () => {
+  // Важно! Все хуки должны быть на верхнем уровне компонента
   const navigate = useNavigate();
   const [initialized, setInitialized] = useState(false);
   const [shouldRedirect, setShouldRedirect] = useState(false);
 
-  // Инициализируем хранилище
-  useEffect(() => {
-    try {
-      // Инициализируем хранилище
-      initializeProjectsStorage();
-      setInitialized(true);
-
-      // Для дополнительной надежности - проверяем и обновляем даты проектов напрямую
-      const updateProjectDates = () => {
-        try {
-          const storedProjects = localStorage.getItem("projects");
-          if (storedProjects) {
-            const parsedProjects = JSON.parse(storedProjects);
-
-            // Проверяем, что это массив
-            if (!Array.isArray(parsedProjects)) {
-              console.error("Stored projects is not an array");
-              return;
-            }
-
-            // Обновляем проекты с отсутствующими датами
-            let updated = false;
-            const updatedProjects = parsedProjects.map((project) => {
-              // Если у проекта нет дат, добавляем их
-              if (!project.startDate || !project.endDate) {
-                updated = true;
-                console.log(`Adding missing dates to project ${project.id}`);
-                return {
-                  ...project,
-                  startDate: project.startDate || new Date().toISOString(),
-                  endDate:
-                    project.endDate ||
-                    new Date(
-                      Date.now() + 30 * 24 * 60 * 60 * 1000,
-                    ).toISOString(),
-                };
-              }
-
-              // Проверяем задачи проекта
-              if (Array.isArray(project.tasks)) {
-                const updatedTasks = project.tasks.map((task) => {
-                  if (!task.startDate || !task.endDate) {
-                    updated = true;
-                    console.log(
-                      `Adding missing dates to task ${task.id} in project ${project.id}`,
-                    );
-                    return {
-                      ...task,
-                      startDate: task.startDate || project.startDate,
-                      endDate: task.endDate || project.endDate,
-                    };
-                  }
-                  return task;
-                });
-
-                if (
-                  JSON.stringify(updatedTasks) !== JSON.stringify(project.tasks)
-                ) {
-                  updated = true;
-                  return { ...project, tasks: updatedTasks };
-                }
-              }
-
-              return project;
-            });
-
-            // Сохраняем обновленные проекты, если были изменения
-            if (updated) {
-              console.log("Saving projects with updated dates");
-              localStorage.setItem("projects", JSON.stringify(updatedProjects));
-            }
-          }
-        } catch (error) {
-          console.error("Error updating project dates:", error);
-        }
-      };
-
-      // Вызываем функцию обновления дат
-      updateProjectDates();
-    } catch (error) {
-      console.error("Ошибка при инициализации хранилища:", error);
-    }
-  }, []);
-
-  // Получаем данные из хука
+  // Получаем данные из хука - всегда вызываем в том же порядке
   const {
     assignedTasks,
     availableTasks,
-    projects, // Получаем проекты из хука
+    projects,
     user,
     isLoading,
     handleTakeTask,
@@ -111,40 +28,38 @@ const Employee: React.FC = () => {
     handleLogout,
   } = useEmployeeData(navigate);
 
-  // Проверяем формат данных для отладки
+  // Безопасно получаем массивы - используем useMemo
+  const safeData = useMemo(() => {
+    return {
+      assignedTasks: Array.isArray(assignedTasks) ? assignedTasks : [],
+      availableTasks: Array.isArray(availableTasks) ? availableTasks : [],
+      projects: Array.isArray(projects) ? projects : [],
+    };
+  }, [assignedTasks, availableTasks, projects]);
+
+  // Инициализируем хранилище проектов при первой загрузке - без условий
   useEffect(() => {
-    if (!isLoading) {
-      console.log("Employee data loaded:", {
-        hasUser: !!user,
-        projectsCount: projects?.length || 0,
-        assignedTasksCount: assignedTasks?.length || 0,
-        availableTasksCount: availableTasks?.length || 0,
-      });
-
-      // Проверяем формат доступных задач
-      if (Array.isArray(availableTasks) && availableTasks.length > 0) {
-        // Проверяем структуру первой доступной задачи
-        const firstTask = availableTasks[0];
-        console.log("First available task format:", {
-          hasTaskProperty: !!firstTask.task,
-          hasProjectProperty: !!firstTask.project,
-          taskId: firstTask.task?.id,
-          projectId: firstTask.project?.id,
-          projectStartDate: firstTask.project?.startDate,
-          projectEndDate: firstTask.project?.endDate,
-        });
+    const initStorage = async () => {
+      try {
+        await initializeProjectsStorage();
+        setInitialized(true);
+      } catch (error) {
+        console.error("Ошибка при инициализации хранилища:", error);
+        setInitialized(true); // Все равно устанавливаем true, чтобы не блокировать UI
       }
-    }
-  }, [isLoading, user, projects, assignedTasks, availableTasks]);
+    };
 
-  // Обработка перенаправления, если нет пользователя
+    initStorage();
+  }, []);
+
+  // Обработка перенаправления - без условий
   useEffect(() => {
     if (!isLoading && !user) {
       setShouldRedirect(true);
     }
   }, [isLoading, user]);
 
-  // Отдельный useEffect для навигации, чтобы избежать обновления состояния во время рендеринга
+  // Отдельный useEffect для навигации - без условий
   useEffect(() => {
     if (shouldRedirect) {
       navigate("/login");
@@ -180,77 +95,24 @@ const Employee: React.FC = () => {
     );
   }
 
-  // Безопасно получаем массивы задач и проектов
-  const safeAssignedTasks = Array.isArray(assignedTasks) ? assignedTasks : [];
-
-  // Убедимся, что данные имеют правильный формат перед передачей в компоненты
-  const safeAvailableTasks = useMemo(() => {
-    if (!Array.isArray(availableTasks)) {
-      console.error("availableTasks is not an array");
-      return [];
-    }
-
-    // Проверяем каждую задачу на корректность структуры
-    return availableTasks.map((item) => {
-      // Если item уже в формате {task, project}, возвращаем его
-      if (item.task && item.project) {
-        return item;
-      }
-
-      // Иначе пытаемся создать правильную структуру
-      const taskData = item.task || item;
-      let projectData = item.project;
-
-      // Если нет данных о проекте, пытаемся найти их
-      if (!projectData && taskData.projectId && Array.isArray(projects)) {
-        projectData = projects.find((p) => p.id === taskData.projectId) || {
-          id: taskData.projectId,
-          name: taskData.projectName || "Проект",
-          startDate: taskData.projectStartDate,
-          endDate: taskData.projectEndDate,
-        };
-      }
-
-      return {
-        task: taskData,
-        project: projectData || { id: "", name: "Проект" },
-      };
-    });
-  }, [availableTasks, projects]);
-
-  const safeProjects = Array.isArray(projects) ? projects : [];
-
-  // Отладка данных перед рендерингом
-  console.log("Employee page full data:", {
-    availableTasks: safeAvailableTasks.map((t) => ({
-      id: t.id,
-      name: t.name,
-      startDate: t.startDate,
-      endDate: t.endDate,
-      projectStartDate: t.projectStartDate,
-      projectEndDate: t.projectEndDate,
-      // Добавляем полные данные первой задачи для отладки
-      ...(t.id === safeAvailableTasks[0]?.id ? { fullTask: t } : {}),
-    })),
-  });
-
+  // Рендерим основной контент только если все проверки пройдены
   return (
     <EmployeeLayout userName={user.name || ""} onLogout={handleLogout}>
       <EmployeeContent>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Карточка с назначенными задачами */}
           <EmployeeTasksCard
-            tasks={safeAssignedTasks}
+            tasks={safeData.assignedTasks}
             onUpdateProgress={handleUpdateTaskProgress}
             onAddComment={handleAddTaskComment}
-            projects={safeProjects}
+            projects={safeData.projects}
           />
 
           {/* Секция с доступными задачами */}
           <AvailableTasksSection
-            tasks={safeAvailableTasks}
+            tasks={safeData.availableTasks}
             onTakeTask={handleTakeTask}
-            projects={safeProjects}
+            projects={safeData.projects}
           />
         </div>
       </EmployeeContent>

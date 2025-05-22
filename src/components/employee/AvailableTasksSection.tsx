@@ -1,6 +1,11 @@
-
-import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Task, Project } from "@/types/project";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
@@ -15,22 +20,14 @@ interface AvailableTasksSectionProps {
 const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
   tasks,
   onTakeTask,
-  projects = []
+  projects = [],
 }) => {
-  // Создаем карту проектов для быстрого доступа
-  const projectsMap = useMemo(() => {
-    const map: Record<string, Project> = {};
-    if (Array.isArray(projects)) {
-      projects.forEach(project => {
-        if (project?.id) {
-          map[project.id] = project;
-        }
-      });
-    }
-    return map;
-  }, [projects]);
+  // Проверяем, есть ли доступные задачи
+  if (!Array.isArray(tasks) || tasks.length === 0) {
+    return <EmptyAvailableTasks />;
+  }
 
-  // Форматируем дату для отображения
+  // Безопасное форматирование даты
   const formatDate = (dateString?: string | null): string => {
     if (!dateString) return "Не указано";
     try {
@@ -43,23 +40,6 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
     }
   };
 
-  // Проверяем, есть ли доступные задачи
-  if (!Array.isArray(tasks) || tasks.length === 0) {
-    return <EmptyAvailableTasks />;
-  }
-
-  // Для отладки - выводим информацию о задачах
-  console.log("Available tasks in section:", tasks.map(t => ({
-    taskId: t.task.id,
-    taskName: t.task.name,
-    projectId: t.project?.id,
-    projectName: t.project?.name,
-    projectStartDate: t.project?.startDate,
-    projectEndDate: t.project?.endDate,
-    taskStartDate: t.task.startDate,
-    taskEndDate: t.task.endDate
-  })));
-
   return (
     <Card>
       <CardHeader>
@@ -67,27 +47,27 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
           <Icon name="Briefcase" className="text-primary h-5 w-5" />
           <CardTitle>Доступные задачи</CardTitle>
         </div>
-        <CardDescription>Задачи, которые вы можете взять в работу</CardDescription>
+        <CardDescription>
+          Задачи, которые вы можете взять в работу
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {tasks.map(({ task, project }) => {
-          // Получаем полную информацию о проекте из карты проектов, если доступно
-          const fullProject = project?.id ? projectsMap[project.id] || project : project;
-          
-          // Для отладки - выводим информацию о задаче и ее проекте
-          console.log(`Rendering available task ${task.id || task.name}:`, {
-            projectFromTasks: project,
-            projectFromMap: fullProject,
+          // Получаем даты задачи или проекта
+          const startDate = task.startDate || project?.startDate;
+          const endDate = task.endDate || project?.endDate;
+
+          // Отладка
+          console.log(`Rendering available task ${task.id}:`, {
+            taskName: task.name,
             taskStartDate: task.startDate,
             taskEndDate: task.endDate,
-            projectStartDate: fullProject?.startDate,
-            projectEndDate: fullProject?.endDate
+            projectStartDate: project?.startDate,
+            projectEndDate: project?.endDate,
+            finalStartDate: startDate,
+            finalEndDate: endDate,
           });
-          
-          // Используем даты проекта, если даты задачи отсутствуют
-          const startDate = task.startDate || fullProject?.startDate;
-          const endDate = task.endDate || fullProject?.endDate;
-          
+
           return (
             <div key={task.id} className="border rounded-lg p-4 bg-white">
               <div className="flex justify-between items-start">
@@ -100,10 +80,10 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                   )}
                 </div>
                 <div className="bg-slate-100 px-2 py-1 rounded text-xs">
-                  {fullProject?.name || "Проект"}
+                  {project?.name || "Проект"}
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 text-xs text-slate-500">
                 <div className="flex items-center gap-1">
                   <Icon name="Calendar" className="h-3 w-3" />
@@ -126,9 +106,9 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                   </div>
                 ) : null}
               </div>
-              
-              <Button 
-                onClick={() => onTakeTask(task.id, fullProject?.id || "")}
+
+              <Button
+                onClick={() => onTakeTask(task.id, project?.id || "")}
                 className="w-full mt-3"
                 size="sm"
               >

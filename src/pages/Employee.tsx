@@ -30,9 +30,28 @@ const Employee: React.FC = () => {
 
   // Безопасно получаем массивы - используем useMemo
   const safeData = useMemo(() => {
+    // Нормализуем данные задач с более сложной обработкой
+    const normalizeTaskWithProject = (taskWithProject: any) => {
+      // Убедимся, что задача и проект всегда объекты
+      const task = taskWithProject?.task || taskWithProject || {};
+      const project = taskWithProject?.project || {};
+
+      // Обеспечиваем, что у задачи всегда есть ID
+      const safeTask = {
+        ...task,
+        id: task.id || `task-${Math.random().toString(36).substring(7)}`,
+      };
+
+      return { task: safeTask, project };
+    };
+
     return {
-      assignedTasks: Array.isArray(assignedTasks) ? assignedTasks : [],
-      availableTasks: Array.isArray(availableTasks) ? availableTasks : [],
+      assignedTasks: Array.isArray(assignedTasks)
+        ? assignedTasks.map(normalizeTaskWithProject)
+        : [],
+      availableTasks: Array.isArray(availableTasks)
+        ? availableTasks.map(normalizeTaskWithProject)
+        : [],
       projects: Array.isArray(projects) ? projects : [],
     };
   }, [assignedTasks, availableTasks, projects]);

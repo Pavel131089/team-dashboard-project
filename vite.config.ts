@@ -1,7 +1,8 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import { fileURLToPath } from "url";
-import { dirname, resolve } from "path";
+
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,16 +12,36 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": resolve(__dirname, "./src"),
+      '@': resolve(__dirname, './src'),
     },
   },
   server: {
-    host: "0.0.0.0",
+    host: '0.0.0.0',
     port: 5173,
     allowedHosts: true,
     hmr: {
-      overlay: false, // Disables the error overlay if you only want console errors
-    },
+      overlay: false // Отключаем overlay ошибок - будем показывать свои сообщения
+    }
   },
-  base: "/", // Убедимся, что базовый путь для скриптов - корень сайта
+  build: {
+    // Выводим больше информации при сборке
+    sourcemap: true,
+    // Настройки оптимизации
+    rollupOptions: {
+      output: {
+        // Разделяем код на чанки
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: [
+            '@/components/ui/button', 
+            '@/components/ui/card',
+            '@/components/ui/toast'
+          ]
+        }
+      }
+    },
+    // Настройки для улучшения совместимости
+    target: 'es2015', // Целевая версия ES для более широкой совместимости
+    outDir: 'dist', // Явно указываем директорию сборки
+  }
 });

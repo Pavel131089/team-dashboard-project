@@ -31,10 +31,21 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   onAddComment,
   projects = [], // Значение по умолчанию - пустой массив
 }) => {
-  const [commentText, setCommentText] = useState<string>("");
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>(
     {},
   );
+  // ===COMMENTS-START===
+  const [commentsByTaskId, setCommentsByTaskId] = useState<
+    Record<string, string>
+  >({});
+  const getCommentForTask = (taskId: string) => commentsByTaskId[taskId] || "";
+  const setCommentForTask = (taskId: string, comment: string) => {
+    setCommentsByTaskId((prev) => ({
+      ...prev,
+      [taskId]: comment,
+    }));
+  };
+  // ===COMMENTS-END===
 
   // Убедимся, что tasks определен и является массивом
   const safeTasks = Array.isArray(tasks) ? tasks : [];
@@ -53,15 +64,16 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     }));
   };
 
-  // Обработчик отправки комментария
+  // Обновленный обработчик отправки комментария
   const handleSubmitComment = (taskId: string, projectId: string) => {
+    const commentText = getCommentForTask(taskId);
+
     if (commentText.trim()) {
-      // Сначала обновляем задачу
       const success = onAddComment(taskId, projectId, commentText);
 
-      // Затем сбрасываем состояние формы ТОЛЬКО если комментарий был успешно добавлен
       if (success) {
-        setCommentText("");
+        // Очищаем только комментарий для конкретной задачи
+        setCommentForTask(taskId, "");
       }
     }
   };
@@ -248,6 +260,9 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     // Безопасно получаем progress
     const progress = typeof task.progress === "number" ? task.progress : 0;
 
+    // Получаем текст комментария из состояния
+    const commentText = getCommentForTask(taskId);
+
     return (
       <div className="border rounded-md mb-3 bg-white">
         {/* Заголовок задачи (всегда видимый) */}
@@ -354,16 +369,32 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                   <Textarea
                     placeholder="Добавить комментарий..."
                     value={commentText}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => setCommentText(e.target.value)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Предотвращаем дальнейшее всплытие события
+                      e.nativeEvent.stopImmediatePropagation();
+                    }}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      // Предотвращаем дальнейшее всплытие события
+                      e.nativeEvent.stopImmediatePropagation();
+                      setCommentForTask(taskId, e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                      // Предотвращаем дальнейшее всплытие события
+                      e.nativeEvent.stopImmediatePropagation();
+                    }}
                     className="w-full h-20 resize-none"
-                    // Добавляем атрибуты для лучшей работы поля ввода
+                    autoCorrect="off"
                     autoComplete="off"
-                    spellCheck="true"
+                    spellCheck="false"
                   />
                   <Button
                     onClick={(e) => {
                       e.stopPropagation();
+                      // Предотвращаем дальнейшее всплытие события
+                      e.nativeEvent.stopImmediatePropagation();
                       handleSubmitComment(taskId, task.projectId);
                     }}
                     disabled={!commentText.trim()}

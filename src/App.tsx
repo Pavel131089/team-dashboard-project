@@ -1,26 +1,58 @@
-
-import { Routes, Route, Navigate } from 'react-router-dom'
-import './App.css'
-import NotFound from './pages/NotFound'
-import { Suspense, lazy } from 'react'
-
-// Используем lazy loading для компонентов страниц
-const Login = lazy(() => import('./pages/Login'))
-const Dashboard = lazy(() => import('./pages/Dashboard'))
-const Employee = lazy(() => import('./pages/Employee'))
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import "./App.css";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Employee from "./pages/Employee";
+import NotFound from "./pages/NotFound";
+import DatabaseStatus from "./pages/DatabaseStatus";
+import AuthGuard from "./components/auth/AuthGuard";
+import { Toaster } from "sonner";
 
 function App() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen">Загрузка...</div>}>
+    <>
+      {/* Добавляем Toaster для уведомлений */}
+      <Toaster position="top-right" closeButton />
+
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* Публичные маршруты */}
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/employee" element={<Employee />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
+        {/* Защищенные маршруты для руководителей */}
+        <Route
+          path="/dashboard"
+          element={
+            <AuthGuard requiredRole="manager">
+              <Dashboard />
+            </AuthGuard>
+          }
+        />
+        <Route
+          path="/database-status"
+          element={
+            <AuthGuard requiredRole="manager">
+              <DatabaseStatus />
+            </AuthGuard>
+          }
+        />
+
+        {/* Защищенные маршруты для сотрудников */}
+        <Route
+          path="/employee"
+          element={
+            <AuthGuard requiredRole="employee">
+              <Employee />
+            </AuthGuard>
+          }
+        />
+
+        {/* Маршрут для обработки 404 ошибок */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </Suspense>
-  )
+    </>
+  );
 }
 
-export default App
+export default App;

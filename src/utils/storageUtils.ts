@@ -1,92 +1,104 @@
 
+import { Project, Task } from "@/types/project";
+
 /**
- * @file Обертка для сохранения обратной совместимости
- * @deprecated Используйте импорты из 'src/utils/storage' вместо этого файла
+ * Проверяет доступность localStorage
+ * @returns true если localStorage доступен, иначе false
  */
-
-// Реэкспортируем все из нового модуля для обратной совместимости
-import storageAPI, {
-  createSampleProject,
-  getProjectsFromStorage,
-  saveProjectsToStorage,
-  initializeProjectsStorage,
-  testStorageAvailability,
-  resetProjectsStorage,
-  removeUserFromStorage,
-  saveLoginMessage,
-  getAuthErrorMessage
-} from './storage';
-
-// Экспортируем именованные функции для обратной совместимости
-export {
-  createSampleProject,
-  getProjectsFromStorage,
-  saveProjectsToStorage,
-  initializeProjectsStorage,
-  testStorageAvailability,
-  resetProjectsStorage,
-  removeUserFromStorage,
-  saveLoginMessage,
-  getAuthErrorMessage
-};
-
-// Экспортируем по умолчанию объект с функциями для обратной совместимости
-export default {
-  getProjectsFromStorage,
-  saveProjectsToStorage,
-  initializeProjectsStorage,
-  createSampleProject,
-  testStorageAvailability,
-  resetProjectsStorage,
-  removeUserFromStorage,
-  saveLoginMessage,
-  getAuthErrorMessage,
-  
-  /**
-   * Получает данные из хранилища с типизацией
-   * @param key - Ключ в хранилище
-   * @param defaultValue - Значение по умолчанию
-   * @returns Данные из хранилища или defaultValue
-   */
-  getFromStorage<T>(key: string, defaultValue: T): T {
-    try {
-      const dataStr = localStorage.getItem(key);
-      if (!dataStr) return defaultValue;
-      return JSON.parse(dataStr) as T;
-    } catch (error) {
-      console.error(`Ошибка при получении данных из хранилища (${key}):`, error);
-      return defaultValue;
-    }
-  },
-  
-  /**
-   * Сохраняет данные в хранилище
-   * @param key - Ключ в хранилище
-   * @param data - Данные для сохранения
-   * @returns true в случае успешного сохранения
-   */
-  saveToStorage<T>(key: string, data: T): boolean {
-    try {
-      localStorage.setItem(key, JSON.stringify(data));
-      return true;
-    } catch (error) {
-      console.error(`Ошибка при сохранении данных в хранилище (${key}):`, error);
-      return false;
-    }
-  },
-  
-  /**
-   * Инициализирует хранилище с начальными данными
-   * @param key - Ключ в хранилище
-   * @param defaultValue - Начальное значение
-   */
-  initializeStorage<T>(key: string, defaultValue: T): void {
-    try {
-      if (localStorage.getItem(key) === null) {
-        localStorage.setItem(key, JSON.stringify(defaultValue));
-      }
-    } catch (error) {
-      console.error(`Ошибка при инициализации хранилища (${key}):`, error);
-    }
+export function testStorageAvailability(): boolean {
+  try {
+    const testKey = "__storage_test__";
+    localStorage.setItem(testKey, testKey);
+    const result = localStorage.getItem(testKey) === testKey;
+    localStorage.removeItem(testKey);
+    return result;
+  } catch (e) {
+    return false;
   }
-};
+}
+
+/**
+ * Создает тестовый проект и добавляет его в localStorage
+ * @returns true если операция успешна, иначе false
+ */
+export function createSampleProject(): boolean {
+  try {
+    // Получаем существующие проекты
+    const existingProjects = localStorage.getItem('projects');
+    let projects: Project[] = [];
+    
+    if (existingProjects) {
+      projects = JSON.parse(existingProjects);
+    }
+    
+    // Создаем тестовый проект
+    const sampleTasks: Task[] = [
+      {
+        id: `task-${Date.now()}-1`,
+        name: "Разработка дизайна",
+        description: "Создание макетов и прототипов для основных страниц",
+        startDate: "2023-06-01",
+        endDate: "2023-06-15",
+        actualStartDate: "2023-06-02",
+        actualEndDate: null,
+        price: 25000,
+        estimatedTime: 40,
+        assignedTo: "Иванов И.И.",
+        assignedToNames: ["Иванов И.И."],
+        progress: 80
+      },
+      {
+        id: `task-${Date.now()}-2`,
+        name: "Верстка главной страницы",
+        description: "HTML/CSS реализация дизайна главной страницы",
+        startDate: "2023-06-16",
+        endDate: "2023-06-25",
+        actualStartDate: "2023-06-16",
+        actualEndDate: null,
+        price: 15000,
+        estimatedTime: 20,
+        assignedTo: "Петров П.П.",
+        assignedToNames: ["Петров П.П."],
+        progress: 50
+      }
+    ];
+    
+    const sampleProject: Project = {
+      id: `project-${Date.now()}`,
+      name: "Тестовый проект",
+      description: "Проект создан для тестирования функциональности системы",
+      startDate: "2023-06-01",
+      endDate: "2023-07-30",
+      status: "active",
+      budget: 100000,
+      manager: "Менеджер",
+      client: "ООО Тест",
+      tasks: sampleTasks
+    };
+    
+    // Добавляем тестовый проект к существующим проектам
+    projects.push(sampleProject);
+    
+    // Сохраняем обновленный список проектов
+    localStorage.setItem('projects', JSON.stringify(projects));
+    
+    return true;
+  } catch (error) {
+    console.error("Ошибка при создании тестового проекта:", error);
+    return false;
+  }
+}
+
+/**
+ * Удаляет все проекты из localStorage
+ * @returns true если операция успешна, иначе false
+ */
+export function resetProjectsStorage(): boolean {
+  try {
+    localStorage.setItem('projects', JSON.stringify([]));
+    return true;
+  } catch (error) {
+    console.error("Ошибка при сбросе хранилища проектов:", error);
+    return false;
+  }
+}

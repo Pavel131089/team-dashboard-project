@@ -1,10 +1,10 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { authService } from "@/services/auth/authService";
 import { sessionService } from "@/services/auth/sessionService";
 import { userService } from "@/services/auth/userService";
-import { storageUtils } from "@/utils/storage";
 
 // Типы данных
 export type UserRole = "manager" | "employee";
@@ -23,7 +23,7 @@ export function useAuth(navigateTo?: string) {
   const [formData, setFormData] = useState<LoginFormData>({
     username: "",
     password: "",
-    role: "employee",
+    role: "manager",
   });
 
   // Состояние ошибки
@@ -70,7 +70,7 @@ export function useAuth(navigateTo?: string) {
 
       // Если сессия существует и пользователь аутентифицирован
       if (session && session.isAuthenticated) {
-        redirectToRolePage(session.role);
+        redirectToRolePage(session.role as UserRole);
         return true;
       }
 
@@ -115,10 +115,10 @@ export function useAuth(navigateTo?: string) {
         console.log("Успешный вход:", result.user);
 
         // При успешном входе показываем уведомление
-        toast({
-          title: "Успешный вход",
-          description: `Добро пожаловать, ${result.user.name}!`,
-        });
+        toast.success(
+          `Добро пожаловать, ${result.user.name}!`,
+          { duration: 3000 }
+        );
 
         // Перенаправляем на соответствующую страницу
         redirectToRolePage(result.user.role);
@@ -139,7 +139,9 @@ export function useAuth(navigateTo?: string) {
    */
   const initializeDefaultUsers = () => {
     userService.initializeDefaultUsers();
-    storageUtils.initializeStorage("projects", []);
+    if (!localStorage.getItem("projects")) {
+      localStorage.setItem("projects", JSON.stringify([]));
+    }
   };
 
   /**
@@ -156,10 +158,7 @@ export function useAuth(navigateTo?: string) {
     sessionService.clearSession();
 
     // Уведомление о выходе
-    toast({
-      title: "Выход из системы",
-      description: "Вы успешно вышли из системы",
-    });
+    toast.success("Вы успешно вышли из системы");
 
     navigate("/login");
   };

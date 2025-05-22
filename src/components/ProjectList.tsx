@@ -1,11 +1,13 @@
-
 import { useState } from "react";
 import { Project } from "@/types/project";
 import { toast } from "@/components/ui/use-toast";
 import ProjectItem from "@/components/projects/ProjectItem";
 import ProjectDialogs from "@/components/projects/ProjectDialogs";
 import EmptyProjectsList from "@/components/projects/EmptyProjectsList";
-import { formatDate, getAssignedUserName } from "@/components/utils/FormatUtils";
+import {
+  formatDate,
+  getAssignedUserName,
+} from "@/components/utils/FormatUtils";
 
 interface User {
   id: string;
@@ -21,18 +23,22 @@ interface ProjectListProps {
   users?: User[];
 }
 
-const ProjectList = ({ 
-  projects, 
-  onProjectsUpdated, 
+const ProjectList = ({
+  projects,
+  onProjectsUpdated,
   userRole = "manager",
   onUpdateProject,
   onDeleteProject,
-  users = []
+  users = [],
 }: ProjectListProps) => {
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
-  const [taskToDelete, setTaskToDelete] = useState<{projectId: string, taskId: string} | null>(null);
-  const [isDeleteProjectDialogOpen, setIsDeleteProjectDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<{
+    projectId: string;
+    taskId: string;
+  } | null>(null);
+  const [isDeleteProjectDialogOpen, setIsDeleteProjectDialogOpen] =
+    useState(false);
   const [isDeleteTaskDialogOpen, setIsDeleteTaskDialogOpen] = useState(false);
 
   const handleExpandToggle = (projectId: string | null) => {
@@ -48,19 +54,21 @@ const ProjectList = ({
     setTaskToDelete({ projectId, taskId });
     setIsDeleteTaskDialogOpen(true);
   };
-  
+
   const confirmDeleteProject = () => {
     if (projectToDelete) {
       if (onDeleteProject) {
         onDeleteProject(projectToDelete);
       } else if (onProjectsUpdated) {
-        const updatedProjects = projects.filter(p => p.id !== projectToDelete);
+        const updatedProjects = projects.filter(
+          (p) => p.id !== projectToDelete,
+        );
         onProjectsUpdated(updatedProjects);
       }
-      
+
       toast({
         title: "Проект удален",
-        description: "Проект и все его задачи были успешно удалены"
+        description: "Проект и все его задачи были успешно удалены",
       });
       setIsDeleteProjectDialogOpen(false);
       setProjectToDelete(null);
@@ -70,28 +78,28 @@ const ProjectList = ({
   const confirmDeleteTask = () => {
     if (taskToDelete) {
       const { projectId, taskId } = taskToDelete;
-      const updatedProjects = projects.map(project => {
+      const updatedProjects = projects.map((project) => {
         if (project.id === projectId) {
           return {
             ...project,
-            tasks: project.tasks.filter(task => task.id !== taskId)
+            tasks: project.tasks.filter((task) => task.id !== taskId),
           };
         }
         return project;
       });
-      
+
       if (onUpdateProject) {
-        const updatedProject = updatedProjects.find(p => p.id === projectId);
+        const updatedProject = updatedProjects.find((p) => p.id === projectId);
         if (updatedProject) {
           onUpdateProject(updatedProject);
         }
       } else if (onProjectsUpdated) {
         onProjectsUpdated(updatedProjects);
       }
-      
+
       toast({
         title: "Задача удалена",
-        description: "Задача была успешно удалена из проекта"
+        description: "Задача была успешно удалена из проекта",
       });
     }
     setIsDeleteTaskDialogOpen(false);
@@ -99,10 +107,10 @@ const ProjectList = ({
   };
 
   const handleTaskUpdate = (projectId: string, updatedTask: any) => {
-    const updatedProjects = projects.map(project => {
+    const updatedProjects = projects.map((project) => {
       if (project.id === projectId) {
-        const updatedTasks = project.tasks.map(task => 
-          task.id === updatedTask.id ? updatedTask : task
+        const updatedTasks = project.tasks.map((task) =>
+          task.id === updatedTask.id ? updatedTask : task,
         );
         return { ...project, tasks: updatedTasks };
       }
@@ -110,7 +118,7 @@ const ProjectList = ({
     });
 
     if (onUpdateProject) {
-      const updatedProject = updatedProjects.find(p => p.id === projectId);
+      const updatedProject = updatedProjects.find((p) => p.id === projectId);
       if (updatedProject) {
         onUpdateProject(updatedProject);
       }
@@ -123,14 +131,16 @@ const ProjectList = ({
     if (onUpdateProject) {
       onUpdateProject(updatedProject);
     } else if (onProjectsUpdated) {
-      const updatedProjects = projects.map(p => 
-        p.id === updatedProject.id ? updatedProject : p
+      const updatedProjects = projects.map((p) =>
+        p.id === updatedProject.id ? updatedProject : p,
       );
       onProjectsUpdated(updatedProjects);
     }
   };
 
-  const getFormattedUserName = (assignedTo: string | string[] | null | undefined) => {
+  const getFormattedUserName = (
+    assignedTo: string | string[] | null | undefined,
+  ) => {
     if (users && users.length > 0) {
       return getAssignedUserName(assignedTo, users);
     }

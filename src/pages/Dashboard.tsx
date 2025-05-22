@@ -1,25 +1,80 @@
 
-import * as React from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import DashboardTabs from "@/components/dashboard/DashboardTabs";
+import StorageDiagnostics from "@/components/dashboard/StorageDiagnostics";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("projects");
+  
+  // Получаем данные и функции из хука
+  const {
+    projects,
+    user,
+    isLoading,
+    handleImportProject,
+    handleUpdateProject,
+    handleDeleteProject,
+    handleLogout,
+  } = useDashboardData(navigate);
+
+  // Проверка и восстановление данных при монтировании
+  useEffect(() => {
+    if (!isLoading && (!user || user.role !== "manager")) {
+      toast.error("Доступ запрещен. Перенаправление на страницу входа.");
+      navigate("/login");
+    }
+  }, [user, isLoading, navigate]);
+
+  // Если данные загружаются, показываем заглушку
+  if (isLoading) {
+    return (
+      <div className="p-4 space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-4 gap-4">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </div>
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Панель руководителя</h1>
-      <p>Добро пожаловать в панель управления!</p>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* Заголовок с именем пользователя и кнопкой выхода */}
+      <DashboardHeader 
+        username={user?.name || ""} 
+        onLogout={handleLogout} 
+      />
       
-      <Routes>
-        <Route index element={<DashboardIndex />} />
-        <Route path="projects" element={<DashboardProjects />} />
-        <Route path="users" element={<DashboardUsers />} />
-      </Routes>
+      {/* Основное содержимое */}
+      <main className="flex-1 container mx-auto py-6 px-4">
+        <h1 className="text-3xl font-bold mb-6">Панель руководителя</h1>
+        
+        {/* Вкладки с проектами, импортом, экспортом и пользователями */}
+        <DashboardTabs 
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          projects={projects}
+          onImportProject={handleImportProject}
+          onUpdateProject={handleUpdateProject}
+          onDeleteProject={handleDeleteProject}
+        />
+      </main>
+      
+      {/* Компонент диагностики для отладки */}
+      <StorageDiagnostics onReloadProjects={() => window.location.reload()} />
     </div>
   );
 };
-
-// Вспомогательные компоненты для подмаршрутов
-const DashboardIndex = () => <div>Основная информация</div>;
-const DashboardProjects = () => <div>Управление проектами</div>;
-const DashboardUsers = () => <div>Управление пользователями</div>;
 
 export default Dashboard;

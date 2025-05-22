@@ -1,7 +1,7 @@
+
 import { LoginFormData } from "@/hooks/useAuth";
 import { User, userService } from "./userService";
 import { sessionService } from "./sessionService";
-import { storageUtils } from "@/utils/storage";
 import { toast } from "sonner";
 
 interface LoginResult {
@@ -164,7 +164,9 @@ export const authService = {
     sessionService.saveSession(sessionData);
 
     // Инициализируем хранилище проектов, если оно не существует
-    storageUtils.initializeStorage("projects", []);
+    if (!localStorage.getItem("projects")) {
+      localStorage.setItem("projects", JSON.stringify([]));
+    }
 
     // Выводим информацию в консоль
     console.log("Создана сессия пользователя:", sessionData);

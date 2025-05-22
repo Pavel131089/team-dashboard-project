@@ -1,75 +1,61 @@
 
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import React, { useEffect } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
+import LoginForm, { DemoCredentials } from "@/components/auth/LoginForm";
+import Icon from "@/components/ui/icon";
 
-const Login = () => {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const navigate = useNavigate()
+/**
+ * Страница входа в систему
+ */
+const Login: React.FC = () => {
+  // Используем хук авторизации
+  const {
+    formData,
+    error,
+    handleInputChange,
+    handleRoleChange,
+    handleSubmit,
+    checkExistingSession,
+    initializeDefaultUsers,
+  } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Здесь будет логика аутентификации
-    console.log('Logging in with:', username, password)
-    
-    // Простое перенаправление для демонстрации
-    if (username.toLowerCase() === 'admin') {
-      navigate('/dashboard')
-    } else {
-      navigate('/employee')
-    }
-  }
+  // При монтировании компонента
+  useEffect(() => {
+    // Проверяем существующую сессию и инициализируем пользователей
+    initializeDefaultUsers();
+    checkExistingSession();
+  }, []);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Вход в систему</CardTitle>
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-center mb-2">
+            <Icon name="FileText" className="h-10 w-10 text-primary" />
+          </div>
+          <CardTitle className="text-2xl text-center">Система управления проектами</CardTitle>
           <CardDescription className="text-center">
-            Введите свои учетные данные для входа
+            Войдите, используя ваши учетные данные
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="username" className="text-sm font-medium">
-                Имя пользователя
-              </label>
-              <Input
-                id="username"
-                placeholder="Введите имя пользователя"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
-                Пароль
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Введите пароль"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full">
-              Войти
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex justify-center text-sm text-gray-500">
-          Тестовые пользователи: admin / employee
+
+        <LoginForm
+          formData={formData}
+          error={error}
+          onInputChange={handleInputChange}
+          onRoleChange={handleRoleChange}
+          onSubmit={handleSubmit}
+        />
+
+        <CardFooter className="flex justify-center border-t pt-4">
+          <p className="text-xs text-center text-slate-500">
+            © {new Date().getFullYear()} Система управления проектами
+          </p>
         </CardFooter>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

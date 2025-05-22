@@ -1,93 +1,82 @@
 
-import { UserRole } from "@/hooks/useAuth";
+/**
+ * Сервис для работы с сессиями пользователей
+ * Отвечает за сохранение и получение информации о текущей сессии
+ */
 
-export interface SessionData {
+// Тип для сессии пользователя
+export interface UserSession {
   id: string;
   username: string;
-  role: UserRole;
+  role: "manager" | "employee";
   isAuthenticated: boolean;
   loginTime: string;
 }
 
-/**
- * Сервис для управления сессией пользователя
- */
+// Ключ для хранения сессии в localStorage
+const SESSION_KEY = "user";
+// Ключ для хранения сообщения об ошибке
+const ERROR_MESSAGE_KEY = "auth_message";
+
 export const sessionService = {
   /**
-   * Ключ для хранения данных сессии
+   * Сохраняет сессию пользователя в localStorage
+   * @param session - Сессия пользователя
    */
-  SESSION_KEY: 'user',
-  
-  /**
-   * Ключ для хранения сообщений об ошибках
-   */
-  ERROR_MESSAGE_KEY: 'auth_message',
-  
-  /**
-   * Сохраняет сессию пользователя
-   * 
-   * @param sessionData - Данные сессии
-   */
-  saveSession(sessionData: SessionData): void {
-    localStorage.setItem(this.SESSION_KEY, JSON.stringify(sessionData));
-  },
-  
-  /**
-   * Получает текущую сессию пользователя
-   * 
-   * @returns Данные сессии или null, если сессия не найдена
-   */
-  getCurrentSession(): SessionData | null {
+  saveSession(session: UserSession): void {
     try {
-      const sessionStr = localStorage.getItem(this.SESSION_KEY);
-      if (!sessionStr) return null;
-      
-      const session = JSON.parse(sessionStr) as SessionData;
-      return session;
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    } catch (error) {
+      console.error("Ошибка при сохранении сессии:", error);
+    }
+  },
+
+  /**
+   * Получает текущую сессию пользователя из localStorage
+   * @returns Сессия пользователя или null, если сессия не найдена
+   */
+  getCurrentSession(): UserSession | null {
+    try {
+      const sessionJson = localStorage.getItem(SESSION_KEY);
+      if (sessionJson) {
+        return JSON.parse(sessionJson);
+      }
+      return null;
     } catch (error) {
       console.error("Ошибка при получении сессии:", error);
       return null;
     }
   },
-  
+
   /**
-   * Проверяет, авторизован ли пользователь
-   * 
-   * @returns true, если пользователь авторизован
-   */
-  isAuthenticated(): boolean {
-    const session = this.getCurrentSession();
-    return session !== null && session.isAuthenticated === true;
-  },
-  
-  /**
-   * Очищает сессию пользователя
+   * Очищает текущую сессию пользователя
    */
   clearSession(): void {
-    localStorage.removeItem(this.SESSION_KEY);
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch (error) {
+      console.error("Ошибка при очистке сессии:", error);
+    }
   },
-  
+
   /**
-   * Сохраняет сообщение об ошибке авторизации
-   * 
+   * Сохраняет сообщение об ошибке для отображения на странице входа
    * @param message - Сообщение об ошибке
    */
   saveErrorMessage(message: string): void {
-    sessionStorage.setItem(this.ERROR_MESSAGE_KEY, message);
+    sessionStorage.setItem(ERROR_MESSAGE_KEY, message);
   },
-  
+
   /**
-   * Получает и удаляет сообщение об ошибке авторизации
-   * 
-   * @returns Сообщение об ошибке или null
+   * Получает сообщение об ошибке и удаляет его из sessionStorage
+   * @returns Сообщение об ошибке или null, если сообщение не найдено
    */
   getErrorMessage(): string | null {
-    const message = sessionStorage.getItem(this.ERROR_MESSAGE_KEY);
-    
+    const message = sessionStorage.getItem(ERROR_MESSAGE_KEY);
     if (message) {
-      sessionStorage.removeItem(this.ERROR_MESSAGE_KEY);
+      sessionStorage.removeItem(ERROR_MESSAGE_KEY);
+      return message;
     }
-    
-    return message;
-  }
+    return null;
+  },
 };

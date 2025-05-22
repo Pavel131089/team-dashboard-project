@@ -85,6 +85,7 @@ const Employee: React.FC = () => {
           <AvailableTasksSection
             tasks={safeAvailableTasks}
             onTakeTask={handleTakeTask}
+            projects={projects} // Передаем все проекты для отображения дополнительной информации
           />
         </div>
       </EmployeeContent>

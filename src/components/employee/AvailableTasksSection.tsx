@@ -1,8 +1,9 @@
 import React, { useMemo } from "react";
-import { Task } from "@/types/project";
+import { Task, Project } from "@/types/project";
 import Icon from "@/components/ui/icon";
 import EmptyAvailableTasks from "@/components/employee/EmptyAvailableTasks";
 import AvailableTaskItem from "@/components/employee/AvailableTaskItem";
+import ProjectInfoHeader from "@/components/employee/ProjectInfoHeader";
 
 interface TaskWithProject extends Task {
   projectId: string;
@@ -12,11 +13,13 @@ interface TaskWithProject extends Task {
 interface AvailableTasksSectionProps {
   tasks: TaskWithProject[];
   onTakeTask: (taskId: string, projectId: string) => void;
+  projects?: Project[]; // Добавляем доступ ко всем проектам
 }
 
 const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
   tasks,
   onTakeTask,
+  projects = [],
 }) => {
   // Безопасно группируем задачи по проектам
   const projectsWithTasks = useMemo(() => {
@@ -34,6 +37,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
           projectId: string;
           projectName: string;
           tasks: TaskWithProject[];
+          project?: Project; // Добавляем ссылку на полную информацию о проекте
         }
       > = {};
 
@@ -49,10 +53,14 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
 
         // Создаем запись для проекта, если ее еще нет
         if (!projectMap[projectId]) {
+          // Находим полную информацию о проекте
+          const fullProject = projects.find((p) => p.id === projectId);
+
           projectMap[projectId] = {
             projectId,
             projectName,
             tasks: [],
+            project: fullProject,
           };
         }
 
@@ -66,7 +74,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
       console.error("Ошибка при группировке задач:", error);
       return [];
     }
-  }, [tasks]);
+  }, [tasks, projects]);
 
   // Если нет доступных задач, показываем пустое состояние
   if (!projectsWithTasks.length) {
@@ -81,29 +89,32 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
       </div>
 
       <div className="space-y-4">
-        {projectsWithTasks.map((project) => (
+        {projectsWithTasks.map((projectInfo) => (
           <div
-            key={project.projectId}
-            className="bg-white rounded-lg shadow-sm border p-4"
+            key={projectInfo.projectId}
+            className="bg-white rounded-lg shadow-sm border overflow-hidden"
           >
-            <h3 className="font-medium text-lg mb-3 flex items-center">
-              <Icon name="Folder" className="h-4 w-4 mr-2 text-primary" />
-              {project.projectName}
-            </h3>
+            {/* Добавляем новый компонент для информации о проекте */}
+            <ProjectInfoHeader
+              project={projectInfo.project}
+              projectName={projectInfo.projectName}
+            />
 
-            <div className="space-y-3">
-              {project.tasks.map((task) => (
-                <AvailableTaskItem
-                  key={task.id}
-                  task={task}
-                  projectName={project.projectName}
-                  onTakeTask={() => {
-                    if (task.id && task.projectId) {
-                      onTakeTask(task.id, task.projectId);
-                    }
-                  }}
-                />
-              ))}
+            <div className="p-4">
+              <div className="space-y-3">
+                {projectInfo.tasks.map((task) => (
+                  <AvailableTaskItem
+                    key={task.id}
+                    task={task}
+                    projectName={projectInfo.projectName}
+                    onTakeTask={() => {
+                      if (task.id && task.projectId) {
+                        onTakeTask(task.id, task.projectId);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         ))}

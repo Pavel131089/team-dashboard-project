@@ -66,6 +66,73 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     }
   };
 
+  // Группируем задачи по проектам для отображения дополнительной информации
+  const groupTasksByProject = () => {
+    const projectMap: Record<
+      string,
+      {
+        projectId: string;
+        projectName: string;
+        tasks: TaskWithProject[];
+      }
+    > = {};
+
+    safeTasks.forEach((task) => {
+      if (!task.projectId) return;
+
+      if (!projectMap[task.projectId]) {
+        projectMap[task.projectId] = {
+          projectId: task.projectId,
+          projectName: task.projectName || "Без названия",
+          tasks: [],
+        };
+      }
+
+      projectMap[task.projectId].tasks.push(task);
+    });
+
+    return Object.values(projectMap);
+  };
+
+  const projectGroups = groupTasksByProject();
+
+  // Компонент для отображения проекта
+  const ProjectGroup = ({
+    projectInfo,
+  }: {
+    projectInfo: {
+      projectId: string;
+      projectName: string;
+      tasks: TaskWithProject[];
+    };
+  }) => {
+    // Вычисляем прогресс проекта
+    const projectProgress = Math.round(
+      projectInfo.tasks.reduce((sum, task) => sum + (task.progress || 0), 0) /
+        projectInfo.tasks.length,
+    );
+
+    return (
+      <div className="mb-6 border rounded-md overflow-hidden">
+        <div className="bg-gray-50 border-b p-3">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-medium flex items-center">
+              <Icon name="Folder" className="h-4 w-4 mr-2 text-primary" />
+              {projectInfo.projectName}
+            </h3>
+            <span className="text-sm">{projectProgress}% выполнено</span>
+          </div>
+          <Progress value={projectProgress} className="h-1" />
+        </div>
+        <div className="p-3">
+          {projectInfo.tasks.map((task) => (
+            <TaskItem key={task.id} task={task} />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   // Компонент для отображения одной задачи
   const TaskItem = ({ task }: { task: TaskWithProject }) => {
     // Проверяем, что задача существует и имеет id
@@ -99,9 +166,13 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                 {task.description || "Без описания"}
               </p>
               <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
-                <div>
-                  Сроки: {formatDate(task.startDate)} -{" "}
-                  {formatDate(task.endDate)}
+                <div className="flex items-center gap-1">
+                  <Icon name="Calendar" className="h-3 w-3" />
+                  <span>Начало: {formatDate(task.startDate)}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Icon name="CalendarClock" className="h-3 w-3" />
+                  <span>Дедлайн: {formatDate(task.endDate)}</span>
                 </div>
                 <div>Оценка времени: {task.estimatedTime || 0} ч.</div>
                 <div>
@@ -191,8 +262,12 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
         <CardTitle className="text-xl">Мои задачи</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="active">
+        <Tabs defaultValue="projects">
           <TabsList className="w-full mb-4">
+            <TabsTrigger value="projects" className="flex-1">
+              По проектам{" "}
+              <Badge className="ml-2 bg-primary">{projectGroups.length}</Badge>
+            </TabsTrigger>
             <TabsTrigger value="active" className="flex-1">
               Активные{" "}
               <Badge className="ml-2 bg-primary">{activeTasks.length}</Badge>
@@ -204,6 +279,30 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
               </Badge>
             </TabsTrigger>
           </TabsList>
+
+          {/* Добавляем новую вкладку для группировки по проектам */}
+          <TabsContent value="projects">
+            {projectGroups.length === 0 ? (
+              <div className="text-center py-8">
+                <Icon
+                  name="Briefcase"
+                  className="mx-auto h-12 w-12 text-slate-300"
+                />
+                <p className="mt-2 text-slate-500">
+                  У вас нет задач в проектах
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {projectGroups.map((projectInfo) => (
+                  <ProjectGroup
+                    key={projectInfo.projectId}
+                    projectInfo={projectInfo}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
           <TabsContent value="active">
             {activeTasks.length === 0 ? (

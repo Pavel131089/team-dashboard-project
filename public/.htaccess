@@ -1,10 +1,20 @@
 
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME} !-l
-  RewriteRule . /index.html [L]
+# Включаем модуль rewrite
+RewriteEngine On
+
+# Если запрашиваемый файл не существует
+RewriteCond %{REQUEST_FILENAME} !-f
+# Если запрашиваемая директория не существует
+RewriteCond %{REQUEST_FILENAME} !-d
+# Перенаправляем все запросы на index.html
+RewriteRule ^ index.html [QSA,L]
+
+# Устанавливаем заголовки для iframe
+<IfModule mod_headers.c>
+    # Разрешаем встраивание в iframe с любого источника
+    Header set X-Frame-Options "ALLOWALL"
+    Header set Content-Security-Policy "frame-ancestors *"
+    
+    # Устанавливаем политику реферера
+    Header set Referrer-Policy "no-referrer"
 </IfModule>

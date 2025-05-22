@@ -56,8 +56,13 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   // Обработчик отправки комментария
   const handleSubmitComment = (taskId: string, projectId: string) => {
     if (commentText.trim()) {
-      onAddComment(taskId, projectId, commentText);
-      setCommentText("");
+      // Сначала обновляем задачу
+      const success = onAddComment(taskId, projectId, commentText);
+
+      // Затем сбрасываем состояние формы ТОЛЬКО если комментарий был успешно добавлен
+      if (success) {
+        setCommentText("");
+      }
     }
   };
 
@@ -352,6 +357,9 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => setCommentText(e.target.value)}
                     className="w-full h-20 resize-none"
+                    // Добавляем атрибуты для лучшей работы поля ввода
+                    autoComplete="off"
+                    spellCheck="true"
                   />
                   <Button
                     onClick={(e) => {

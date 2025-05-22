@@ -426,6 +426,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
           return false;
         }
 
+        // Создаем новый комментарий
         const newComment = {
           id: `comment-${Date.now()}`,
           text: commentText,
@@ -433,7 +434,8 @@ export function useEmployeeData(navigate: NavigateFunction) {
           date: new Date().toISOString(),
         };
 
-        const updatedTask: Task = {
+        // Обновляем задачу
+        const updatedTask = {
           ...task,
           comments: [
             ...(Array.isArray(task.comments) ? task.comments : []),
@@ -441,6 +443,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
           ],
         };
 
+        // Обновляем проект с новой задачей
         const updatedProjects = projects.map((p) => {
           if (p.id === projectId) {
             return {
@@ -451,9 +454,13 @@ export function useEmployeeData(navigate: NavigateFunction) {
           return p;
         });
 
+        // Сохраняем изменения в localStorage
         localStorage.setItem("projects", JSON.stringify(updatedProjects));
+
+        // Обновляем состояние проектов
         setProjects(updatedProjects);
 
+        // Обновляем списки задач
         const { userTasks, otherTasks } = processProjects(
           updatedProjects,
           user,

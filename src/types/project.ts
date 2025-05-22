@@ -30,7 +30,7 @@ export interface Task {
   progress: number;
   actualStartDate?: string | null;
   actualEndDate?: string | null;
-  comments?: TaskComment[];
+  comments?: TaskComment[]; // Используем структурированный тип для комментариев
   // Дополнительные поля для хранения ссылки на проект
   projectId?: string;
   projectName?: string;

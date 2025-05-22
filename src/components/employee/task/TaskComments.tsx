@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,16 +11,25 @@ interface TaskCommentsProps {
   onUpdateTask: (updatedTask: Task) => void;
 }
 
-const TaskComments: React.FC<TaskCommentsProps> = ({
-  task,
-  onUpdateTask,
-}) => {
+const TaskComments: React.FC<TaskCommentsProps> = ({ task, onUpdateTask }) => {
   const [newComment, setNewComment] = useState("");
+
+  // Обработчик изменения текста комментария
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewComment(e.target.value);
+  };
 
   // Добавление нового комментария
   const handleAddComment = () => {
+    if (!newComment.trim()) return;
+
+    // Используем функцию-помощник для добавления комментария к конкретной задаче
     const updatedTask = addCommentToTask(task, newComment);
+
+    // Обновляем задачу через пропс-функцию
     onUpdateTask(updatedTask);
+
+    // Очищаем поле ввода
     setNewComment("");
   };
 
@@ -54,23 +62,23 @@ const TaskComments: React.FC<TaskCommentsProps> = ({
         </p>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2">
         <Textarea
           placeholder="Добавить комментарий..."
           value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          className="min-h-[80px] text-sm"
+          onChange={handleCommentChange}
+          className="min-h-[80px] text-sm resize-none"
         />
+        <Button
+          size="sm"
+          onClick={handleAddComment}
+          disabled={!newComment.trim()}
+          className="mt-1 ml-auto"
+        >
+          <Icon name="Send" className="h-4 w-4 mr-1" />
+          Добавить комментарий
+        </Button>
       </div>
-      <Button 
-        size="sm" 
-        onClick={handleAddComment} 
-        disabled={!newComment.trim()}
-        className="mt-2 ml-auto"
-      >
-        <Icon name="Send" className="h-4 w-4 mr-1" />
-        Добавить комментарий
-      </Button>
     </div>
   );
 };

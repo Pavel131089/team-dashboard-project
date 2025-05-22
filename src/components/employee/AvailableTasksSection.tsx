@@ -55,6 +55,26 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
     return Math.round(totalProgress / project.tasks.length);
   };
 
+  // Функция для отображения сотрудников, назначенных на задачу
+  const renderAssignedUsers = (task: any): JSX.Element | null => {
+    if (
+      !task.assignedToNames ||
+      !Array.isArray(task.assignedToNames) ||
+      task.assignedToNames.length === 0
+    ) {
+      return null;
+    }
+
+    return (
+      <div className="mt-2 text-xs text-slate-500">
+        <div className="flex items-center gap-1">
+          <Icon name="Users" className="h-3 w-3" />
+          <span>Исполнители: {task.assignedToNames.join(", ")}</span>
+        </div>
+      </div>
+    );
+  };
+
   // Функция для поиска полной информации о проекте
   const getFullProject = (projectId: string): Project | undefined => {
     if (!Array.isArray(projects)) return undefined;
@@ -162,6 +182,9 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* Показываем назначенных исполнителей */}
+              {renderAssignedUsers(task)}
 
               <Button
                 onClick={() => onTakeTask(task.id, projectId)}

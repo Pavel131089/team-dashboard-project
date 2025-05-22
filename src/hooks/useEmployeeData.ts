@@ -72,15 +72,8 @@ export function useEmployeeData(navigate: NavigateFunction) {
             // Проверка назначения задачи текущему пользователю
             let isAssigned = false;
 
-            if (
-              task.assignedTo &&
-              userData.id &&
-              task.assignedTo === userData.id
-            ) {
-              isAssigned = true;
-            }
-
-            if (!isAssigned && Array.isArray(task.assignedToNames)) {
+            // Проверяем, назначена ли задача текущему пользователю
+            if (Array.isArray(task.assignedToNames)) {
               isAssigned = task.assignedToNames.some((name) => {
                 if (!name) return false;
                 const nameStr = String(name).toLowerCase();
@@ -93,20 +86,28 @@ export function useEmployeeData(navigate: NavigateFunction) {
                 const userEmail = userData.email
                   ? String(userData.email).toLowerCase()
                   : "";
+                const userId = userData.id
+                  ? String(userData.id).toLowerCase()
+                  : "";
                 return (
                   nameStr === userName ||
                   nameStr === userUsername ||
-                  nameStr === userEmail
+                  nameStr === userEmail ||
+                  nameStr === userId
                 );
               });
+            } else if (task.assignedTo === userData.id) {
+              isAssigned = true;
             }
 
             if (isAssigned) {
               userTasks.push(taskWithProject);
-            } else if (
-              !task.assignedTo &&
-              (!task.assignedToNames || task.assignedToNames.length === 0)
-            ) {
+            }
+
+            // Добавляем задачу в список доступных для всех,
+            // даже если она уже назначена другим сотрудникам,
+            // но не текущему пользователю
+            if (!isAssigned) {
               otherTasks.push(taskWithProject);
             }
           });
@@ -275,24 +276,55 @@ export function useEmployeeData(navigate: NavigateFunction) {
   const handleTakeTask = useCallback(
     (taskId: string, projectId: string) => {
       if (!user) {
+        setTimeout(() => {
+          toast.error("Необходимо войти в систему");
+        }, 0);
         return false;
       }
 
       try {
         const project = projects.find((p) => p.id === projectId);
         if (!project) {
+          setTimeout(() => {
+            toast.error("Проект не найден");
+          }, 0);
           return false;
         }
 
         const task = project.tasks.find((t) => t.id === taskId);
         if (!task) {
+          setTimeout(() => {
+            toast.error("Задача не найдена");
+          }, 0);
           return false;
         }
 
+        // Не заменяем текущих исполнителей, а добавляем нового
+        const currentAssignedToNames = Array.isArray(task.assignedToNames)
+          ? task.assignedToNames
+          : [];
+
+        // Проверяем, не назначена ли задача уже этому пользователю
+        const isAlreadyAssigned = currentAssignedToNames.some(
+          (name) => name === user.name || name === user.id,
+        );
+
+        if (isAlreadyAssigned) {
+          setTimeout(() => {
+            toast.info("Эта задача уже назначена вам");
+          }, 0);
+          return true; // Возвращаем true, т.к. фактически задача уже назначена
+        }
+
+        // Добавляем текущего пользователя к списку исполнителей
+        const newAssignedToNames = [...currentAssignedToNames, user.name];
+
+        // Обновляем список исполнителей и поле assignedTo
+        // assignedTo содержит ID последнего назначенного пользователя
         const updatedTask: Task = {
           ...task,
           assignedTo: user.id,
-          assignedToNames: [...(task.assignedToNames || []), user.name],
+          assignedToNames: newAssignedToNames,
           actualStartDate: task.actualStartDate || new Date().toISOString(),
         };
 
@@ -316,9 +348,16 @@ export function useEmployeeData(navigate: NavigateFunction) {
         setAssignedTasks(userTasks);
         setAvailableTasks(otherTasks);
 
+        setTimeout(() => {
+          toast.success("Задача принята в работу");
+        }, 0);
+
         return true;
       } catch (error) {
         console.error("Ошибка при принятии задачи:", error);
+        setTimeout(() => {
+          toast.error("Ошибка при принятии задачи");
+        }, 0);
         return false;
       }
     },

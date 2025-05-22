@@ -1,98 +1,91 @@
-
 import { Task } from "@/types/project";
 
 /**
- * Проверяет, есть ли комментарии в задаче
- * @param task задача для проверки
- * @returns true, если есть комментарии
+ * Проверяет, есть ли у задачи комментарии
+ * @param task Задача для проверки
+ * @returns true если у задачи есть комментарии
  */
-export const hasTaskComments = (task?: Task): boolean => {
-  if (!task) return false;
-  return Array.isArray(task.comments) && task.comments.length > 0;
-};
-
-/**
- * Извлекает дату и текст из комментария в формате "[Дата] Текст"
- * @param comment строка комментария
- * @returns объект с датой и текстом
- */
-export const parseComment = (comment: string | any): { date: string | null; text: string } => {
-  if (!comment) return { date: null, text: "" };
-  
-  // Если это объект с полями date и text или author, text
-  if (typeof comment === 'object') {
-    if (comment.date && comment.text) {
-      return { 
-        date: formatCommentDate(comment.date), 
-        text: comment.text 
-      };
-    }
-    if (comment.author && comment.text) {
-      return { 
-        date: comment.date ? formatCommentDate(comment.date) : null, 
-        text: `${comment.author}: ${comment.text}` 
-      };
-    }
-  }
-  
-  // Если это строка
-  if (typeof comment === 'string') {
-    // Пробуем найти дату в квадратных скобках
-    const match = comment.match(/^\[(.*?)\](.*)/);
-    if (match) {
-      return {
-        date: match[1].trim(),
-        text: match[2].trim()
-      };
-    }
-    
-    return {
-      date: null,
-      text: comment
-    };
-  }
-  
-  return { date: null, text: String(comment) };
-};
-
-/**
- * Форматирует дату комментария
- */
-const formatCommentDate = (dateString: string): string => {
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    
-    return date.toLocaleString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch (error) {
-    return dateString;
-  }
+export const hasTaskComments = (task: Task): boolean => {
+  return Boolean(task.comments && task.comments.length > 0);
 };
 
 /**
  * Добавляет комментарий к задаче
- * @param task задача
- * @param commentText текст комментария
- * @returns обновленная задача с новым комментарием
+ * @param task Задача
+ * @param commentText Текст комментария
+ * @param userName Имя пользователя (опционально)
+ * @returns Обновленная задача с новым комментарием
  */
-export const addCommentToTask = (task: Task, commentText: string): Task => {
-  const now = new Date();
-  const formattedDate = now.toISOString();
-  
-  const newComment = {
-    id: `comment-${Date.now()}`,
-    text: commentText,
-    date: formattedDate
-  };
-  
+export const addCommentToTask = (
+  task: Task,
+  commentText: string,
+  userName: string = "Сотрудник",
+): Task => {
+  const date = new Date().toISOString();
+  const formattedComment = `${date}|${userName}: ${commentText}`;
+
   return {
     ...task,
-    comments: [...(Array.isArray(task.comments) ? task.comments : []), newComment]
+    comments: task.comments
+      ? [...task.comments, formattedComment]
+      : [formattedComment],
   };
+};
+
+/**
+ * Разбирает комментарий на дату и текст
+ * @param comment Строка комментария
+ * @returns Объект с датой и текстом комментария
+ */
+export const parseComment = (
+  comment: string,
+): { date: string; text: string } => {
+  const parts = comment.split("|");
+
+  if (parts.length < 2) {
+    return { date: "", text: comment };
+  }
+
+  try {
+    const dateStr = parts[0];
+    const date = new Date(dateStr);
+    const formattedDate = date.toLocaleString();
+
+    return {
+      date: formattedDate,
+      text: parts.slice(1).join("|"),
+    };
+  } catch (error) {
+    return { date: "", text: comment };
+  }
+};
+
+/**
+ * Проверяет, есть ли у задачи комментарии
+ * Псевдоним для hasTaskComments для обратной совместимости
+ */
+export const hasComments = hasTaskComments;
+
+/**
+ * Проверяет, может ли пользователь взять задачу в работу
+ * @param task Задача для проверки
+ * @param userId ID пользователя
+ * @returns true если пользователь может взять задачу в работу
+ */
+export const canUserTakeTask = (task: Task, userId: string): boolean => {
+  // Проверяем, назначена ли задача уже этому пользователю
+  if (task.assignedTo === userId) {
+    return false;
+  }
+
+  // Проверяем в массиве assignedToNames
+  if (
+    Array.isArray(task.assignedToNames) &&
+    task.assignedToNames.includes(userId)
+  ) {
+    return false;
+  }
+
+  // В остальных случаях пользователь может взять задачу
+  return true;
 };

@@ -9,40 +9,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import Icon from "@/components/ui/icon";
 import { toast } from "sonner";
 
-/**
- * Компонент для отображения ошибки
- */
-const LoginError = ({ message }: { message: string }) => {
-  if (!message) return null;
-
-  return (
-    <Alert variant="destructive" className="mb-4">
-      <Icon name="AlertTriangle" className="h-4 w-4" />
-      <AlertDescription>{message}</AlertDescription>
-    </Alert>
-  );
-};
-
-/**
- * Компонент для демонстрационных учетных данных
- */
-const DemoCredentials = () => {
-  return (
-    <div className="pt-2 text-sm text-slate-500">
-      <p>Для демо-доступа используйте:</p>
-      <ul className="list-disc pl-5 mt-1 space-y-1">
-        <li>
-          Руководитель:{" "}
-          <span className="font-medium">manager / manager123</span>
-        </li>
-        <li>
-          Сотрудник: <span className="font-medium">employee / employee123</span>
-        </li>
-      </ul>
-    </div>
-  );
-};
-
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState("manager");
@@ -64,27 +30,24 @@ const Login: React.FC = () => {
       }
     } catch (error) {
       console.error("Ошибка при проверке авторизации:", error);
-      // Если произошла ошибка, не перенаправляем пользователя и показываем страницу входа
     }
   }, [navigate]);
 
-  // Обработчик входа - упрощенная версия для повышения надежности
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
 
     try {
-      // Простая проверка учетных данных для демо
-      const isValidLogin =
+      // Простая проверка учетных данных
+      if (
         (username === "manager" &&
           password === "manager123" &&
           role === "manager") ||
         (username === "employee" &&
           password === "employee123" &&
-          role === "employee");
-
-      if (isValidLogin) {
+          role === "employee")
+      ) {
         // Создаем объект пользователя
         const user = {
           id: role === "manager" ? "default-manager" : "default-employee",
@@ -97,12 +60,11 @@ const Login: React.FC = () => {
         // Сохраняем в localStorage
         localStorage.setItem("user", JSON.stringify(user));
 
-        // Используем setTimeout для предотвращения обновления состояния во время рендеринга
-        setTimeout(() => {
-          toast.success(`Добро пожаловать, ${user.name}!`);
-          // Перенаправляем на нужную страницу
-          navigate(role === "manager" ? "/dashboard" : "/employee");
-        }, 0);
+        // Отображаем сообщение об успешном входе
+        toast.success(`Добро пожаловать, ${user.name}!`);
+
+        // Перенаправляем на нужную страницу
+        navigate(role === "manager" ? "/dashboard" : "/employee");
       } else {
         setError("Неверное имя пользователя или пароль");
       }
@@ -127,7 +89,12 @@ const Login: React.FC = () => {
         </CardHeader>
 
         <CardContent>
-          {error && <LoginError message={error} />}
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <Icon name="AlertTriangle" className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
@@ -189,7 +156,19 @@ const Login: React.FC = () => {
               )}
             </Button>
 
-            <DemoCredentials />
+            <div className="pt-2 text-sm text-slate-500">
+              <p>Для демо-доступа используйте:</p>
+              <ul className="list-disc pl-5 mt-1 space-y-1">
+                <li>
+                  Руководитель:{" "}
+                  <span className="font-medium">manager / manager123</span>
+                </li>
+                <li>
+                  Сотрудник:{" "}
+                  <span className="font-medium">employee / employee123</span>
+                </li>
+              </ul>
+            </div>
           </form>
         </CardContent>
       </Card>

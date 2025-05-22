@@ -1,9 +1,14 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import Icon from "@/components/ui/icon";
 import { Project, User } from "@/types/project";
@@ -54,7 +59,6 @@ const Dashboard: React.FC = () => {
         localStorage.setItem("projects", JSON.stringify([]));
         setProjects([]);
       }
-
     } catch (error) {
       console.error("Ошибка при загрузке данных:", error);
       toast.error("Ошибка при загрузке данных");
@@ -79,8 +83,8 @@ const Dashboard: React.FC = () => {
 
   // Обработчик обновления проекта
   const handleUpdateProject = (updatedProject: Project) => {
-    const updatedProjects = projects.map(project => 
-      project.id === updatedProject.id ? updatedProject : project
+    const updatedProjects = projects.map((project) =>
+      project.id === updatedProject.id ? updatedProject : project,
     );
     setProjects(updatedProjects);
     localStorage.setItem("projects", JSON.stringify(updatedProjects));
@@ -89,11 +93,13 @@ const Dashboard: React.FC = () => {
 
   // Обработчик удаления проекта
   const handleDeleteProject = (projectId: string) => {
-    const projectToDelete = projects.find(p => p.id === projectId);
-    const updatedProjects = projects.filter(project => project.id !== projectId);
+    const projectToDelete = projects.find((p) => p.id === projectId);
+    const updatedProjects = projects.filter(
+      (project) => project.id !== projectId,
+    );
     setProjects(updatedProjects);
     localStorage.setItem("projects", JSON.stringify(updatedProjects));
-    
+
     if (projectToDelete) {
       toast.success(`Проект "${projectToDelete.name}" удален`);
     }
@@ -104,8 +110,13 @@ const Dashboard: React.FC = () => {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <Icon name="Loader2" className="mx-auto h-12 w-12 animate-spin text-primary" />
-          <p className="mt-4 text-lg font-medium">Загрузка панели управления...</p>
+          <Icon
+            name="Loader2"
+            className="mx-auto h-12 w-12 animate-spin text-primary"
+          />
+          <p className="mt-4 text-lg font-medium">
+            Загрузка панели управления...
+          </p>
         </div>
       </div>
     );
@@ -118,7 +129,9 @@ const Dashboard: React.FC = () => {
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <h1 className="text-xl font-bold">Панель руководителя</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-600">{user?.name || "Пользователь"}</span>
+            <span className="text-sm text-slate-600">
+              {user?.name || "Пользователь"}
+            </span>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <Icon name="LogOut" className="mr-2 h-4 w-4" />
               Выйти
@@ -129,7 +142,11 @@ const Dashboard: React.FC = () => {
 
       {/* Основное содержимое */}
       <main className="container mx-auto py-6 px-4">
-        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs
+          defaultValue={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
           {/* Табы */}
           <TabsList className="grid grid-cols-4 w-full max-w-2xl mx-auto">
             <TabsTrigger value="projects">
@@ -160,7 +177,7 @@ const Dashboard: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ProjectList 
+                <ProjectList
                   projects={projects}
                   onUpdateProject={handleUpdateProject}
                   onDeleteProject={handleDeleteProject}

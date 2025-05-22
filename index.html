@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
   <head>
@@ -14,36 +15,180 @@
       
       body {
         background-color: #f5f5f5;
+      }
+      
+      .header {
+        background: white;
+        padding: 12px 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
-        min-height: 100vh;
-        padding: 20px;
+      }
+      
+      .header h1 {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+      }
+      
+      .user-panel {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      
+      .btn {
+        background-color: #6366f1;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      
+      .btn-outline {
+        background-color: transparent;
+        color: #6366f1;
+        border: 1px solid #6366f1;
+      }
+      
+      .btn:hover {
+        background-color: #4f46e5;
+      }
+      
+      .btn-outline:hover {
+        background-color: #f5f7ff;
+      }
+      
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px 16px;
       }
       
       .card {
         background: white;
         border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        width: 100%;
-        max-width: 450px;
-        padding: 30px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        margin-bottom: 24px;
       }
       
       .card-header {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .card-title {
+        font-size: 22px;
+        font-weight: bold;
+        color: #333;
+      }
+      
+      .card-content {
+        padding: 20px;
+      }
+      
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 24px;
+      }
+      
+      .tab {
+        padding: 12px 24px;
+        font-size: 16px;
+        cursor: pointer;
+        color: #555;
+        border-bottom: 2px solid transparent;
+      }
+      
+      .tab.active {
+        color: #6366f1;
+        border-bottom: 2px solid #6366f1;
+        font-weight: 500;
+      }
+      
+      .tab-content {
+        display: none;
+      }
+      
+      .tab-content.active {
+        display: block;
+      }
+      
+      .project-card {
+        padding: 16px;
+        border-bottom: 1px solid #eee;
+      }
+      
+      .project-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      
+      .project-title {
+        font-weight: bold;
+        font-size: 18px;
+      }
+      
+      .project-description {
+        color: #666;
+        margin-bottom: 12px;
+      }
+      
+      .progress-container {
+        height: 6px;
+        background: #eee;
+        border-radius: 3px;
+        margin-top: 12px;
+      }
+      
+      .progress-bar {
+        height: 100%;
+        background: #6366f1;
+        border-radius: 3px;
+      }
+      
+      .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      
+      .login-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        padding: 24px;
+      }
+      
+      .login-header {
         text-align: center;
         margin-bottom: 24px;
       }
       
-      .card-title {
-        color: #5540ff;
-        font-size: 28px;
+      .login-title {
+        font-size: 24px;
         font-weight: bold;
+        color: #6366f1;
         margin-bottom: 8px;
       }
       
       .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 16px;
       }
       
       .form-label {
@@ -55,7 +200,7 @@
       
       .form-input {
         width: 100%;
-        padding: 12px;
+        padding: 10px;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 16px;
@@ -63,132 +208,113 @@
       
       .radio-group {
         display: flex;
-        gap: 20px;
-        margin-bottom: 24px;
+        gap: 16px;
+        margin: 8px 0;
       }
       
       .radio-option {
         display: flex;
         align-items: center;
-        gap: 8px;
-      }
-      
-      .btn {
-        background-color: #5540ff;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 12px 20px;
-        font-size: 16px;
-        font-weight: 500;
-        cursor: pointer;
-        width: 100%;
-        transition: background-color 0.2s;
-      }
-      
-      .btn:hover {
-        background-color: #4430ee;
-      }
-      
-      .info-text {
-        text-align: center;
-        margin-top: 20px;
-        font-size: 14px;
-        color: #777;
+        gap: 6px;
       }
       
       .demo-info {
-        margin-top: 24px;
+        margin-top: 16px;
         padding: 12px;
-        background-color: #f0f0f0;
+        background-color: #f8f9fa;
         border-radius: 4px;
         font-size: 14px;
-      }
-      
-      .demo-info p {
-        margin-bottom: 8px;
+        color: #666;
       }
       
       .demo-info ul {
-        padding-left: 20px;
+        padding-left: 16px;
+        margin-top: 8px;
       }
       
       .demo-info li {
         margin-bottom: 4px;
       }
       
-      .dashboard {
+      .error-message {
+        background-color: #fee2e2;
+        color: #b91c1c;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 16px;
         display: none;
-        padding: 20px;
       }
       
-      .dashboard-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #eee;
+      .employee-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px 16px;
       }
       
-      .dashboard-title {
-        font-size: 24px;
-        font-weight: bold;
-      }
-      
-      .user-info {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      
-      .tab-group {
-        display: flex;
-        border-bottom: 1px solid #ddd;
-        margin-bottom: 20px;
-      }
-      
-      .tab {
-        padding: 10px 20px;
-        cursor: pointer;
-        border-bottom: 2px solid transparent;
-      }
-      
-      .tab.active {
-        border-bottom: 2px solid #5540ff;
-        color: #5540ff;
-        font-weight: 500;
-      }
-      
-      .project-card {
+      .task-card {
         background: white;
-        border-radius: 6px;
-        padding: 15px;
-        margin-bottom: 15px;
+        border-radius: 8px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        padding: 16px;
+        margin-bottom: 16px;
       }
       
-      .project-header {
+      .task-header {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
       }
       
-      .project-title {
+      .task-title {
         font-weight: bold;
       }
       
-      .project-progress {
-        height: 6px;
-        background: #eee;
-        border-radius: 3px;
-        margin-top: 10px;
+      .task-badge {
+        background: #f3f4f6;
+        color: #4b5563;
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 12px;
       }
       
-      .project-progress-bar {
-        height: 100%;
-        background: #5540ff;
-        border-radius: 3px;
+      .task-description {
+        color: #666;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+      
+      .task-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+      }
+      
+      .task-info {
+        display: flex;
+        gap: 12px;
+        font-size: 12px;
+        color: #666;
+      }
+      
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+      }
+      
+      /* Page containers */
+      #login-page, #dashboard-page, #employee-page {
+        display: none;
+      }
+      
+      /* Tab contents */
+      #projects-tab, #import-tab, #export-tab, #users-tab {
+        display: none;
+      }
+      
+      #projects-tab {
+        display: block;
       }
     </style>
       <meta name="pp-name" value="team-dashboard-project">
@@ -197,185 +323,453 @@
   </head>
   <body>
     <!-- Страница входа -->
-    <div class="card" id="login-page">
-      <div class="card-header">
-        <h1 class="card-title">Система управления проектами</h1>
-        <p>Добро пожаловать в систему управления проектами!</p>
-      </div>
-      
-      <form id="login-form" onsubmit="handleLogin(event)">
-        <div class="form-group">
-          <label class="form-label" for="username">Имя пользователя:</label>
-          <input class="form-input" type="text" id="username" value="manager" required>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label" for="password">Пароль:</label>
-          <input class="form-input" type="password" id="password" value="manager123" required>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label">Роль:</label>
-          <div class="radio-group">
-            <label class="radio-option">
-              <input type="radio" name="role" value="manager" checked>
-              Руководитель
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="role" value="employee">
-              Сотрудник
-            </label>
+    <div id="login-page">
+      <div class="login-container">
+        <div class="login-card">
+          <div class="login-header">
+            <h1 class="login-title">Система управления проектами</h1>
+            <p>Добро пожаловать в систему управления проектами!</p>
+          </div>
+          
+          <div id="login-error" class="error-message">
+            Неверное имя пользователя или пароль
+          </div>
+          
+          <form id="login-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+              <label class="form-label" for="username">Имя пользователя:</label>
+              <input class="form-input" type="text" id="username" value="manager" required>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="password">Пароль:</label>
+              <input class="form-input" type="password" id="password" value="manager123" required>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Роль:</label>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="role" value="manager" checked>
+                  Руководитель
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="role" value="employee">
+                  Сотрудник
+                </label>
+              </div>
+            </div>
+            
+            <button type="submit" class="btn" style="width:100%">Войти в систему</button>
+          </form>
+          
+          <div class="demo-info">
+            <p>Для демо-доступа используйте:</p>
+            <ul>
+              <li>Руководитель: <strong>manager / manager123</strong></li>
+              <li>Сотрудник: <strong>employee / employee123</strong></li>
+            </ul>
           </div>
         </div>
-        
-        <button type="submit" class="btn">Войти в систему</button>
-      </form>
-      
-      <div class="demo-info">
-        <p>Для демо-доступа используйте:</p>
-        <ul>
-          <li>Руководитель: <strong>manager / manager123</strong></li>
-          <li>Сотрудник: <strong>employee / employee123</strong></li>
-        </ul>
       </div>
     </div>
     
-    <!-- Панель управления -->
-    <div class="card" id="dashboard-page" style="display: none; max-width: 800px;">
-      <div class="dashboard-header">
-        <h1 class="dashboard-title">Панель руководителя</h1>
-        <div class="user-info">
+    <!-- Панель руководителя -->
+    <div id="dashboard-page">
+      <div class="header">
+        <h1>Панель руководителя</h1>
+        <div class="user-panel">
           <span id="user-name">Менеджер</span>
-          <button class="btn" style="width: auto; padding: 8px 12px; font-size: 14px;" onclick="logout()">Выйти</button>
+          <button class="btn btn-outline" onclick="logout()">Выйти</button>
         </div>
       </div>
       
-      <div class="tab-group">
-        <div class="tab active">Проекты</div>
-        <div class="tab">Импорт</div>
-        <div class="tab">Экспорт</div>
-        <div class="tab">Пользователи</div>
-      </div>
-      
-      <div class="projects-list">
-        <div class="project-card">
-          <div class="project-header">
-            <div class="project-title">Тестовый проект</div>
-            <div>30% выполнено</div>
+      <div class="container">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Панель руководителя</h2>
           </div>
-          <p>Описание тестового проекта</p>
-          <div class="project-progress">
-            <div class="project-progress-bar" style="width: 30%"></div>
+          
+          <div class="tabs">
+            <div class="tab active" onclick="switchTab('projects')">Проекты</div>
+            <div class="tab" onclick="switchTab('import')">Импорт</div>
+            <div class="tab" onclick="switchTab('export')">Экспорт</div>
+            <div class="tab" onclick="switchTab('users')">Пользователи</div>
           </div>
-        </div>
-        
-        <div class="project-card">
-          <div class="project-header">
-            <div class="project-title">Разработка мобильного приложения</div>
-            <div>70% выполнено</div>
-          </div>
-          <p>Разработка мобильного приложения для iOS и Android</p>
-          <div class="project-progress">
-            <div class="project-progress-bar" style="width: 70%"></div>
+          
+          <div class="card-content">
+            <!-- Вкладка проектов -->
+            <div id="projects-tab" class="tab-content active">
+              <div class="project-card">
+                <div class="project-header">
+                  <div class="project-title">Тестовый проект</div>
+                  <div>30% выполнено</div>
+                </div>
+                <div class="project-description">Описание тестового проекта</div>
+                <div class="progress-container">
+                  <div class="progress-bar" style="width: 30%"></div>
+                </div>
+              </div>
+              
+              <div class="project-card">
+                <div class="project-header">
+                  <div class="project-title">Разработка мобильного приложения</div>
+                  <div>70% выполнено</div>
+                </div>
+                <div class="project-description">Разработка мобильного приложения для iOS и Android</div>
+                <div class="progress-container">
+                  <div class="progress-bar" style="width: 70%"></div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Вкладка импорта -->
+            <div id="import-tab" class="tab-content">
+              <h3 style="margin-bottom: 16px">Импорт проектов</h3>
+              <p style="margin-bottom: 16px">Создайте новый проект или импортируйте существующий</p>
+              
+              <div class="form-group">
+                <label class="form-label">Загрузка файла проекта:</label>
+                <input type="file" class="form-input" accept=".json,.xlsx,.csv">
+                <p style="margin-top: 8px; font-size: 14px; color: #666;">Поддерживаемые форматы: JSON, XLSX, CSV</p>
+              </div>
+              
+              <button class="btn" onclick="showAlert('Импорт проекта успешно выполнен')">Импортировать</button>
+            </div>
+            
+            <!-- Вкладка экспорта -->
+            <div id="export-tab" class="tab-content">
+              <h3 style="margin-bottom: 16px">Экспорт отчетов</h3>
+              <p style="margin-bottom: 16px">Формирование и экспорт отчетов по проектам</p>
+              
+              <div class="form-group">
+                <label class="form-label">Выберите проект:</label>
+                <select class="form-input">
+                  <option>Все проекты</option>
+                  <option>Тестовый проект</option>
+                  <option>Разработка мобильного приложения</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Формат экспорта:</label>
+                <select class="form-input">
+                  <option>Excel (.xlsx)</option>
+                  <option>CSV (.csv)</option>
+                  <option>JSON (.json)</option>
+                </select>
+              </div>
+              
+              <button class="btn" onclick="showAlert('Отчет успешно экспортирован')">Экспортировать</button>
+            </div>
+            
+            <!-- Вкладка пользователей -->
+            <div id="users-tab" class="tab-content">
+              <h3 style="margin-bottom: 16px">Управление пользователями</h3>
+              <p style="margin-bottom: 16px">Добавление и управление пользователями системы</p>
+              
+              <button class="btn" style="margin-bottom: 16px" onclick="showAlert('Пользователь добавлен')">Добавить пользователя</button>
+              
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <th style="text-align: left; padding: 12px;">Имя</th>
+                    <th style="text-align: left; padding: 12px;">Email</th>
+                    <th style="text-align: left; padding: 12px;">Роль</th>
+                    <th style="text-align: right; padding: 12px;">Действия</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px;">Менеджер</td>
+                    <td style="padding: 12px;">manager</td>
+                    <td style="padding: 12px;">Руководитель</td>
+                    <td style="padding: 12px; text-align: right;">
+                      <button class="btn btn-outline" style="padding: 4px 8px;" 
+                              onclick="showAlert('Невозможно удалить стандартного пользователя')">Удалить</button>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px;">Сотрудник</td>
+                    <td style="padding: 12px;">employee</td>
+                    <td style="padding: 12px;">Сотрудник</td>
+                    <td style="padding: 12px; text-align: right;">
+                      <button class="btn btn-outline" style="padding: 4px 8px;"
+                              onclick="showAlert('Невозможно удалить стандартного пользователя')">Удалить</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </div>
     
     <!-- Страница сотрудника -->
-    <div class="card" id="employee-page" style="display: none; max-width: 800px;">
-      <div class="dashboard-header">
-        <h1 class="dashboard-title">Страница сотрудника</h1>
-        <div class="user-info">
+    <div id="employee-page">
+      <div class="header">
+        <h1>Личный кабинет</h1>
+        <div class="user-panel">
           <span id="employee-name">Сотрудник</span>
-          <button class="btn" style="width: auto; padding: 8px 12px; font-size: 14px;" onclick="logout()">Выйти</button>
+          <button class="btn btn-outline" onclick="logout()">Выйти</button>
         </div>
       </div>
       
-      <div class="tab-group">
-        <div class="tab active">Мои задачи</div>
-        <div class="tab">Доступные задачи</div>
-      </div>
-      
-      <div class="projects-list">
-        <div class="project-card">
-          <div class="project-header">
-            <div class="project-title">Разработка интерфейса</div>
-            <div>50% выполнено</div>
+      <div class="employee-container">
+        <h2 style="margin-bottom: 24px">Мои задачи</h2>
+        
+        <div class="grid">
+          <!-- Мои задачи -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Мои задачи</h3>
+            </div>
+            <div class="card-content">
+              <div class="task-card">
+                <div class="task-header">
+                  <div class="task-title">Задача 1</div>
+                  <div class="task-badge">Тестовый проект</div>
+                </div>
+                <div class="task-description">Описание задачи 1</div>
+                <div class="progress-container">
+                  <div class="progress-bar" style="width: 30%"></div>
+                </div>
+                <div class="task-footer">
+                  <div class="task-info">
+                    <div>Срок: 7 дней</div>
+                    <div>Стоимость: 5000 ₽</div>
+                  </div>
+                  <div>30%</div>
+                </div>
+              </div>
+            </div>
           </div>
-          <p>Разработка интерфейса для мобильного приложения</p>
-          <div class="project-progress">
-            <div class="project-progress-bar" style="width: 50%"></div>
+          
+          <!-- Доступные задачи -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Доступные задачи</h3>
+            </div>
+            <div class="card-content">
+              <div class="task-card">
+                <div class="task-header">
+                  <div class="task-title">Дизайн интерфейса</div>
+                  <div class="task-badge">Разработка мобильного приложения</div>
+                </div>
+                <div class="task-description">Создание дизайна мобильного приложения</div>
+                <div class="task-footer">
+                  <div class="task-info">
+                    <div>Срок: 10 дней</div>
+                    <div>Стоимость: 15000 ₽</div>
+                  </div>
+                  <button class="btn" style="padding: 4px 8px;" onclick="takeTask(this)">Взять в работу</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
     
     <script>
-      // Простые функции для входа в систему и навигации
+      // При загрузке страницы проверяем, авторизован ли пользователь
+      window.addEventListener('DOMContentLoaded', function() {
+        try {
+          // Получаем данные пользователя из localStorage
+          const userJson = localStorage.getItem('user');
+          
+          if (userJson) {
+            const user = JSON.parse(userJson);
+            
+            // Если пользователь авторизован, показываем соответствующую страницу
+            if (user.isAuthenticated) {
+              showPage(user.role === 'manager' ? 'dashboard' : 'employee');
+              
+              // Устанавливаем имя пользователя
+              if (user.role === 'manager') {
+                document.getElementById('user-name').textContent = user.name || 'Менеджер';
+              } else {
+                document.getElementById('employee-name').textContent = user.name || 'Сотрудник';
+              }
+            } else {
+              showPage('login');
+            }
+          } else {
+            showPage('login');
+          }
+        } catch (error) {
+          console.error('Ошибка при проверке авторизации:', error);
+          showPage('login');
+        }
+      });
+      
+      // Функция для показа указанной страницы
+      function showPage(pageName) {
+        // Скрываем все страницы
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('dashboard-page').style.display = 'none';
+        document.getElementById('employee-page').style.display = 'none';
+        
+        // Показываем нужную страницу
+        document.getElementById(pageName + '-page').style.display = 'block';
+      }
+      
+      // Обработчик входа в систему
       function handleLogin(event) {
         event.preventDefault();
         
+        // Получаем значения полей формы
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         const role = document.querySelector('input[name="role"]:checked').value;
         
-        // Проверка учетных данных
+        // Скрываем сообщение об ошибке
+        document.getElementById('login-error').style.display = 'none';
+        
+        // Проверяем учетные данные
         if ((username === 'manager' && password === 'manager123' && role === 'manager') ||
             (username === 'employee' && password === 'employee123' && role === 'employee')) {
           
-          // Сохраняем данные пользователя
-          localStorage.setItem('user', JSON.stringify({
-            username,
-            role,
+          // Создаем объект пользователя
+          const user = {
+            id: role === 'manager' ? 'default-manager' : 'default-employee',
+            name: role === 'manager' ? 'Менеджер' : 'Сотрудник',
+            username: username,
+            role: role,
             isAuthenticated: true
-          }));
+          };
           
-          // Показываем нужную страницу
-          document.getElementById('login-page').style.display = 'none';
+          // Сохраняем в localStorage
+          localStorage.setItem('user', JSON.stringify(user));
           
+          // Показываем уведомление об успешном входе
+          showAlert('Добро пожаловать, ' + user.name + '!');
+          
+          // Перенаправляем на нужную страницу
+          showPage(role === 'manager' ? 'dashboard' : 'employee');
+          
+          // Устанавливаем имя пользователя
           if (role === 'manager') {
-            document.getElementById('dashboard-page').style.display = 'block';
+            document.getElementById('user-name').textContent = user.name;
           } else {
-            document.getElementById('employee-page').style.display = 'block';
+            document.getElementById('employee-name').textContent = user.name;
           }
-          
         } else {
-          alert('Неверное имя пользователя или пароль');
+          // Показываем сообщение об ошибке
+          document.getElementById('login-error').style.display = 'block';
         }
       }
       
+      // Функция для выхода из системы
       function logout() {
+        // Удаляем данные пользователя из localStorage
         localStorage.removeItem('user');
-        document.getElementById('dashboard-page').style.display = 'none';
-        document.getElementById('employee-page').style.display = 'none';
-        document.getElementById('login-page').style.display = 'block';
+        
+        // Перенаправляем на страницу входа
+        showPage('login');
+        
+        // Сбрасываем значения полей формы
+        document.getElementById('username').value = 'manager';
+        document.getElementById('password').value = 'manager123';
+        document.querySelector('input[name="role"][value="manager"]').checked = true;
       }
       
-      // Проверяем, залогинен ли пользователь при загрузке страницы
-      window.addEventListener('DOMContentLoaded', function() {
-        try {
-          const userData = localStorage.getItem('user');
-          
-          if (userData) {
-            const user = JSON.parse(userData);
-            
-            if (user.isAuthenticated) {
-              document.getElementById('login-page').style.display = 'none';
-              
-              if (user.role === 'manager') {
-                document.getElementById('dashboard-page').style.display = 'block';
-                document.getElementById('user-name').textContent = user.username || 'Менеджер';
-              } else {
-                document.getElementById('employee-page').style.display = 'block';
-                document.getElementById('employee-name').textContent = user.username || 'Сотрудник';
-              }
+      // Функция для переключения вкладок
+      function switchTab(tabName) {
+        // Получаем все вкладки и содержимое вкладок
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        // Удаляем класс активности у всех вкладок и содержимого
+        tabs.forEach(tab => tab.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+        
+        // Добавляем класс активности нужной вкладке и содержимому
+        document.querySelector(`.tab:nth-child(${getTabIndex(tabName)})`).classList.add('active');
+        document.getElementById(tabName + '-tab').classList.add('active');
+      }
+      
+      // Функция для получения индекса вкладки
+      function getTabIndex(tabName) {
+        const tabMap = {
+          'projects': 1,
+          'import': 2,
+          'export': 3,
+          'users': 4
+        };
+        
+        return tabMap[tabName] || 1;
+      }
+      
+      // Функция для показа уведомления
+      function showAlert(message) {
+        alert(message);
+      }
+      
+      // Функция для взятия задачи в работу
+      function takeTask(button) {
+        // Изменяем текст кнопки
+        button.textContent = 'В работе';
+        button.disabled = true;
+        
+        // Показываем уведомление
+        showAlert('Задача успешно взята в работу!');
+        
+        // Изменяем стиль кнопки
+        button.style.backgroundColor = '#d1d5db';
+        button.style.color = '#4b5563';
+      }
+      
+      // Инициализация проектов при первой загрузке
+      function initializeProjects() {
+        // Проверяем, есть ли проекты в localStorage
+        if (!localStorage.getItem('projects')) {
+          // Создаем демо-проекты
+          const demoProjects = [
+            {
+              id: "project-1",
+              name: "Тестовый проект",
+              description: "Описание тестового проекта",
+              progress: 30,
+              tasks: [
+                {
+                  id: "task-1",
+                  name: "Задача 1",
+                  description: "Описание задачи 1",
+                  progress: 30,
+                  price: 5000,
+                  estimatedTime: 10,
+                  assignedTo: ""
+                }
+              ]
+            },
+            {
+              id: "project-2",
+              name: "Разработка мобильного приложения",
+              description: "Разработка мобильного приложения для iOS и Android",
+              progress: 70,
+              tasks: [
+                {
+                  id: "task-2",
+                  name: "Дизайн интерфейса",
+                  description: "Создание дизайна мобильного приложения",
+                  progress: 0,
+                  price: 15000,
+                  estimatedTime: 20,
+                  assignedTo: ""
+                }
+              ]
             }
-          }
-        } catch (error) {
-          console.error('Ошибка при проверке аутентификации:', error);
+          ];
+          
+          // Сохраняем проекты в localStorage
+          localStorage.setItem('projects', JSON.stringify(demoProjects));
         }
-      });
+      }
+      
+      // Инициализируем проекты
+      initializeProjects();
     </script>
   </body>
 </html>

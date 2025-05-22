@@ -1,4 +1,3 @@
-
 // Типы данных для проектов и задач
 
 export interface User {
@@ -6,34 +5,43 @@ export interface User {
   name: string;
   email: string;
   password: string;
-  role: 'manager' | 'employee';
+  role: "manager" | "employee";
 }
 
+// Интерфейс для комментария к задаче
+export interface TaskComment {
+  id: string;
+  text: string;
+  author: string;
+  date: string;
+}
+
+// Интерфейс для задачи проекта
 export interface Task {
   id: string;
   name: string;
-  description: string;
-  startDate: string; // формат "YYYY-MM-DD"
-  endDate: string; // формат "YYYY-MM-DD"
-  actualStartDate: string | null; // формат "YYYY-MM-DD"
-  actualEndDate: string | null; // формат "YYYY-MM-DD"
-  estimatedTime: number; // в часах
-  price: number; // в рублях
-  progress: number; // процент выполнения от 0 до 100
-  assignedTo: string | string[]; // ID пользователя или массив ID
-  assignedToNames: string[]; // имена пользователей
+  description?: string;
+  price: number;
+  estimatedTime: number;
+  startDate: string;
+  endDate: string;
+  assignedTo: string;
+  assignedToNames: string[];
+  progress: number;
+  actualStartDate?: string | null;
+  actualEndDate?: string | null;
+  comments?: TaskComment[];
 }
 
+// Интерфейс для проекта
 export interface Project {
   id: string;
   name: string;
   description: string;
-  client: string;
-  manager: string;
-  startDate: string; // формат "YYYY-MM-DD"
-  endDate: string; // формат "YYYY-MM-DD"
-  budget: number;
+  createdAt: string;
+  createdBy: string;
+  startDate: string;
+  endDate: string;
   tasks: Task[];
-  createdAt: string; // ISO формат даты
-  updatedAt: string; // ISO формат даты
+  updatedAt?: string;
 }

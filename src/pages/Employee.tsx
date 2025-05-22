@@ -17,6 +17,7 @@ const Employee: React.FC = () => {
     initializeProjectsStorage();
   }, []);
 
+  // Получаем данные из хука
   const {
     assignedTasks,
     availableTasks,
@@ -25,7 +26,7 @@ const Employee: React.FC = () => {
     handleTakeTask,
     handleUpdateTaskProgress,
     handleAddTaskComment,
-    handleLogout,
+    handleLogout
   } = useEmployeeData(navigate);
 
   // Если данные загружаются, показываем заглушку

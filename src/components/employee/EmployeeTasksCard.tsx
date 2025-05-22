@@ -29,9 +29,12 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   const [activeTask, setActiveTask] = useState<string | null>(null);
   const [commentText, setCommentText] = useState<string>("");
 
+  // Убедимся, что tasks определен и является массивом
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+
   // Разделяем задачи на активные и завершенные
-  const activeTasks = tasks.filter(task => task.progress < 100);
-  const completedTasks = tasks.filter(task => task.progress === 100);
+  const activeTasks = safeTasks.filter(task => (task.progress || 0) < 100);
+  const completedTasks = safeTasks.filter(task => (task.progress || 0) === 100);
 
   // Обработчик отправки комментария
   const handleSubmitComment = (taskId: string, projectId: string) => {
@@ -42,9 +45,14 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   };
 
   // Функция для отображения дат
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ru-RU');
+  const formatDate = (dateString: string | undefined | null) => {
+    if (!dateString) return "Не указано";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('ru-RU');
+    } catch (error) {
+      return "Неверный формат";
+    }
   };
 
   // Компонент для отображения одной задачи
@@ -58,7 +66,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
               {task.projectName}
             </Badge>
           </div>
-          <Progress value={task.progress} className="h-2 mt-2 w-full" />
+          <Progress value={task.progress || 0} className="h-2 mt-2 w-full" />
         </div>
       </AccordionTrigger>
       <AccordionContent className="px-4 pb-4">
@@ -68,15 +76,15 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
             <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
               <div>Сроки: {formatDate(task.startDate)} - {formatDate(task.endDate)}</div>
               <div>Оценка времени: {task.estimatedTime} ч.</div>
-              <div>Стоимость: {task.price.toLocaleString()} ₽</div>
+              <div>Стоимость: {task.price?.toLocaleString() || 0} ₽</div>
             </div>
           </div>
           
           <div>
             <p className="text-sm font-medium mb-2">Прогресс выполнения</p>
             <div className="flex items-center space-x-2 mb-3">
-              <Progress value={task.progress} className="h-2 flex-1" />
-              <span className="text-sm">{task.progress}%</span>
+              <Progress value={task.progress || 0} className="h-2 flex-1" />
+              <span className="text-sm">{task.progress || 0}%</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {[0, 25, 50, 75, 100].map(value => (
@@ -85,7 +93,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                   variant="outline" 
                   size="sm"
                   onClick={() => onUpdateProgress(task.id, task.projectId, value)}
-                  className={task.progress === value ? "bg-primary text-primary-foreground" : ""}
+                  className={(task.progress || 0) === value ? "bg-primary text-primary-foreground" : ""}
                 >
                   {value}%
                 </Button>
@@ -98,10 +106,10 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
             <div className="bg-slate-50 p-3 rounded-md mb-3 max-h-40 overflow-y-auto">
               {task.comments && task.comments.length > 0 ? (
                 <div className="space-y-2">
-                  {task.comments.map(comment => (
-                    <div key={comment.id} className="text-sm border-l-2 border-slate-300 pl-2">
+                  {task.comments.map((comment, index) => (
+                    <div key={comment.id || index} className="text-sm border-l-2 border-slate-300 pl-2">
                       <p className="text-xs text-slate-500">
-                        {comment.author} • {new Date(comment.date).toLocaleString('ru-RU')}
+                        {comment.author || "Система"} • {formatDate(comment.date)}
                       </p>
                       <p>{comment.text}</p>
                     </div>

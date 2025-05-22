@@ -159,6 +159,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
         try {
           const projectsData = localStorage.getItem("projects");
           projectsList = projectsData ? JSON.parse(projectsData) : [];
+          console.log("Загружено проектов:", projectsList.length);
 
           if (!Array.isArray(projectsList)) {
             console.error("Данные проектов не являются массивом");
@@ -172,12 +173,21 @@ export function useEmployeeData(navigate: NavigateFunction) {
         setProjects(projectsList);
 
         // Обработка проектов для получения задач
-        const { userTasks, otherTasks } = processProjects(
-          projectsList,
-          userData,
-        );
-        setAssignedTasks(userTasks);
-        setAvailableTasks(otherTasks);
+        try {
+          const { userTasks, otherTasks } = processProjects(
+            projectsList,
+            userData,
+          );
+          console.log("Задачи пользователя:", userTasks.length);
+          console.log("Доступные задачи:", otherTasks.length);
+
+          setAssignedTasks(userTasks);
+          setAvailableTasks(otherTasks);
+        } catch (error) {
+          console.error("Ошибка при обработке задач:", error);
+          setAssignedTasks([]);
+          setAvailableTasks([]);
+        }
       } catch (error) {
         console.error("Ошибка при загрузке данных:", error);
       } finally {

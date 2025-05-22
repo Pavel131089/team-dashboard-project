@@ -20,66 +20,17 @@ const formatDate = (dateString?: string | null): string => {
     if (isNaN(date.getTime())) return "Не указано";
     return date.toLocaleDateString("ru-RU");
   } catch (error) {
-    console.error("Ошибка форматирования даты:", error);
     return "Не указано";
   }
 };
 
-const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = (props) => {
-  // Защитное копирование props
-  const { 
-    onTakeTask = () => {}, 
-    projects = [] 
-  } = props;
-  
-  // Безопасное получение и обработка задач
-  const tasks = React.useMemo(() => {
-    // Проверяем, что props.tasks существует и является массивом
-    if (!props.tasks || !Array.isArray(props.tasks)) {
-      console.warn("tasks не является массивом:", props.tasks);
-      return [];
-    }
-    
-    // Фильтруем и нормализуем задачи
-    return props.tasks
-      .filter(item => item && (item.task || item))
-      .map((item, index) => {
-        // Пытаемся извлечь task и project из разных возможных структур
-        let task, project;
-        
-        // Вариант 1: { task, project } структура
-        if (item.task && typeof item.task === 'object') {
-          task = item.task;
-          project = item.project;
-        } 
-        // Вариант 2: task напрямую
-        else if (typeof item === 'object') {
-          task = item;
-          // Если task имеет projectId, пробуем найти проект
-          if (task.projectId && Array.isArray(projects)) {
-            project = projects.find(p => p.id === task.projectId);
-          }
-        }
-        
-        // Проверяем что task получен
-        if (!task) {
-          console.warn("Некорректная структура задачи:", item);
-          return null;
-        }
-        
-        // Генерируем id, если отсутствует
-        const id = task.id || `task-${index}`;
-        
-        return {
-          task: { ...task, id },
-          project: project || {},
-        };
-      })
-      .filter(Boolean); // Удаляем null элементы
-  }, [props.tasks, projects]);
-  
-  // Если нет задач, показываем пустое состояние
-  if (tasks.length === 0) {
+const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
+  tasks,
+  onTakeTask,
+  projects = []
+}) => {
+  // Простая проверка на отсутствие задач
+  if (!tasks || tasks.length === 0) {
     return <EmptyAvailableTasks />;
   }
 
@@ -93,28 +44,50 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = (props) => {
         <CardDescription>Задачи, которые вы можете взять в работу</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {tasks.map(({ task, project }, index) => {
-          // Безопасно получаем даты с проверкой
-          const startDate = task?.startDate || project?.startDate;
-          const endDate = task?.endDate || project?.endDate;
+        {tasks.map((item, index) => {
+          // Определяем структуру элемента
+          let task, project;
           
-          // Безопасно получаем ID
-          const taskId = task?.id || `task-${index}`;
+          if (item && typeof item === 'object') {
+            // Если это объект типа {task, project}
+            if (item.task) {
+              task = item.task;
+              project = item.project;
+            } else {
+              // Если это просто объект task
+              task = item;
+              if (task.projectId && projects.length > 0) {
+                project = projects.find(p => p.id === task.projectId) || {};
+              } else {
+                project = {};
+              }
+            }
+          } else {
+            // Если данные некорректные, пропускаем
+            return null;
+          }
+          
+          // Генерируем id, если он отсутствует
+          const taskId = task.id || `task-${index}`;
           const projectId = project?.id || "";
+          
+          // Получаем даты задачи или проекта
+          const startDate = task.startDate || (project && project.startDate);
+          const endDate = task.endDate || (project && project.endDate);
           
           return (
             <div key={taskId} className="border rounded-lg p-4 bg-white">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-medium text-base">{task?.name || "Без названия"}</h3>
-                  {task?.description && (
+                  <h3 className="font-medium text-base">{task.name || "Без названия"}</h3>
+                  {task.description && (
                     <p className="text-sm text-slate-600 line-clamp-2 mt-1">
                       {task.description}
                     </p>
                   )}
                 </div>
                 <div className="bg-slate-100 px-2 py-1 rounded text-xs">
-                  {project?.name || "Проект"}
+                  {project && project.name ? project.name : "Проект"}
                 </div>
               </div>
               
@@ -127,13 +100,13 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = (props) => {
                   <Icon name="CalendarClock" className="h-3 w-3" />
                   <span>Окончание: {formatDate(endDate)}</span>
                 </div>
-                {task?.estimatedTime ? (
+                {task.estimatedTime ? (
                   <div className="flex items-center gap-1">
                     <Icon name="Clock" className="h-3 w-3" />
                     <span>Время: {task.estimatedTime} ч.</span>
                   </div>
                 ) : null}
-                {task?.price ? (
+                {task.price ? (
                   <div className="flex items-center gap-1">
                     <Icon name="CircleDollarSign" className="h-3 w-3" />
                     <span>Цена: {task.price} ₽</span>

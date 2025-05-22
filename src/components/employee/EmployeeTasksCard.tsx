@@ -78,7 +78,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     > = {};
 
     safeTasks.forEach((task) => {
-      if (!task.projectId) return;
+      if (!task || !task.projectId) return;
 
       if (!projectMap[task.projectId]) {
         projectMap[task.projectId] = {
@@ -109,7 +109,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     // Вычисляем прогресс проекта
     const projectProgress = Math.round(
       projectInfo.tasks.reduce((sum, task) => sum + (task.progress || 0), 0) /
-        projectInfo.tasks.length,
+        Math.max(projectInfo.tasks.length, 1),
     );
 
     return (
@@ -126,7 +126,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
         </div>
         <div className="p-3">
           {projectInfo.tasks.map((task) => (
-            <TaskItem key={task.id} task={task} />
+            <TaskItem key={task.id || `task-${Math.random()}`} task={task} />
           ))}
         </div>
       </div>
@@ -136,18 +136,18 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   // Компонент для отображения одной задачи
   const TaskItem = ({ task }: { task: TaskWithProject }) => {
     // Проверяем, что задача существует и имеет id
-    if (!task || !task.id) {
+    if (!task) {
       return null;
     }
+
+    // Генерируем уникальный идентификатор для задачи, если его нет
+    const taskId = task.id || `task-${Math.random()}`;
 
     // Безопасно получаем progress
     const progress = typeof task.progress === "number" ? task.progress : 0;
 
     return (
-      <AccordionItem
-        value={task.id}
-        className="border rounded-md mb-3 bg-white"
-      >
+      <AccordionItem value={taskId} className="border rounded-md mb-3 bg-white">
         <AccordionTrigger className="px-4 py-3 hover:no-underline">
           <div className="flex flex-col items-start w-full text-left">
             <div className="flex justify-between w-full">
@@ -174,13 +174,19 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                   <Icon name="CalendarClock" className="h-3 w-3" />
                   <span>Дедлайн: {formatDate(task.endDate)}</span>
                 </div>
-                <div>Оценка времени: {task.estimatedTime || 0} ч.</div>
-                <div>
-                  Стоимость:{" "}
-                  {typeof task.price === "number"
-                    ? task.price.toLocaleString()
-                    : 0}{" "}
-                  ₽
+                <div className="flex items-center gap-1">
+                  <Icon name="Clock" className="h-3 w-3" />
+                  <span>Время: {task.estimatedTime || 0} ч.</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Icon name="DollarSign" className="h-3 w-3" />
+                  <span>
+                    Цена:{" "}
+                    {typeof task.price === "number"
+                      ? task.price.toLocaleString()
+                      : 0}{" "}
+                    ₽
+                  </span>
                 </div>
               </div>
             </div>
@@ -197,7 +203,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      onUpdateProgress(task.id, task.projectId, value)
+                      onUpdateProgress(taskId, task.projectId, value)
                     }
                     className={
                       progress === value
@@ -214,7 +220,9 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
             <div>
               <p className="text-sm font-medium mb-2">Комментарии</p>
               <div className="bg-slate-50 p-3 rounded-md mb-3 max-h-40 overflow-y-auto">
-                {task.comments && task.comments.length > 0 ? (
+                {task.comments &&
+                Array.isArray(task.comments) &&
+                task.comments.length > 0 ? (
                   <div className="space-y-2">
                     {task.comments.map((comment, index) => (
                       <div
@@ -241,7 +249,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                   className="w-full h-20 resize-none"
                 />
                 <Button
-                  onClick={() => handleSubmitComment(task.id, task.projectId)}
+                  onClick={() => handleSubmitComment(taskId, task.projectId)}
                   disabled={!commentText.trim()}
                   size="sm"
                   className="w-full"
@@ -262,12 +270,8 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
         <CardTitle className="text-xl">Мои задачи</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="projects">
+        <Tabs defaultValue="active">
           <TabsList className="w-full mb-4">
-            <TabsTrigger value="projects" className="flex-1">
-              По проектам{" "}
-              <Badge className="ml-2 bg-primary">{projectGroups.length}</Badge>
-            </TabsTrigger>
             <TabsTrigger value="active" className="flex-1">
               Активные{" "}
               <Badge className="ml-2 bg-primary">{activeTasks.length}</Badge>
@@ -278,31 +282,11 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                 {completedTasks.length}
               </Badge>
             </TabsTrigger>
+            <TabsTrigger value="projects" className="flex-1">
+              По проектам{" "}
+              <Badge className="ml-2 bg-primary">{projectGroups.length}</Badge>
+            </TabsTrigger>
           </TabsList>
-
-          {/* Добавляем новую вкладку для группировки по проектам */}
-          <TabsContent value="projects">
-            {projectGroups.length === 0 ? (
-              <div className="text-center py-8">
-                <Icon
-                  name="Briefcase"
-                  className="mx-auto h-12 w-12 text-slate-300"
-                />
-                <p className="mt-2 text-slate-500">
-                  У вас нет задач в проектах
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {projectGroups.map((projectInfo) => (
-                  <ProjectGroup
-                    key={projectInfo.projectId}
-                    projectInfo={projectInfo}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
 
           <TabsContent value="active">
             {activeTasks.length === 0 ? (
@@ -320,9 +304,10 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                 value={activeTask || undefined}
                 onValueChange={(value) => setActiveTask(value)}
               >
-                {activeTasks.map((task) => (
-                  <TaskItem key={task.id} task={task} />
-                ))}
+                {activeTasks.map((task) => {
+                  const safeTaskId = task.id || `task-${Math.random()}`;
+                  return <TaskItem key={safeTaskId} task={task} />;
+                })}
               </Accordion>
             )}
           </TabsContent>
@@ -345,10 +330,34 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                 value={activeTask || undefined}
                 onValueChange={(value) => setActiveTask(value)}
               >
-                {completedTasks.map((task) => (
-                  <TaskItem key={task.id} task={task} />
-                ))}
+                {completedTasks.map((task) => {
+                  const safeTaskId = task.id || `task-${Math.random()}`;
+                  return <TaskItem key={safeTaskId} task={task} />;
+                })}
               </Accordion>
+            )}
+          </TabsContent>
+
+          <TabsContent value="projects">
+            {projectGroups.length === 0 ? (
+              <div className="text-center py-8">
+                <Icon
+                  name="Briefcase"
+                  className="mx-auto h-12 w-12 text-slate-300"
+                />
+                <p className="mt-2 text-slate-500">
+                  У вас нет задач в проектах
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {projectGroups.map((projectInfo) => (
+                  <ProjectGroup
+                    key={projectInfo.projectId || `project-${Math.random()}`}
+                    projectInfo={projectInfo}
+                  />
+                ))}
+              </div>
             )}
           </TabsContent>
         </Tabs>

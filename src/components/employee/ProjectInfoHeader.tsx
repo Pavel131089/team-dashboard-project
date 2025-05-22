@@ -1,26 +1,34 @@
 
 import React from "react";
 import { Project } from "@/types/project";
-import { formatDate } from "@/utils/dateUtils";
 import { Progress } from "@/components/ui/progress";
 import Icon from "@/components/ui/icon";
+import { formatDate } from "@/utils/dateUtils";
 
 interface ProjectInfoHeaderProps {
-  project: Project;
+  project?: Project;
+  projectName: string;
 }
 
-const ProjectInfoHeader: React.FC<ProjectInfoHeaderProps> = ({ project }) => {
-  // Рассчитываем общий прогресс проекта
+/**
+ * Компонент для отображения информации о проекте
+ */
+const ProjectInfoHeader: React.FC<ProjectInfoHeaderProps> = ({
+  project,
+  projectName,
+}) => {
+  // Функция для расчета прогресса проекта
   const calculateProgress = (): number => {
-    if (!project.tasks || project.tasks.length === 0) return 0;
+    if (!project?.tasks || !Array.isArray(project.tasks) || project.tasks.length === 0) return 0;
 
     const totalProgress = project.tasks.reduce(
-      (sum, task) => sum + (typeof task.progress === 'number' ? task.progress : 0),
+      (sum, task) => sum + (typeof task.progress === "number" ? task.progress : 0),
       0
     );
     return Math.round(totalProgress / project.tasks.length);
   };
 
+  // Получаем прогресс проекта
   const progress = calculateProgress();
 
   // Определяем цвет прогресс-бара в зависимости от значения
@@ -31,42 +39,82 @@ const ProjectInfoHeader: React.FC<ProjectInfoHeaderProps> = ({ project }) => {
     return "bg-red-500";
   };
 
-  // Форматируем даты
-  const startDate = formatDate(project.startDate);
-  const endDate = formatDate(project.endDate);
+  // Функция для определения оставшегося времени
+  const getRemainingTime = (): string => {
+    if (!project?.endDate) return "Срок не установлен";
+
+    try {
+      const endDate = new Date(project.endDate);
+      const today = new Date();
+      
+      // Если дата окончания в прошлом
+      if (endDate < today) {
+        return "Срок прошел";
+      }
+      
+      // Вычисляем разницу в днях
+      const diffTime = endDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      return `Осталось: ${diffDays} дн.`;
+    } catch (error) {
+      return "Невозможно определить";
+    }
+  };
 
   return (
-    <div className="px-4 py-3 border-b bg-slate-50">
-      <div className="flex justify-between items-start">
-        <h3 className="font-medium">{project.name || "Без названия"}</h3>
-        <span className="text-xs bg-slate-200 px-1.5 py-0.5 rounded text-slate-700">
-          {project.tasks?.length || 0} задач
-        </span>
+    <div className="bg-slate-50 p-4 border-b">
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <h3 className="text-lg font-medium flex items-center">
+            <Icon name="Folder" className="h-5 w-5 mr-2 text-blue-500" />
+            {projectName}
+          </h3>
+          {project?.description && (
+            <p className="text-sm text-slate-600 mt-1 max-w-lg">
+              {project.description}
+            </p>
+          )}
+        </div>
+        
+        <div className="text-right">
+          <div className="text-sm text-slate-500">
+            {getRemainingTime()}
+          </div>
+        </div>
       </div>
       
-      {project.description && (
-        <p className="text-sm text-slate-600 mt-1">{project.description}</p>
-      )}
-      
-      <div className="mt-2 text-xs text-slate-500">
-        <div className="flex items-center gap-4 mb-1">
-          <span className="flex items-center">
-            <Icon name="Calendar" className="w-3 h-3 mr-1" />
-            Начало: {startDate}
-          </span>
-          <span className="flex items-center">
-            <Icon name="CalendarClock" className="w-3 h-3 mr-1" />
-            Окончание: {endDate}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mt-3">
+        <div className="flex items-center gap-1">
+          <Icon name="Calendar" className="h-4 w-4 text-slate-500" />
+          <span className="text-slate-700">
+            Начало: {project?.startDate ? formatDate(project.startDate) : "Не указано"}
           </span>
         </div>
         
-        <div className="flex items-center gap-2 mt-2">
-          <span>Прогресс проекта:</span>
-          <span className="font-medium">{progress}%</span>
+        <div className="flex items-center gap-1">
+          <Icon name="CalendarClock" className="h-4 w-4 text-slate-500" />
+          <span className="text-slate-700">
+            Окончание: {project?.endDate ? formatDate(project.endDate) : "Не указано"}
+          </span>
         </div>
-        <Progress 
-          value={progress} 
-          className="h-1.5 mt-1"
+        
+        <div className="flex items-center gap-1">
+          <Icon name="ListChecks" className="h-4 w-4 text-slate-500" />
+          <span className="text-slate-700">
+            Задач: {project?.tasks ? project.tasks.length : 0}
+          </span>
+        </div>
+      </div>
+      
+      <div className="mt-3">
+        <div className="flex justify-between mb-1">
+          <span className="text-sm font-medium">Прогресс проекта</span>
+          <span className="text-sm font-medium">{progress}%</span>
+        </div>
+        <Progress
+          value={progress}
+          className="h-2"
           indicatorClassName={getProgressColor(progress)}
         />
       </div>

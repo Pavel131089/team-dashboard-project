@@ -27,13 +27,13 @@ const Employee: React.FC = () => {
   const {
     assignedTasks,
     availableTasks,
+    projects, // Получаем проекты из хука
     user,
     isLoading,
     handleTakeTask,
     handleUpdateTaskProgress,
     handleAddTaskComment,
     handleLogout,
-    projects,
   } = useEmployeeData(navigate);
 
   // Если данные загружаются или хранилище еще не инициализировано, показываем заглушку
@@ -65,11 +65,12 @@ const Employee: React.FC = () => {
     );
   }
 
-  // Безопасно получаем массивы задач
+  // Безопасно получаем массивы задач и проектов
   const safeAssignedTasks = Array.isArray(assignedTasks) ? assignedTasks : [];
   const safeAvailableTasks = Array.isArray(availableTasks)
     ? availableTasks
     : [];
+  const safeProjects = Array.isArray(projects) ? projects : [];
 
   return (
     <EmployeeLayout userName={user.name || ""} onLogout={handleLogout}>
@@ -86,7 +87,7 @@ const Employee: React.FC = () => {
           <AvailableTasksSection
             tasks={safeAvailableTasks}
             onTakeTask={handleTakeTask}
-            projects={projects} // Используем проекты из хука useEmployeeData
+            projects={safeProjects} // Передаем массив проектов
           />
         </div>
       </EmployeeContent>

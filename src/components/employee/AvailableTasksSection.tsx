@@ -54,6 +54,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
         // Создаем запись для проекта, если ее еще нет
         if (!projectMap[projectId]) {
           // Находим полную информацию о проекте
+          // Проверяем, что projects - это массив перед вызовом find
           const fullProject = Array.isArray(projects)
             ? projects.find((p) => p.id === projectId)
             : undefined;
@@ -93,23 +94,20 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
       <div className="space-y-4">
         {projectsWithTasks.map((projectInfo) => (
           <div
-            key={projectInfo.projectId}
+            key={projectInfo.projectId || `project-${Math.random()}`}
             className="bg-white rounded-lg shadow-sm border overflow-hidden"
           >
-            {/* Добавляем новый компонент для информации о проекте */}
-            {projectInfo.project ? (
-              <ProjectInfoHeader project={projectInfo.project} />
-            ) : (
-              <div className="px-4 py-3 border-b bg-slate-50">
-                <h3 className="font-medium">{projectInfo.projectName}</h3>
-              </div>
-            )}
+            {/* Добавляем компонент для информации о проекте */}
+            <ProjectInfoHeader
+              project={projectInfo.project}
+              projectName={projectInfo.projectName}
+            />
 
             <div className="p-4">
               <div className="space-y-3">
                 {projectInfo.tasks.map((task) => (
                   <AvailableTaskItem
-                    key={task.id}
+                    key={task.id || `task-${Math.random()}`}
                     task={task}
                     projectName={projectInfo.projectName}
                     onTakeTask={() => {

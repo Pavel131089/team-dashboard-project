@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { getProgressColorClass } from "@/utils/progressUtils";
+import CommentInputForm from "./task/CommentInputForm";
 
 interface TaskWithProject extends Task {
   projectId: string;
@@ -64,17 +65,14 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     }));
   };
 
-  // Обновленный обработчик отправки комментария
-  const handleSubmitComment = (taskId: string, projectId: string) => {
-    const commentText = getCommentForTask(taskId);
-
+  // Обновляем обработчик отправки комментария
+  const handleSubmitComment = (
+    taskId: string,
+    projectId: string,
+    commentText: string,
+  ) => {
     if (commentText.trim()) {
-      const success = onAddComment(taskId, projectId, commentText);
-
-      if (success) {
-        // Очищаем только комментарий для конкретной задачи
-        setCommentForTask(taskId, "");
-      }
+      onAddComment(taskId, projectId, commentText);
     }
   };
 
@@ -365,44 +363,13 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                     <p className="text-sm text-slate-500">Нет комментариев</p>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <Textarea
-                    placeholder="Добавить комментарий..."
-                    value={commentText}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Предотвращаем дальнейшее всплытие события
-                      e.nativeEvent.stopImmediatePropagation();
+                {/* Заменяем старую форму ввода на новый компонент */}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <CommentInputForm
+                    onSubmit={(text) => {
+                      handleSubmitComment(taskId, task.projectId, text);
                     }}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      // Предотвращаем дальнейшее всплытие события
-                      e.nativeEvent.stopImmediatePropagation();
-                      setCommentForTask(taskId, e.target.value);
-                    }}
-                    onKeyDown={(e) => {
-                      e.stopPropagation();
-                      // Предотвращаем дальнейшее всплытие события
-                      e.nativeEvent.stopImmediatePropagation();
-                    }}
-                    className="w-full h-20 resize-none"
-                    autoCorrect="off"
-                    autoComplete="off"
-                    spellCheck="false"
                   />
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Предотвращаем дальнейшее всплытие события
-                      e.nativeEvent.stopImmediatePropagation();
-                      handleSubmitComment(taskId, task.projectId);
-                    }}
-                    disabled={!commentText.trim()}
-                    size="sm"
-                    className="w-full"
-                  >
-                    Отправить
-                  </Button>
                 </div>
               </div>
             </div>

@@ -104,6 +104,7 @@ const Employee: React.FC = () => {
   // Обработчик для добавления комментария с последующим уведомлением
   const handleCommentAdd = useCallback(
     (taskId: string, projectId: string, comment: string) => {
+      console.log("Добавление комментария:", { taskId, projectId, comment });
       const result = handleAddTaskComment(taskId, projectId, comment);
 
       // Отложенное уведомление для предотвращения обновления состояния во время рендеринга

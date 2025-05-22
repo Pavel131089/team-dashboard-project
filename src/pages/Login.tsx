@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import LoginForm from "@/components/auth/LoginForm";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -19,11 +20,12 @@ const Login: React.FC = () => {
 
   // Проверяем существующую сессию при монтировании компонента
   useEffect(() => {
-    const { authenticated, role } = checkExistingSession();
+    const sessionInfo = checkExistingSession();
 
-    if (authenticated && role) {
+    if (sessionInfo.authenticated && sessionInfo.role) {
       // Определяем цель перенаправления на основе роли
-      const target = role === "manager" ? "/dashboard" : "/employee";
+      const target =
+        sessionInfo.role === "manager" ? "/dashboard" : "/employee";
       setRedirectTarget(target);
       setShouldRedirect(true);
     }
@@ -38,13 +40,18 @@ const Login: React.FC = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-      <LoginForm
-        formData={formData}
-        error={error}
-        handleInputChange={handleInputChange}
-        handleRoleChange={handleRoleChange}
-        handleSubmit={handleSubmit}
-      />
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Вход в систему</CardTitle>
+        </CardHeader>
+        <LoginForm
+          formData={formData}
+          error={error}
+          onInputChange={handleInputChange}
+          onRoleChange={handleRoleChange}
+          onSubmit={handleSubmit}
+        />
+      </Card>
     </div>
   );
 };

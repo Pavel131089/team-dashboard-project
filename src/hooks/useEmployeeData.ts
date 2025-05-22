@@ -26,66 +26,71 @@ export function useEmployeeData(navigate: NavigateFunction) {
   // Загрузка данных пользователя и проектов
   useEffect(() => {
     loadUserAndProjects();
-  }, [navigate]);
+  }, [loadUserAndProjects]); // Добавляем зависимость
 
-  // Обработчик загрузки пользователя и проектов
+  // Загружаем пользователя и проекты из хранилища
   const loadUserAndProjects = useCallback(async () => {
     setIsLoading(true);
     try {
       // Загрузка пользователя из localStorage
       const userJson = localStorage.getItem("user");
       if (!userJson) {
-        setTimeout(() => {
-          redirectToLogin();
-        }, 0);
+        redirectToLogin();
         return;
       }
 
-      const userData = JSON.parse(userJson);
-      if (!userData.isAuthenticated) {
-        setTimeout(() => {
-          redirectToLogin("Сессия истекла. Пожалуйста, войдите снова.");
-        }, 0);
+      let userData;
+      try {
+        userData = JSON.parse(userJson);
+      } catch (error) {
+        console.error("Ошибка при парсинге данных пользователя:", error);
+        redirectToLogin("Проблема с данными пользователя");
+        return;
+      }
+
+      if (!userData || !userData.isAuthenticated) {
+        redirectToLogin("Сессия истекла. Пожалуйста, войдите снова.");
         return;
       }
 
       // Проверяем роль пользователя
       if (userData.role === "manager") {
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 0);
+        navigate("/dashboard");
         return;
       }
 
       setUser(userData);
 
       // Загрузка проектов
-      const projectsList = getProjectsFromStorage();
+      let projectsList = [];
+      try {
+        const projectsData = localStorage.getItem("projects");
+        projectsList = projectsData ? JSON.parse(projectsData) : [];
+
+        // Проверяем, что projectsList действительно массив
+        if (!Array.isArray(projectsList)) {
+          console.error("Данные проектов не являются массивом");
+          projectsList = [];
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке проектов:", error);
+        projectsList = [];
+      }
+
       setProjects(projectsList);
 
-      // Обработка проектов для получения задач - перенесено в useEffect
+      // Обработка проектов для получения задач
+      const processedTasks = processProjects(projectsList, userData);
+      setAssignedTasks(processedTasks.userTasks);
+      setAvailableTasks(processedTasks.otherTasks);
     } catch (error) {
       console.error("Ошибка при загрузке данных:", error);
-      setTimeout(() => {
-        redirectToLogin("Ошибка загрузки данных. Пожалуйста, войдите снова.");
-      }, 0);
+      toast.error("Произошла ошибка при загрузке данных");
+      redirectToLogin("Ошибка загрузки данных. Пожалуйста, войдите снова.");
     } finally {
       setIsLoading(false);
     }
-  }, [navigate, redirectToLogin]);
-
-  // Используем отдельный useEffect для обработки проектов и задач
-  useEffect(() => {
-    if (user && projects.length > 0) {
-      try {
-        const { userTasks, otherTasks } = processProjects(projects, user);
-        setAssignedTasks(userTasks);
-        setAvailableTasks(otherTasks);
-      } catch (error) {
-        console.error("Ошибка при обработке задач:", error);
-      }
-    }
-  }, [user, projects]);
+  }, [navigate, redirectToLogin]); // Включаем только внешние зависимости
 
   // Перенаправление на страницу входа
   const redirectToLogin = useCallback(
@@ -106,63 +111,96 @@ export function useEmployeeData(navigate: NavigateFunction) {
   }, [navigate]);
 
   // Обработка проектов для получения задач
-  const processProjects = (
-    projectsList: Project[],
-    userData: User,
-  ): {
-    userTasks: TaskWithProject[];
-    otherTasks: TaskWithProject[];
-  } => {
-    const userTasks: TaskWithProject[] = [];
-    const otherTasks: TaskWithProject[] = [];
+  const processProjects = useCallback(
+    (
+      projectsList: Project[],
+      userData: User,
+    ): {
+      userTasks: TaskWithProject[];
+      otherTasks: TaskWithProject[];
+    } => {
+      const userTasks: TaskWithProject[] = [];
+      const otherTasks: TaskWithProject[] = [];
 
-    if (!Array.isArray(projectsList)) {
-      console.error("Проекты не являются массивом:", projectsList);
-      return { userTasks, otherTasks };
-    }
-
-    projectsList.forEach((project) => {
-      if (!project || !project.tasks || !Array.isArray(project.tasks)) {
-        console.log("Пропускаем некорректный проект:", project);
-        return;
+      // Проверяем, что projectsList - массив
+      if (!Array.isArray(projectsList)) {
+        console.error("projectsList не является массивом");
+        return { userTasks, otherTasks };
       }
 
-      project.tasks.forEach((task) => {
-        if (!task) return;
+      try {
+        projectsList.forEach((project) => {
+          // Проверяем, что project существует и tasks - массив
+          if (!project || !Array.isArray(project.tasks)) {
+            return;
+          }
 
-        const taskWithProject: TaskWithProject = {
-          ...task,
-          projectId: project.id,
-          projectName: project.name,
-        };
+          project.tasks.forEach((task) => {
+            // Проверяем, что task существует
+            if (!task) return;
 
-        // Проверяем, назначена ли задача текущему пользователю
-        const isAssigned =
-          (userData && task.assignedTo === userData.id) ||
-          (userData &&
-            task.assignedToNames &&
-            Array.isArray(task.assignedToNames) &&
-            task.assignedToNames.some(
-              (name) =>
-                name === userData.name ||
-                name === userData.username ||
-                name === userData.email,
-            ));
+            // Создаем копию задачи с дополнительными полями
+            const taskWithProject: TaskWithProject = {
+              ...task,
+              projectId: project.id,
+              projectName: project.name || "Без названия",
+            };
 
-        if (isAssigned) {
-          userTasks.push(taskWithProject);
-        } else if (
-          !task.assignedTo &&
-          (!task.assignedToNames || task.assignedToNames.length === 0)
-        ) {
-          // Если задача не назначена никому, она доступна
-          otherTasks.push(taskWithProject);
-        }
-      });
-    });
+            // Проверка назначения задачи текущему пользователю
+            let isAssigned = false;
 
-    return { userTasks, otherTasks };
-  };
+            // Проверяем по ID пользователя
+            if (
+              task.assignedTo &&
+              userData.id &&
+              task.assignedTo === userData.id
+            ) {
+              isAssigned = true;
+            }
+
+            // Проверяем по имени, имени пользователя или email
+            if (!isAssigned && Array.isArray(task.assignedToNames)) {
+              isAssigned = task.assignedToNames.some((name) => {
+                if (!name) return false;
+
+                const nameStr = String(name).toLowerCase();
+                const userName = userData.name
+                  ? String(userData.name).toLowerCase()
+                  : "";
+                const userUsername = userData.username
+                  ? String(userData.username).toLowerCase()
+                  : "";
+                const userEmail = userData.email
+                  ? String(userData.email).toLowerCase()
+                  : "";
+
+                return (
+                  nameStr === userName ||
+                  nameStr === userUsername ||
+                  nameStr === userEmail
+                );
+              });
+            }
+
+            if (isAssigned) {
+              userTasks.push(taskWithProject);
+            } else if (
+              !task.assignedTo &&
+              (!task.assignedToNames || task.assignedToNames.length === 0)
+            ) {
+              // Если задача не назначена никому, она доступна
+              otherTasks.push(taskWithProject);
+            }
+          });
+        });
+      } catch (error) {
+        console.error("Ошибка при обработке проектов:", error);
+      }
+
+      return { userTasks, otherTasks };
+    },
+    [],
+  );
 
   // Обновление задачи
   const updateProjectTask = useCallback(

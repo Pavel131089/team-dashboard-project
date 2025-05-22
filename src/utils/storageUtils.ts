@@ -31,11 +31,33 @@ export function saveProjectsToStorage(projects: Project[]): void {
  */
 export function initializeProjectsStorage(): void {
   try {
-    const projects = getProjectsFromStorage();
+    // Проверяем наличие проектов в хранилище
+    const projectsStr = localStorage.getItem("projects");
+    let projects = [];
 
+    // Если проекты уже есть, проверяем их валидность
+    if (projectsStr) {
+      try {
+        const parsedProjects = JSON.parse(projectsStr);
+        if (Array.isArray(parsedProjects)) {
+          projects = parsedProjects;
+        } else {
+          // Если данные есть, но не являются массивом, сбрасываем их
+          console.error(
+            "Данные проектов в хранилище не являются массивом, сброс данных",
+          );
+          projects = [];
+        }
+      } catch (error) {
+        console.error("Ошибка при парсинге проектов из хранилища:", error);
+        projects = [];
+      }
+    }
+
+    // Если проектов нет, создаем демо-проекты
     if (projects.length === 0) {
       // Создаем несколько демо-проектов
-      const demoProjects: Project[] = [
+      const demoProjects = [
         {
           id: "project-1",
           name: "Веб-сайт компании",
@@ -108,11 +130,14 @@ export function initializeProjectsStorage(): void {
         },
       ];
 
-      saveProjectsToStorage(demoProjects);
+      // Сохраняем демо-проекты в хранилище
+      localStorage.setItem("projects", JSON.stringify(demoProjects));
       console.log("Инициализировано хранилище с демо-проектами");
     }
   } catch (error) {
-    console.error("Ошибка инициализации хранилища проектов:", error);
+    console.error("Ошибка при инициализации хранилища проектов:", error);
+    // В случае ошибки создаем пустой массив проектов
+    localStorage.setItem("projects", JSON.stringify([]));
   }
 }
 

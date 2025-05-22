@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -12,21 +11,28 @@ interface AvailableTaskItemProps {
   onTakeTask: () => void;
 }
 
-const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({ 
-  task, 
-  projectName, 
-  onTakeTask 
+const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
+  task,
+  projectName,
+  onTakeTask,
 }) => {
-  // Форматирование даты
+  // Безопасное форматирование даты
   const formatDate = (dateString: string | undefined | null) => {
     if (!dateString) return "Не указано";
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('ru-RU');
+      if (isNaN(date.getTime())) return "Неверная дата";
+      return date.toLocaleDateString("ru-RU");
     } catch (error) {
+      console.error("Ошибка форматирования даты:", error);
       return "Неверный формат";
     }
   };
+
+  // Проверяем, что задача существует
+  if (!task) {
+    return null;
+  }
 
   return (
     <Card className="border-l-4 border-l-blue-500">
@@ -42,7 +48,7 @@ const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
             {projectName || "Проект"}
           </Badge>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-2 mt-3 text-xs text-slate-500">
           <div className="flex items-center gap-1">
             <Icon name="Calendar" className="h-3 w-3" />
@@ -58,17 +64,17 @@ const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
           </div>
           <div className="flex items-center gap-1">
             <Icon name="DollarSign" className="h-3 w-3" />
-            <span>Цена: {task.price?.toLocaleString() || 0} ₽</span>
+            <span>
+              Цена:{" "}
+              {typeof task.price === "number" ? task.price.toLocaleString() : 0}{" "}
+              ₽
+            </span>
           </div>
         </div>
       </CardContent>
-      
+
       <CardFooter className="pt-0">
-        <Button 
-          onClick={onTakeTask} 
-          size="sm"
-          className="w-full"
-        >
+        <Button onClick={onTakeTask} size="sm" className="w-full">
           <Icon name="Check" className="h-4 w-4 mr-1" />
           Взять в работу
         </Button>

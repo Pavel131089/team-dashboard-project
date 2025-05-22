@@ -1,4 +1,3 @@
-
 import React, { useMemo } from "react";
 import { Task } from "@/types/project";
 import Icon from "@/components/ui/icon";
@@ -19,43 +18,58 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
   tasks,
   onTakeTask,
 }) => {
-  // Сгруппируем задачи по проектам для более удобного отображения
-  const tasksByProject = useMemo(() => {
-    const result: Record<string, { projectName: string; tasks: TaskWithProject[] }> = {};
-    
+  // Безопасно группируем задачи по проектам
+  const projectsWithTasks = useMemo(() => {
     // Проверяем, что tasks это массив
     if (!Array.isArray(tasks)) {
-      return {};
+      console.error("tasks не является массивом в AvailableTasksSection");
+      return [];
     }
 
-    // Группируем задачи по projectId
-    tasks.forEach(task => {
-      if (!task.projectId) return;
-      
-      if (!result[task.projectId]) {
-        result[task.projectId] = {
-          projectName: task.projectName || 'Неизвестный проект',
-          tasks: []
-        };
-      }
-      
-      result[task.projectId].tasks.push(task);
-    });
-    
-    return result;
+    try {
+      // Создаем структуру для группировки задач по проектам
+      const projectMap: Record<
+        string,
+        {
+          projectId: string;
+          projectName: string;
+          tasks: TaskWithProject[];
+        }
+      > = {};
+
+      // Проходим по всем задачам и группируем их по projectId
+      tasks.forEach((task) => {
+        // Пропускаем задачи без projectId
+        if (!task?.projectId) {
+          return;
+        }
+
+        const projectId = task.projectId;
+        const projectName = task.projectName || "Без названия";
+
+        // Создаем запись для проекта, если ее еще нет
+        if (!projectMap[projectId]) {
+          projectMap[projectId] = {
+            projectId,
+            projectName,
+            tasks: [],
+          };
+        }
+
+        // Добавляем задачу в соответствующий проект
+        projectMap[projectId].tasks.push(task);
+      });
+
+      // Преобразуем объект в массив для отображения
+      return Object.values(projectMap);
+    } catch (error) {
+      console.error("Ошибка при группировке задач:", error);
+      return [];
+    }
   }, [tasks]);
 
-  // Получаем массив проектов с задачами
-  const projectsWithTasks = useMemo(() => {
-    return Object.entries(tasksByProject).map(([projectId, data]) => ({
-      projectId,
-      projectName: data.projectName,
-      tasks: data.tasks
-    }));
-  }, [tasksByProject]);
-
   // Если нет доступных задач, показываем пустое состояние
-  if (projectsWithTasks.length === 0) {
+  if (!projectsWithTasks.length) {
     return <EmptyAvailableTasks />;
   }
 
@@ -68,19 +82,26 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
 
       <div className="space-y-4">
         {projectsWithTasks.map((project) => (
-          <div key={project.projectId} className="bg-white rounded-lg shadow-sm border p-4">
+          <div
+            key={project.projectId}
+            className="bg-white rounded-lg shadow-sm border p-4"
+          >
             <h3 className="font-medium text-lg mb-3 flex items-center">
               <Icon name="Folder" className="h-4 w-4 mr-2 text-primary" />
               {project.projectName}
             </h3>
-            
+
             <div className="space-y-3">
               {project.tasks.map((task) => (
                 <AvailableTaskItem
                   key={task.id}
                   task={task}
                   projectName={project.projectName}
-                  onTakeTask={() => onTakeTask(task.id, task.projectId)}
+                  onTakeTask={() => {
+                    if (task.id && task.projectId) {
+                      onTakeTask(task.id, task.projectId);
+                    }
+                  }}
                 />
               ))}
             </div>

@@ -1,269 +1,382 @@
+
 <!DOCTYPE html>
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Система управления проектами</title>
-    <meta name="description" content="Система управления проектами и задачами для команд" />
-    
-    <!-- Предотвращение кэширования -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    
-    <!-- Полифиллы для поддержки старых браузеров -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=default,fetch,Object.assign,Array.from"></script>
-    
-    <!-- Статический контент, который отобразится даже если JavaScript не загрузится -->
     <style>
-      body {
-        font-family: Arial, sans-serif;
+      * {
+        box-sizing: border-box;
         margin: 0;
         padding: 0;
-        background-color: #f9fafb;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       }
       
-      #static-content {
-        display: none;
-        text-align: center;
-        padding: 40px 20px;
-        max-width: 500px;
-        margin: 100px auto;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
-      
-      #static-content h1 {
-        color: #4f46e5;
-        margin-bottom: 20px;
-      }
-      
-      #static-content p {
-        color: #6b7280;
-        margin-bottom: 20px;
-      }
-      
-      #static-content .button {
-        display: inline-block;
-        background-color: #4f46e5;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 4px;
-        text-decoration: none;
-        font-weight: bold;
-      }
-      
-      #initial-loader {
+      body {
+        background-color: #f5f5f5;
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
-        width: 100%;
-        background-color: #f9fafb;
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 9999;
-      }
-      
-      .loader-spinner {
-        border: 4px solid rgba(0, 0, 0, 0.1);
-        border-left-color: #4f46e5;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-      }
-      
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      
-      #root:not(:empty) + #initial-loader {
-        display: none;
-      }
-      
-      #root:not(:empty) ~ #static-content {
-        display: none;
-      }
-      
-      #error-message {
-        display: none;
-        text-align: center;
-        color: #ef4444;
-        font-family: sans-serif;
-        max-width: 600px;
-        margin: 0 auto;
+        min-height: 100vh;
         padding: 20px;
       }
       
-      /* Показать статический контент через 5 секунд, если React не загрузился */
-      @media (prefers-reduced-motion: no-preference) {
-        body.js-loading #static-content {
-          animation: showStatic 1s ease 5s forwards;
-        }
-        
-        @keyframes showStatic {
-          to {
-            display: block;
-          }
-        }
+      .card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 450px;
+        padding: 30px;
+      }
+      
+      .card-header {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      
+      .card-title {
+        color: #5540ff;
+        font-size: 28px;
+        font-weight: bold;
+        margin-bottom: 8px;
+      }
+      
+      .form-group {
+        margin-bottom: 20px;
+      }
+      
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+      }
+      
+      .form-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+      
+      .radio-group {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+      
+      .radio-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .btn {
+        background-color: #5540ff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 12px 20px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        width: 100%;
+        transition: background-color 0.2s;
+      }
+      
+      .btn:hover {
+        background-color: #4430ee;
+      }
+      
+      .info-text {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 14px;
+        color: #777;
+      }
+      
+      .demo-info {
+        margin-top: 24px;
+        padding: 12px;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      
+      .demo-info p {
+        margin-bottom: 8px;
+      }
+      
+      .demo-info ul {
+        padding-left: 20px;
+      }
+      
+      .demo-info li {
+        margin-bottom: 4px;
+      }
+      
+      .dashboard {
+        display: none;
+        padding: 20px;
+      }
+      
+      .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+      }
+      
+      .dashboard-title {
+        font-size: 24px;
+        font-weight: bold;
+      }
+      
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .tab-group {
+        display: flex;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 20px;
+      }
+      
+      .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+      }
+      
+      .tab.active {
+        border-bottom: 2px solid #5540ff;
+        color: #5540ff;
+        font-weight: 500;
+      }
+      
+      .project-card {
+        background: white;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      }
+      
+      .project-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      
+      .project-title {
+        font-weight: bold;
+      }
+      
+      .project-progress {
+        height: 6px;
+        background: #eee;
+        border-radius: 3px;
+        margin-top: 10px;
+      }
+      
+      .project-progress-bar {
+        height: 100%;
+        background: #5540ff;
+        border-radius: 3px;
       }
     </style>
       <meta name="pp-name" value="team-dashboard-project">
       <script src="https://cdn.poehali.dev/intertnal/js/pp-min-2.js"></script>
       <script src="https://cdn.poehali.dev/intertnal/js/route-min.js"></script>
   </head>
-
-  <body class="js-loading">
-    <!-- Корневой элемент для React -->
-    <div id="root"></div>
-    
-    <!-- Запасной статический контент -->
-    <div id="static-content">
-      <h1>Система управления проектами</h1>
-      <p>Добро пожаловать в систему управления проектами!</p>
-      <p>Для продолжения работы, выполните вход:</p>
+  <body>
+    <!-- Страница входа -->
+    <div class="card" id="login-page">
+      <div class="card-header">
+        <h1 class="card-title">Система управления проектами</h1>
+        <p>Добро пожаловать в систему управления проектами!</p>
+      </div>
       
-      <form id="static-login-form" onsubmit="handleStaticLogin(event)" style="margin-bottom: 20px">
-        <div style="margin-bottom: 15px">
-          <label for="static-username" style="display: block; text-align: left; margin-bottom: 5px">Имя пользователя:</label>
-          <input type="text" id="static-username" name="username" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" value="manager">
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label" for="username">Имя пользователя:</label>
+          <input class="form-input" type="text" id="username" value="manager" required>
         </div>
         
-        <div style="margin-bottom: 15px">
-          <label for="static-password" style="display: block; text-align: left; margin-bottom: 5px">Пароль:</label>
-          <input type="password" id="static-password" name="password" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" value="manager123">
+        <div class="form-group">
+          <label class="form-label" for="password">Пароль:</label>
+          <input class="form-input" type="password" id="password" value="manager123" required>
         </div>
         
-        <div style="margin-bottom: 15px">
-          <label style="display: block; text-align: left; margin-bottom: 5px">Роль:</label>
-          <div style="display: flex; gap: 20px;">
-            <label style="display: flex; align-items: center;">
-              <input type="radio" name="role" value="manager" checked style="margin-right: 5px;"> Руководитель
+        <div class="form-group">
+          <label class="form-label">Роль:</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="role" value="manager" checked>
+              Руководитель
             </label>
-            <label style="display: flex; align-items: center;">
-              <input type="radio" name="role" value="employee" style="margin-right: 5px;"> Сотрудник
+            <label class="radio-option">
+              <input type="radio" name="role" value="employee">
+              Сотрудник
             </label>
           </div>
         </div>
         
-        <button type="submit" class="button">Войти в систему</button>
+        <button type="submit" class="btn">Войти в систему</button>
       </form>
       
-      <p style="font-size: 0.9em; color: #9ca3af;">Если вы видите эту страницу, возможно у вас возникли проблемы с загрузкой JavaScript.</p>
-    </div>
-    
-    <!-- Начальный загрузчик -->
-    <div id="initial-loader">
-      <div>
-        <div class="loader-spinner"></div>
-        <p style="margin-top: 16px; text-align: center; color: #6b7280;">Загрузка...</p>
+      <div class="demo-info">
+        <p>Для демо-доступа используйте:</p>
+        <ul>
+          <li>Руководитель: <strong>manager / manager123</strong></li>
+          <li>Сотрудник: <strong>employee / employee123</strong></li>
+        </ul>
       </div>
     </div>
     
-    <!-- Сообщение об ошибке -->
-    <div id="error-message" class="error-message">
-      <h2>Не удалось загрузить приложение</h2>
-      <p>Пожалуйста, попробуйте перезагрузить страницу или обратитесь к администратору.</p>
-      <button onclick="window.location.reload()" style="margin-top: 16px; padding: 8px 16px; background-color: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer;">
-        Перезагрузить
-      </button>
+    <!-- Панель управления -->
+    <div class="card" id="dashboard-page" style="display: none; max-width: 800px;">
+      <div class="dashboard-header">
+        <h1 class="dashboard-title">Панель руководителя</h1>
+        <div class="user-info">
+          <span id="user-name">Менеджер</span>
+          <button class="btn" style="width: auto; padding: 8px 12px; font-size: 14px;" onclick="logout()">Выйти</button>
+        </div>
+      </div>
+      
+      <div class="tab-group">
+        <div class="tab active">Проекты</div>
+        <div class="tab">Импорт</div>
+        <div class="tab">Экспорт</div>
+        <div class="tab">Пользователи</div>
+      </div>
+      
+      <div class="projects-list">
+        <div class="project-card">
+          <div class="project-header">
+            <div class="project-title">Тестовый проект</div>
+            <div>30% выполнено</div>
+          </div>
+          <p>Описание тестового проекта</p>
+          <div class="project-progress">
+            <div class="project-progress-bar" style="width: 30%"></div>
+          </div>
+        </div>
+        
+        <div class="project-card">
+          <div class="project-header">
+            <div class="project-title">Разработка мобильного приложения</div>
+            <div>70% выполнено</div>
+          </div>
+          <p>Разработка мобильного приложения для iOS и Android</p>
+          <div class="project-progress">
+            <div class="project-progress-bar" style="width: 70%"></div>
+          </div>
+        </div>
+      </div>
     </div>
     
-    <!-- Обработчик для статической формы входа -->
+    <!-- Страница сотрудника -->
+    <div class="card" id="employee-page" style="display: none; max-width: 800px;">
+      <div class="dashboard-header">
+        <h1 class="dashboard-title">Страница сотрудника</h1>
+        <div class="user-info">
+          <span id="employee-name">Сотрудник</span>
+          <button class="btn" style="width: auto; padding: 8px 12px; font-size: 14px;" onclick="logout()">Выйти</button>
+        </div>
+      </div>
+      
+      <div class="tab-group">
+        <div class="tab active">Мои задачи</div>
+        <div class="tab">Доступные задачи</div>
+      </div>
+      
+      <div class="projects-list">
+        <div class="project-card">
+          <div class="project-header">
+            <div class="project-title">Разработка интерфейса</div>
+            <div>50% выполнено</div>
+          </div>
+          <p>Разработка интерфейса для мобильного приложения</p>
+          <div class="project-progress">
+            <div class="project-progress-bar" style="width: 50%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <script>
-      // Функция для обработки статической формы входа
-      function handleStaticLogin(event) {
+      // Простые функции для входа в систему и навигации
+      function handleLogin(event) {
         event.preventDefault();
-        try {
-          const username = document.getElementById('static-username').value;
-          const password = document.getElementById('static-password').value;
-          const roleInputs = document.getElementsByName('role');
-          let role = 'manager';
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const role = document.querySelector('input[name="role"]:checked').value;
+        
+        // Проверка учетных данных
+        if ((username === 'manager' && password === 'manager123' && role === 'manager') ||
+            (username === 'employee' && password === 'employee123' && role === 'employee')) {
           
-          for (let i = 0; i < roleInputs.length; i++) {
-            if (roleInputs[i].checked) {
-              role = roleInputs[i].value;
-              break;
-            }
+          // Сохраняем данные пользователя
+          localStorage.setItem('user', JSON.stringify({
+            username,
+            role,
+            isAuthenticated: true
+          }));
+          
+          // Показываем нужную страницу
+          document.getElementById('login-page').style.display = 'none';
+          
+          if (role === 'manager') {
+            document.getElementById('dashboard-page').style.display = 'block';
+          } else {
+            document.getElementById('employee-page').style.display = 'block';
           }
           
-          // Создаем объект пользователя для локального хранилища
-          const user = {
-            id: role === 'manager' ? 'default-manager' : 'default-employee',
-            name: role === 'manager' ? 'Менеджер' : 'Сотрудник',
-            username: username,
-            role: role,
-            isAuthenticated: true,
-            loginTime: new Date().toISOString()
-          };
+        } else {
+          alert('Неверное имя пользователя или пароль');
+        }
+      }
+      
+      function logout() {
+        localStorage.removeItem('user');
+        document.getElementById('dashboard-page').style.display = 'none';
+        document.getElementById('employee-page').style.display = 'none';
+        document.getElementById('login-page').style.display = 'block';
+      }
+      
+      // Проверяем, залогинен ли пользователь при загрузке страницы
+      window.addEventListener('DOMContentLoaded', function() {
+        try {
+          const userData = localStorage.getItem('user');
           
-          // Сохраняем в localStorage
-          localStorage.setItem('user', JSON.stringify(user));
-          
-          // Перенаправляем пользователя
-          window.location.href = role === 'manager' ? '/dashboard' : '/employee';
+          if (userData) {
+            const user = JSON.parse(userData);
+            
+            if (user.isAuthenticated) {
+              document.getElementById('login-page').style.display = 'none';
+              
+              if (user.role === 'manager') {
+                document.getElementById('dashboard-page').style.display = 'block';
+                document.getElementById('user-name').textContent = user.username || 'Менеджер';
+              } else {
+                document.getElementById('employee-page').style.display = 'block';
+                document.getElementById('employee-name').textContent = user.username || 'Сотрудник';
+              }
+            }
+          }
         } catch (error) {
-          alert('Произошла ошибка при входе: ' + error.message);
-          console.error('Ошибка входа:', error);
+          console.error('Ошибка при проверке аутентификации:', error);
         }
-      }
-      
-      // Устанавливаем таймер - если через 8 секунд React приложение не загрузилось,
-      // показываем статический контент и убираем загрузчик
-      setTimeout(function() {
-        const root = document.getElementById('root');
-        const loader = document.getElementById('initial-loader');
-        const staticContent = document.getElementById('static-content');
-        
-        if (root && (!root.children.length || root.innerHTML === '')) {
-          if (loader) loader.style.display = 'none';
-          if (staticContent) staticContent.style.display = 'block';
-          console.log('React не загрузился, показываем статический контент');
-        }
-      }, 8000);
-      
-      // Убираем класс js-loading когда документ загружен
-      document.addEventListener('DOMContentLoaded', function() {
-        document.body.classList.remove('js-loading');
       });
-      
-      // Отлавливаем глобальные ошибки загрузки
-      window.addEventListener('error', function(event) {
-        console.error('Глобальная ошибка загрузки:', event.error);
-        const loader = document.getElementById('initial-loader');
-        const errorMessage = document.getElementById('error-message');
-        
-        if (loader) loader.style.display = 'none';
-        if (errorMessage) errorMessage.style.display = 'block';
-      }, true);
     </script>
-    
-    <!-- Базовый скрипт для проверки совместимости -->
-    <script>
-      // Проверка базовой совместимости с современным JavaScript
-      try {
-        // Проверяем поддержку современных функций
-        const testPromise = Promise.resolve(1);
-        const testArray = [1, 2, 3].map(x => x * 2);
-        const testObject = { ...{ a: 1 }, b: 2 };
-        
-        console.log('Базовая проверка JavaScript пройдена');
-      } catch (error) {
-        console.error('Ваш браузер не поддерживает современный JavaScript:', error);
-        
-        // Показываем статический контент, если JS не поддерживается
-        document.getElementById('initial-loader').style.display = 'none';
-        document.getElementById('static-content').style.display = 'block';
-      }
-    </script>
-    
-    <!-- Основной скрипт приложения -->
-    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

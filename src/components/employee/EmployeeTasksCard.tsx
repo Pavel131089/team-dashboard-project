@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Task, Project } from "@/types/project";
@@ -35,6 +35,22 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>(
     {},
   );
+  const [projectsWithFullData, setProjectsWithFullData] = useState<
+    Record<string, Project>
+  >({});
+
+  // Создаем карту проектов для быстрого доступа
+  useEffect(() => {
+    if (Array.isArray(projects) && projects.length > 0) {
+      const projectMap: Record<string, Project> = {};
+      projects.forEach((project) => {
+        if (project.id) {
+          projectMap[project.id] = project;
+        }
+      });
+      setProjectsWithFullData(projectMap);
+    }
+  }, [projects]);
 
   // Убедимся, что tasks определен и является массивом
   const safeTasks = Array.isArray(tasks) ? tasks : [];
@@ -118,10 +134,8 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
         Math.max(projectInfo.tasks.length, 1),
     );
 
-    // Ищем полный проект для получения дат
-    const fullProject = Array.isArray(projects)
-      ? projects.find((p) => p.id === projectInfo.projectId)
-      : undefined;
+    // Получаем полные данные проекта из нашей карты
+    const fullProject = projectsWithFullData[projectInfo.projectId];
 
     return (
       <div className="mb-6 border rounded-md overflow-hidden">
@@ -134,18 +148,23 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
             <span className="text-sm">{projectProgress}% выполнено</span>
           </div>
 
-          {fullProject && (
-            <div className="flex flex-wrap gap-x-4 text-xs text-slate-500 mb-2">
-              <div className="flex items-center gap-1">
-                <Icon name="Calendar" className="h-3 w-3" />
-                <span>Начало: {formatDate(fullProject.startDate)}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Icon name="CalendarCheck" className="h-3 w-3" />
-                <span>Окончание: {formatDate(fullProject.endDate)}</span>
-              </div>
+          {/* Блок с датами проекта - делаем его более заметным */}
+          <div className="flex flex-wrap gap-x-4 text-xs mb-3 border-l-2 border-primary pl-2 py-1 bg-slate-100 rounded">
+            <div className="flex items-center gap-1 text-primary-foreground">
+              <Icon name="Calendar" className="h-3 w-3 text-primary" />
+              <span className="font-medium">Начало:</span>
+              <span>
+                {fullProject ? formatDate(fullProject.startDate) : "Не указано"}
+              </span>
             </div>
-          )}
+            <div className="flex items-center gap-1 text-primary-foreground">
+              <Icon name="CalendarCheck" className="h-3 w-3 text-primary" />
+              <span className="font-medium">Окончание:</span>
+              <span>
+                {fullProject ? formatDate(fullProject.endDate) : "Не указано"}
+              </span>
+            </div>
+          </div>
 
           <Progress
             value={projectProgress}

@@ -1,9 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Task, Project } from "@/types/project";
 import Icon from "@/components/ui/icon";
 import EmptyAvailableTasks from "@/components/employee/EmptyAvailableTasks";
 import AvailableTaskItem from "@/components/employee/AvailableTaskItem";
-import ProjectInfoHeader from "@/components/employee/ProjectInfoHeader";
 
 interface TaskWithProject extends Task {
   projectId: string;
@@ -21,6 +20,22 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
   onTakeTask,
   projects = [], // Значение по умолчанию - пустой массив
 }) => {
+  // Создаем объект проектов для быстрого доступа
+  const [projectsMap, setProjectsMap] = useState<Record<string, Project>>({});
+
+  // Инициализируем карту проектов при изменении массива проектов
+  useEffect(() => {
+    if (Array.isArray(projects) && projects.length > 0) {
+      const map: Record<string, Project> = {};
+      projects.forEach((project) => {
+        if (project.id) {
+          map[project.id] = project;
+        }
+      });
+      setProjectsMap(map);
+    }
+  }, [projects]);
+
   // Безопасно группируем задачи по проектам
   const projectsWithTasks = useMemo(() => {
     // Проверяем, что tasks это массив
@@ -53,11 +68,8 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
 
         // Создаем запись для проекта, если ее еще нет
         if (!projectMap[projectId]) {
-          // Находим полную информацию о проекте
-          // Проверяем, что projects - это массив перед вызовом find
-          const fullProject = Array.isArray(projects)
-            ? projects.find((p) => p.id === projectId)
-            : undefined;
+          // Находим полную информацию о проекте из нашей карты
+          const fullProject = projectsMap[projectId];
 
           projectMap[projectId] = {
             projectId,
@@ -77,7 +89,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
       console.error("Ошибка при группировке задач:", error);
       return [];
     }
-  }, [tasks, projects]);
+  }, [tasks, projectsMap]);
 
   // Если нет доступных задач, показываем пустое состояние
   if (!projectsWithTasks.length) {
@@ -97,11 +109,55 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
             key={projectInfo.projectId || `project-${Math.random()}`}
             className="bg-white rounded-lg shadow-sm border overflow-hidden"
           >
-            {/* Добавляем компонент для информации о проекте с датами */}
-            <ProjectInfoHeader
-              project={projectInfo.project}
-              projectName={projectInfo.projectName}
-            />
+            {/* Показываем информацию о проекте с датами */}
+            <div className="bg-slate-50 p-3 border-b">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-medium text-lg flex items-center">
+                  <Icon
+                    name="Briefcase"
+                    className="h-5 w-5 mr-2 text-primary"
+                  />
+                  {projectInfo.projectName}
+                </h3>
+              </div>
+
+              {/* Блок с датами проекта - делаем его более заметным */}
+              {projectInfo.project && (
+                <div className="flex flex-wrap gap-x-4 text-xs mb-3 border-l-2 border-primary pl-2 py-1 bg-slate-100 rounded">
+                  <div className="flex items-center gap-1 text-primary-foreground">
+                    <Icon name="Calendar" className="h-3 w-3 text-primary" />
+                    <span className="font-medium">Начало:</span>
+                    <span>
+                      {projectInfo.project.startDate
+                        ? new Date(
+                            projectInfo.project.startDate,
+                          ).toLocaleDateString("ru-RU")
+                        : "Не указано"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-primary-foreground">
+                    <Icon
+                      name="CalendarCheck"
+                      className="h-3 w-3 text-primary"
+                    />
+                    <span className="font-medium">Окончание:</span>
+                    <span>
+                      {projectInfo.project.endDate
+                        ? new Date(
+                            projectInfo.project.endDate,
+                          ).toLocaleDateString("ru-RU")
+                        : "Не указано"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {projectInfo.project?.description && (
+                <p className="text-sm text-slate-600 mt-1 mb-2">
+                  {projectInfo.project.description}
+                </p>
+              )}
+            </div>
 
             <div className="p-4">
               <div className="space-y-3">

@@ -44,6 +44,20 @@ export const useDashboardData = (navigate: NavigateFunction) => {
           return;
         }
 
+        // Если у пользователя нет имени, попробуем найти его в таблице пользователей
+        if (!parsedUser.name) {
+          const usersJson = localStorage.getItem("users");
+          if (usersJson) {
+            const users = JSON.parse(usersJson);
+            if (Array.isArray(users)) {
+              const userRecord = users.find((u) => u.id === parsedUser.id);
+              if (userRecord && userRecord.name) {
+                parsedUser.name = userRecord.name;
+              }
+            }
+          }
+        }
+
         setUser(parsedUser);
 
         // Если пользователь не руководитель, перенаправляем на страницу сотрудника

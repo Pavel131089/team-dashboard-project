@@ -65,11 +65,18 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
       return null;
     }
 
+    // Используем функцию getAssigneeNames для получения имен пользователей
+    const displayNames = getAssigneeNames(task.assignedToNames);
+
+    if (displayNames === "Не назначено") {
+      return null;
+    }
+
     return (
       <div className="mt-2 text-xs text-slate-500">
         <div className="flex items-center gap-1">
           <Icon name="Users" className="h-3 w-3" />
-          <span>Исполнители: {task.assignedToNames.join(", ")}</span>
+          <span>Исполнители: {displayNames}</span>
         </div>
       </div>
     );

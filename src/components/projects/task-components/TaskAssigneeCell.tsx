@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { getUserNameById, getUserNamesByIds, getAssigneeNames } from "@/utils/userUtils";
+import { getAssigneeNames } from "@/utils/userUtils";
 
 interface TaskAssigneeCellProps {
   assignedTo: string | string[] | null | undefined;
@@ -15,53 +15,62 @@ const TaskAssigneeCell: React.FC<TaskAssigneeCellProps> = ({
   assignedTo,
   assignedToNames
 }) => {
-  const [displayNames, setDisplayNames] = useState<string[]>([]);
+  const [displayNames, setDisplayNames] = useState<string>("Не назначено");
   
   // Получаем имена исполнителей при монтировании компонента
   useEffect(() => {
-    if (!assignedTo) {
-      setDisplayNames([]);
-      return;
-    }
-    
-    // Если уже есть имена в assignedToNames, используем их
+    // Приоритет: сначала проверяем assignedToNames (имена), затем assignedTo (ID)
     if (assignedToNames && assignedToNames.length > 0) {
-      setDisplayNames(assignedToNames);
+      setDisplayNames(getAssigneeNames(assignedToNames));
       return;
     }
     
-    // Иначе получаем имена по ID
+    if (!assignedTo) {
+      setDisplayNames("Не назначено");
+      return;
+    }
+    
+    // Обрабатываем assignedTo (может быть строкой или массивом)
     if (Array.isArray(assignedTo)) {
-      const names = getUserNamesByIds(assignedTo);
+      if (assignedTo.length === 0) {
+        setDisplayNames("Не назначено");
+        return;
+      }
+      
+      // Получаем имена для ID в массиве
+      const names = getAssigneeNames(assignedTo);
       setDisplayNames(names);
     } else {
-      const name = getUserNameById(assignedTo);
-      setDisplayNames([name]);
+      // Получаем имя для одного ID
+      const name = getAssigneeNames([assignedTo]);
+      setDisplayNames(name);
     }
   }, [assignedTo, assignedToNames]);
   
-  if (!assignedTo) {
+  if (displayNames === "Не назначено") {
     return <span className="text-slate-400">Не назначено</span>;
   }
   
-  // Если это один исполнитель, просто отображаем его имя
-  if (displayNames.length === 1) {
-    return <span>{displayNames[0]}</span>;
+  // Проверяем, есть ли запятая в строке (несколько исполнителей)
+  if (displayNames.includes(',')) {
+    const nameList = displayNames.split(',').map(name => name.trim());
+    
+    return (
+      <div>
+        <div className="text-xs font-medium mb-1">
+          {nameList.length} {nameList.length > 1 ? 'исполнителей' : 'исполнитель'}:
+        </div>
+        <ul className="list-disc pl-4 text-xs space-y-0.5">
+          {nameList.map((name, idx) => (
+            <li key={idx}>{name}</li>
+          ))}
+        </ul>
+      </div>
+    );
   }
   
-  // Если исполнителей несколько, отображаем список
-  return (
-    <div>
-      <div className="text-xs font-medium mb-1">
-        {displayNames.length} {displayNames.length > 1 ? 'исполнителей' : 'исполнитель'}:
-      </div>
-      <ul className="list-disc pl-4 text-xs space-y-0.5">
-        {displayNames.map((name, idx) => (
-          <li key={idx}>{name}</li>
-        ))}
-      </ul>
-    </div>
-  );
+  // Если один исполнитель, просто отображаем его имя
+  return <span>{displayNames}</span>;
 };
 
 export default TaskAssigneeCell;

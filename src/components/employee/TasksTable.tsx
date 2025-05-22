@@ -12,6 +12,7 @@ import TaskRow from "@/components/employee/TaskRow";
 import TaskExpandedInfo from "@/components/employee/TaskExpandedInfo";
 import { Task } from "@/types/project";
 import { hasTaskComments } from "@/utils/taskUtils";
+import { getAssigneeNames } from "@/utils/userUtils";
 
 interface TasksTableProps {
   tasks: { project: any; task: Task }[];
@@ -85,7 +86,12 @@ const TasksTable: React.FC<TasksTableProps> = ({
           {tasks.map(({ project, task }) => (
             <React.Fragment key={task.id}>
               <TaskRow
-                task={task}
+                key={task.id}
+                task={{
+                  ...task,
+                  // Можно добавить отображаемые имена для использования в компоненте
+                  displayAssignees: getAssigneeNames(task.assignedToNames),
+                }}
                 project={project}
                 isExpanded={expandedTaskId === task.id}
                 onToggleExpand={() => toggleTaskExpanded(task.id)}

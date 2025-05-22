@@ -139,6 +139,20 @@ export function useEmployeeData(navigate: NavigateFunction) {
         let userData;
         try {
           userData = JSON.parse(userJson);
+
+          // Если у пользователя нет имени, попробуем найти его в таблице пользователей
+          if (userData && !userData.name) {
+            const usersJson = localStorage.getItem("users");
+            if (usersJson) {
+              const users = JSON.parse(usersJson);
+              if (Array.isArray(users)) {
+                const userRecord = users.find((u) => u.id === userData.id);
+                if (userRecord && userRecord.name) {
+                  userData.name = userRecord.name;
+                }
+              }
+            }
+          }
         } catch (error) {
           console.error("Ошибка при парсинге данных пользователя:", error);
           redirectToLogin("Проблема с данными пользователя");

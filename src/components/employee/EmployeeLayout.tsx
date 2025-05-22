@@ -25,7 +25,7 @@ const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({
             <span className="text-sm text-slate-600 flex items-center">
               <Icon name="User" className="mr-1 md:mr-2 h-4 w-4" />
               <span className="hidden md:inline">{displayName}</span>
-              <span className="md:hidden">Сотрудник</span>
+              <span className="md:hidden">{displayName}</span>
             </span>
             <Button variant="outline" size="sm" onClick={onLogout}>
               <Icon name="LogOut" className="md:mr-2 h-4 w-4" />

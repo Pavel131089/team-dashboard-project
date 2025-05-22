@@ -13,7 +13,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onLogout,
 }) => {
   // Получаем отображаемое имя пользователя
-  const displayName = username || "Пользователь";
+  const displayName = username || "Менеджер";
   const navigate = useNavigate();
 
   return (
@@ -33,7 +33,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <span className="text-sm text-slate-600 flex items-center">
             <Icon name="User" className="mr-1 md:mr-2 h-4 w-4" />
             <span className="hidden md:inline">{displayName}</span>
-            <span className="md:hidden">Руководитель</span>
+            <span className="md:hidden">{displayName}</span>
           </span>
 
           <Button variant="outline" size="sm" onClick={onLogout}>

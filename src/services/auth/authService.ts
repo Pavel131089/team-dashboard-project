@@ -1,4 +1,3 @@
-
 import { LoginFormData } from "@/hooks/useAuth";
 import { User, userService } from "./userService";
 import { sessionService } from "./sessionService";
@@ -171,4 +170,71 @@ export const authService = {
     // Выводим информацию в консоль
     console.log("Создана сессия пользователя:", sessionData);
   },
+};
+
+/**
+ * Выполняет вход пользователя
+ * @param credentials Учетные данные пользователя
+ * @returns Результат входа
+ */
+export const login = (credentials: LoginCredentials): LoginResult => {
+  try {
+    // Получаем пользователей из localStorage
+    const users = userService.getUsers();
+
+    // Ищем пользователя по логину
+    const user = users.find(
+      (u) =>
+        u.email.toLowerCase() === credentials.username.toLowerCase() ||
+        u.username?.toLowerCase() === credentials.username.toLowerCase(),
+    );
+
+    // Если пользователь не найден или пароль неверный, возвращаем ошибку
+    if (!user) {
+      return {
+        success: false,
+        error: "Пользователь не найден",
+      };
+    }
+
+    if (user.password !== credentials.password) {
+      return {
+        success: false,
+        error: "Неверный пароль",
+      };
+    }
+
+    // Проверяем соответствие роли
+    if (user.role !== credentials.role) {
+      return {
+        success: false,
+        error: `Пользователь не имеет роли "${
+          credentials.role === "manager" ? "Руководитель" : "Сотрудник"
+        }"`,
+      };
+    }
+
+    // Создаем объект сессии
+    const session: UserSession = {
+      id: user.id,
+      username: user.name || user.email,
+      role: user.role,
+      isAuthenticated: true,
+      loginTime: new Date().toISOString(),
+    };
+
+    // Сохраняем сессию в localStorage
+    sessionService.saveSession(session);
+
+    return {
+      success: true,
+      user: session,
+    };
+  } catch (error) {
+    console.error("Ошибка при входе:", error);
+    return {
+      success: false,
+      error: "Произошла ошибка при входе",
+    };
+  }
 };

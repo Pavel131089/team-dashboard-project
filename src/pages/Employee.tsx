@@ -19,6 +19,22 @@ const Employee: React.FC = () => {
     try {
       initializeProjectsStorage();
       setInitialized(true);
+
+      // Проверяем, что проекты имеют корректные даты
+      const storedProjects = localStorage.getItem("projects");
+      if (storedProjects) {
+        const parsedProjects = JSON.parse(storedProjects);
+        console.log(
+          "Stored projects with dates:",
+          parsedProjects.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            startDate: p.startDate,
+            endDate: p.endDate,
+            tasksCount: p.tasks?.length || 0,
+          })),
+        );
+      }
     } catch (error) {
       console.error("Ошибка при инициализации хранилища:", error);
     }
@@ -89,27 +105,24 @@ const Employee: React.FC = () => {
 
   // Отладка данных перед рендерингом
   console.log("Employee page data:", {
+    projectsCount: safeProjects.length,
     projects: safeProjects.map((p) => ({
       id: p.id,
       name: p.name,
       startDate: p.startDate,
       endDate: p.endDate,
     })),
-    assignedTasks: safeAssignedTasks.map((t) => ({
+    assignedTasksCount: safeAssignedTasks.length,
+    availableTasksCount: safeAvailableTasks.length,
+
+    // Проверяем даты в доступных задачах
+    availableTasks: safeAvailableTasks.slice(0, 3).map((t) => ({
       id: t.id,
       name: t.name,
-      projectId: t.projectId,
       startDate: t.startDate,
       endDate: t.endDate,
-      projectStartDate: t.projectStartDate,
-      projectEndDate: t.projectEndDate,
-    })),
-    availableTasks: safeAvailableTasks.map((t) => ({
-      id: t.id,
-      name: t.name,
       projectId: t.projectId,
-      startDate: t.startDate,
-      endDate: t.endDate,
+      projectName: t.projectName,
       projectStartDate: t.projectStartDate,
       projectEndDate: t.projectEndDate,
     })),

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -10,8 +9,8 @@ interface AvailableTaskItemProps {
   task: Task;
   projectName: string;
   projectDates?: {
-    startDate?: string;
-    endDate?: string;
+    startDate?: string | null;
+    endDate?: string | null;
   };
   onTakeTask: () => void;
 }
@@ -23,7 +22,7 @@ const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
   onTakeTask,
 }) => {
   // Безопасное форматирование даты
-  const formatDate = (dateString: string | undefined | null) => {
+  const formatDate = (dateString?: string | null) => {
     if (!dateString) return "Не указано";
     try {
       const date = new Date(dateString);
@@ -35,30 +34,26 @@ const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
     }
   };
 
-  // Проверяем, что задача существует
-  if (!task) {
-    return null;
-  }
-
-  // Получаем даты для отображения
-  // Приоритет: даты задачи -> даты проекта из projectDates -> даты из task.projectStartDate/projectEndDate
+  // Получаем даты из задачи или из проекта
   const taskStartDate = task.startDate;
   const taskEndDate = task.endDate;
-  
-  const projectStartDate = projectDates?.startDate || task.projectStartDate;
-  const projectEndDate = projectDates?.endDate || task.projectEndDate;
-  
-  const displayStartDate = taskStartDate || projectStartDate;
-  const displayEndDate = taskEndDate || projectEndDate;
 
-  // Отладочная информация (можно убрать в продакшене)
-  console.log('Task dates:', { 
-    taskStartDate, 
-    taskEndDate, 
-    projectStartDate, 
+  const projectStartDate = projectDates?.startDate;
+  const projectEndDate = projectDates?.endDate;
+
+  // Приоритет: даты задачи -> даты проекта
+  const startDate = taskStartDate || projectStartDate;
+  const endDate = taskEndDate || projectEndDate;
+
+  // Отладочная информация
+  console.log("Task dates in AvailableTaskItem:", {
+    taskId: task.id,
+    taskStartDate,
+    taskEndDate,
+    projectStartDate,
     projectEndDate,
-    displayStartDate,
-    displayEndDate
+    finalStartDate: startDate,
+    finalEndDate: endDate,
   });
 
   return (
@@ -79,11 +74,11 @@ const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
         <div className="grid grid-cols-2 gap-2 mt-3 text-xs text-slate-500">
           <div className="flex items-center gap-1">
             <Icon name="Calendar" className="h-3 w-3" />
-            <span>Начало: {formatDate(displayStartDate)}</span>
+            <span>Начало: {formatDate(startDate)}</span>
           </div>
           <div className="flex items-center gap-1">
             <Icon name="CalendarClock" className="h-3 w-3" />
-            <span>Дедлайн: {formatDate(displayEndDate)}</span>
+            <span>Дедлайн: {formatDate(endDate)}</span>
           </div>
           <div className="flex items-center gap-1">
             <Icon name="Clock" className="h-3 w-3" />

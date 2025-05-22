@@ -114,7 +114,43 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
     }
   };
 
-  // Правильно передаем задачи с информацией о проекте
+  const renderTaskList = (projectInfo: any) => {
+    if (!projectInfo.tasks || projectInfo.tasks.length === 0) {
+      return (
+        <div className="p-6 text-center">
+          <EmptyAvailableTasks />
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4">
+        <div className="space-y-3">
+          {projectInfo.tasks.map((task: TaskWithProject) => (
+            <AvailableTaskItem
+              key={
+                task.id || `task-${Math.random().toString(36).substring(2, 11)}`
+              }
+              task={task}
+              projectName={projectInfo.projectName}
+              // Очень важно: явно передаем даты проекта в задачу
+              projectDates={{
+                startDate: projectInfo.project?.startDate,
+                endDate: projectInfo.project?.endDate,
+              }}
+              onTakeTask={() => {
+                if (task.id && task.projectId) {
+                  onTakeTask(task.id, task.projectId);
+                }
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Отображение списка задач
   return (
     <div className="mt-6 lg:mt-0">
       <div className="flex items-center gap-2 mb-4">
@@ -140,7 +176,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                 </h3>
               </div>
 
-              {/* Даты проекта */}
+              {/* Даты проекта - упрощаем для стабильности */}
               <div className="flex flex-wrap gap-x-4 text-xs mb-3">
                 <div className="flex items-center gap-1">
                   <span className="font-medium">Начало:</span>
@@ -167,38 +203,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
               )}
             </div>
 
-            <div className="p-4">
-              <div className="space-y-3">
-                {projectInfo.tasks.map((task) => {
-                  // Получаем полную информацию о проекте для этой задачи
-                  // Даты проекта берем из нескольких возможных источников
-                  const projectDates = {
-                    startDate: projectInfo.project?.startDate,
-                    endDate: projectInfo.project?.endDate,
-                  };
-
-                  // Отладочная информация (можно убрать в продакшене)
-                  console.log("Project dates for task", task.id, projectDates);
-
-                  return (
-                    <AvailableTaskItem
-                      key={
-                        task.id ||
-                        `task-${Math.random().toString(36).substring(2, 11)}`
-                      }
-                      task={task}
-                      projectName={projectInfo.projectName}
-                      projectDates={projectDates}
-                      onTakeTask={() => {
-                        if (task.id && task.projectId) {
-                          onTakeTask(task.id, task.projectId);
-                        }
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            </div>
+            {renderTaskList(projectInfo)}
           </div>
         ))}
       </div>

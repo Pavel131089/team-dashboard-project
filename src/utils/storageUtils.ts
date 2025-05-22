@@ -41,6 +41,32 @@ export function initializeProjectsStorage(): void {
         const parsedProjects = JSON.parse(projectsStr);
         if (Array.isArray(parsedProjects)) {
           projects = parsedProjects;
+
+          // Проверяем наличие дат в проектах и добавляем, если их нет
+          const projectsUpdated = parsedProjects.map((project) => {
+            if (!project.startDate || !project.endDate) {
+              console.log(
+                `Проект ${project.name} не имеет дат, добавляем дефолтные даты`,
+              );
+              return {
+                ...project,
+                startDate: project.startDate || new Date().toISOString(),
+                endDate:
+                  project.endDate ||
+                  new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              };
+            }
+            return project;
+          });
+
+          // Если были обновления, сохраняем обновленные проекты
+          if (
+            JSON.stringify(projectsUpdated) !== JSON.stringify(parsedProjects)
+          ) {
+            console.log("Обновляем проекты с дополненными датами");
+            localStorage.setItem("projects", JSON.stringify(projectsUpdated));
+            projects = projectsUpdated;
+          }
         } else {
           // Если данные есть, но не являются массивом, сбрасываем их
           console.error(
@@ -56,18 +82,21 @@ export function initializeProjectsStorage(): void {
 
     // Если проектов нет, создаем демо-проекты
     if (projects.length === 0) {
-      // Создаем несколько демо-проектов
+      // Текущая дата и даты с диапазоном для демо-проектов
+      const currentDate = new Date();
+      const oneMonthLater = new Date(currentDate);
+      oneMonthLater.setMonth(currentDate.getMonth() + 1);
+
+      // Создаем несколько демо-проектов с явно указанными датами
       const demoProjects = [
         {
           id: "project-1",
           name: "Веб-сайт компании",
           description: "Разработка корпоративного веб-сайта",
-          createdAt: new Date().toISOString(),
+          createdAt: currentDate.toISOString(),
           createdBy: "default-manager",
-          startDate: new Date().toISOString(),
-          endDate: new Date(
-            Date.now() + 30 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
+          startDate: currentDate.toISOString(),
+          endDate: oneMonthLater.toISOString(),
           tasks: [
             {
               id: "task-1",
@@ -75,9 +104,9 @@ export function initializeProjectsStorage(): void {
               description: "Создание дизайна главной страницы сайта",
               price: 10000,
               estimatedTime: 16,
-              startDate: new Date().toISOString(),
+              startDate: currentDate.toISOString(),
               endDate: new Date(
-                Date.now() + 5 * 24 * 60 * 60 * 1000,
+                currentDate.getTime() + 5 * 24 * 60 * 60 * 1000,
               ).toISOString(),
               assignedTo: "",
               assignedToNames: [],
@@ -90,10 +119,10 @@ export function initializeProjectsStorage(): void {
               price: 7000,
               estimatedTime: 12,
               startDate: new Date(
-                Date.now() + 6 * 24 * 60 * 60 * 1000,
+                currentDate.getTime() + 6 * 24 * 60 * 60 * 1000,
               ).toISOString(),
               endDate: new Date(
-                Date.now() + 10 * 24 * 60 * 60 * 1000,
+                currentDate.getTime() + 10 * 24 * 60 * 60 * 1000,
               ).toISOString(),
               assignedTo: "",
               assignedToNames: [],
@@ -105,11 +134,11 @@ export function initializeProjectsStorage(): void {
           id: "project-2",
           name: "Мобильное приложение",
           description: "Разработка мобильного приложения для iOS и Android",
-          createdAt: new Date().toISOString(),
+          createdAt: currentDate.toISOString(),
           createdBy: "default-manager",
-          startDate: new Date().toISOString(),
+          startDate: currentDate.toISOString(),
           endDate: new Date(
-            Date.now() + 60 * 24 * 60 * 60 * 1000,
+            currentDate.getTime() + 60 * 24 * 60 * 60 * 1000,
           ).toISOString(),
           tasks: [
             {
@@ -118,9 +147,9 @@ export function initializeProjectsStorage(): void {
               description: "Создание прототипа интерфейса в Figma",
               price: 15000,
               estimatedTime: 24,
-              startDate: new Date().toISOString(),
+              startDate: currentDate.toISOString(),
               endDate: new Date(
-                Date.now() + 7 * 24 * 60 * 60 * 1000,
+                currentDate.getTime() + 7 * 24 * 60 * 60 * 1000,
               ).toISOString(),
               assignedTo: "",
               assignedToNames: [],
@@ -132,7 +161,7 @@ export function initializeProjectsStorage(): void {
 
       // Сохраняем демо-проекты в хранилище
       localStorage.setItem("projects", JSON.stringify(demoProjects));
-      console.log("Инициализировано хранилище с демо-проектами");
+      console.log("Инициализировано хранилище с демо-проектами", demoProjects);
     }
   } catch (error) {
     console.error("Ошибка при инициализации хранилища проектов:", error);

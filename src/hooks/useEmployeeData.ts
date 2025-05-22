@@ -50,6 +50,29 @@ export function useEmployeeData(navigate: NavigateFunction) {
           return { userTasks, otherTasks };
         }
 
+        // Проверяем даты проектов и их задач
+        const projectsWithDates = projectsList.map((project) => {
+          console.log(`Проект ${project.name}:`, {
+            id: project.id,
+            startDate: project.startDate,
+            endDate: project.endDate,
+            tasksCount: project.tasks?.length || 0,
+          });
+
+          // Проверяем задачи проекта на наличие дат
+          if (project.tasks && project.tasks.length > 0) {
+            project.tasks.forEach((task) => {
+              console.log(`  Задача ${task.name}:`, {
+                id: task.id,
+                startDate: task.startDate,
+                endDate: task.endDate,
+              });
+            });
+          }
+
+          return project;
+        });
+
         projectsList.forEach((project) => {
           // Проверяем, что project существует и tasks - массив
           if (!project || !Array.isArray(project.tasks)) {
@@ -65,7 +88,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
               ...task,
               projectId: project.id,
               projectName: project.name || "Без названия",
-              // Добавляем даты проекта
+              // Очень важно: явно передаем даты проекта для каждой задачи
               projectStartDate: project.startDate,
               projectEndDate: project.endDate,
             };
@@ -117,6 +140,23 @@ export function useEmployeeData(navigate: NavigateFunction) {
             }
           });
         });
+
+        // Отладка: проверяем, что даты проекта корректно передаются в доступные задачи
+        if (otherTasks.length > 0) {
+          console.log(
+            "Доступные задачи с информацией о датах:",
+            otherTasks.slice(0, 3).map((task) => ({
+              id: task.id,
+              name: task.name,
+              startDate: task.startDate,
+              endDate: task.endDate,
+              projectId: task.projectId,
+              projectName: task.projectName,
+              projectStartDate: task.projectStartDate,
+              projectEndDate: task.projectEndDate,
+            })),
+          );
+        }
       } catch (error) {
         console.error("Ошибка при обработке проектов:", error);
       }

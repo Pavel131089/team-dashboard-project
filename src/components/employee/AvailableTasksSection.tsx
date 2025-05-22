@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import { Task, Project } from "@/types/project";
 import Icon from "@/components/ui/icon";
 import EmptyAvailableTasks from "@/components/employee/EmptyAvailableTasks";
@@ -21,19 +21,16 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
   projects = [], // Значение по умолчанию - пустой массив
 }) => {
   // Создаем объект проектов для быстрого доступа
-  const [projectsMap, setProjectsMap] = useState<Record<string, Project>>({});
-
-  // Инициализируем карту проектов при изменении массива проектов
-  useEffect(() => {
-    if (Array.isArray(projects) && projects.length > 0) {
-      const map: Record<string, Project> = {};
+  const projectsMap = useMemo(() => {
+    const map: Record<string, Project> = {};
+    if (Array.isArray(projects)) {
       projects.forEach((project) => {
-        if (project.id) {
+        if (project?.id) {
           map[project.id] = project;
         }
       });
-      setProjectsMap(map);
     }
+    return map;
   }, [projects]);
 
   // Безопасно группируем задачи по проектам
@@ -96,6 +93,18 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
     return <EmptyAvailableTasks />;
   }
 
+  // Функция для форматирования даты
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return "Не указано";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Неверный формат";
+      return date.toLocaleDateString("ru-RU");
+    } catch (error) {
+      return "Неверный формат";
+    }
+  };
+
   return (
     <div className="mt-6 lg:mt-0">
       <div className="flex items-center gap-2 mb-4">
@@ -121,36 +130,25 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                 </h3>
               </div>
 
-              {/* Блок с датами проекта - делаем его более заметным */}
-              {projectInfo.project && (
-                <div className="flex flex-wrap gap-x-4 text-xs mb-3 border-l-2 border-primary pl-2 py-1 bg-slate-100 rounded">
-                  <div className="flex items-center gap-1 text-primary-foreground">
-                    <Icon name="Calendar" className="h-3 w-3 text-primary" />
-                    <span className="font-medium">Начало:</span>
-                    <span>
-                      {projectInfo.project.startDate
-                        ? new Date(
-                            projectInfo.project.startDate,
-                          ).toLocaleDateString("ru-RU")
-                        : "Не указано"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 text-primary-foreground">
-                    <Icon
-                      name="CalendarCheck"
-                      className="h-3 w-3 text-primary"
-                    />
-                    <span className="font-medium">Окончание:</span>
-                    <span>
-                      {projectInfo.project.endDate
-                        ? new Date(
-                            projectInfo.project.endDate,
-                          ).toLocaleDateString("ru-RU")
-                        : "Не указано"}
-                    </span>
-                  </div>
+              {/* Блок с датами проекта - упрощаем для стабильности */}
+              <div className="flex flex-wrap gap-x-4 text-xs mb-3">
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">Начало:</span>
+                  <span>
+                    {projectInfo.project?.startDate
+                      ? formatDate(projectInfo.project.startDate)
+                      : "Не указано"}
+                  </span>
                 </div>
-              )}
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">Окончание:</span>
+                  <span>
+                    {projectInfo.project?.endDate
+                      ? formatDate(projectInfo.project.endDate)
+                      : "Не указано"}
+                  </span>
+                </div>
+              </div>
 
               {projectInfo.project?.description && (
                 <p className="text-sm text-slate-600 mt-1 mb-2">

@@ -22,32 +22,19 @@ interface EmployeeTasksCardProps {
     progress: number,
   ) => void;
   onAddComment: (taskId: string, projectId: string, comment: string) => void;
-  projects?: Project[];
+  projects?: Project[]; // Получаем проекты через пропсы
 }
 
 const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   tasks,
   onUpdateProgress,
   onAddComment,
-  projects = [],
+  projects = [], // Значение по умолчанию - пустой массив
 }) => {
   const [commentText, setCommentText] = useState<string>("");
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>(
     {},
   );
-
-  // Создаем карту проектов для быстрого доступа - используем useMemo вместо useState+useEffect
-  const projectsWithFullData = useMemo(() => {
-    const projectMap: Record<string, Project> = {};
-    if (Array.isArray(projects)) {
-      projects.forEach((project) => {
-        if (project?.id) {
-          projectMap[project.id] = project;
-        }
-      });
-    }
-    return projectMap;
-  }, [projects]);
 
   // Убедимся, что tasks определен и является массивом
   const safeTasks = Array.isArray(tasks) ? tasks : [];
@@ -79,6 +66,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     if (!dateString) return "Не указано";
     try {
       const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Неверный формат";
       return date.toLocaleDateString("ru-RU");
     } catch (error) {
       return "Неверный формат";
@@ -129,8 +117,11 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
         Math.max(projectInfo.tasks.length, 1),
     );
 
-    // Получаем полные данные проекта из нашей карты
-    const fullProject = projectsWithFullData[projectInfo.projectId];
+    // Находим полную информацию о проекте
+    const fullProject = useMemo(() => {
+      if (!Array.isArray(projects)) return null;
+      return projects.find((p) => p.id === projectInfo.projectId) || null;
+    }, [projectInfo.projectId]);
 
     return (
       <div className="mb-6 border rounded-md overflow-hidden">
@@ -143,21 +134,21 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
             <span className="text-sm">{projectProgress}% выполнено</span>
           </div>
 
-          {/* Блок с датами проекта - делаем его более заметным */}
-          {fullProject && (
-            <div className="flex flex-wrap gap-x-4 text-xs mb-3 border-l-2 border-primary pl-2 py-1 bg-slate-100 rounded">
-              <div className="flex items-center gap-1 text-primary-foreground">
-                <Icon name="Calendar" className="h-3 w-3 text-primary" />
-                <span className="font-medium">Начало:</span>
-                <span>{formatDate(fullProject.startDate)}</span>
-              </div>
-              <div className="flex items-center gap-1 text-primary-foreground">
-                <Icon name="CalendarCheck" className="h-3 w-3 text-primary" />
-                <span className="font-medium">Окончание:</span>
-                <span>{formatDate(fullProject.endDate)}</span>
-              </div>
+          {/* Даты проекта */}
+          <div className="flex flex-wrap gap-x-4 text-xs mb-3">
+            <div className="flex items-center gap-1">
+              <span className="font-medium">Начало:</span>
+              <span>
+                {fullProject ? formatDate(fullProject.startDate) : "Не указано"}
+              </span>
             </div>
-          )}
+            <div className="flex items-center gap-1">
+              <span className="font-medium">Окончание:</span>
+              <span>
+                {fullProject ? formatDate(fullProject.endDate) : "Не указано"}
+              </span>
+            </div>
+          </div>
 
           <Progress
             value={projectProgress}

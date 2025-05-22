@@ -31,6 +31,12 @@ export interface Task {
   actualStartDate?: string | null;
   actualEndDate?: string | null;
   comments?: TaskComment[];
+  // Дополнительные поля для хранения ссылки на проект
+  projectId?: string;
+  projectName?: string;
+  projectStartDate?: string;
+  projectEndDate?: string;
+  fullProject?: Project;
 }
 
 // Интерфейс для проекта

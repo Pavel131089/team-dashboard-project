@@ -75,6 +75,26 @@ const Employee: React.FC = () => {
   const safeAvailableTasks = Array.isArray(availableTasks)
     ? availableTasks
     : [];
+  const safeProjects = Array.isArray(projects) ? projects : [];
+
+  // Убедимся, что все задачи имеют ссылку на правильные проекты
+  const assignedTasksWithProjects = safeAssignedTasks.map((task) => {
+    const projectId = task.projectId;
+    const fullProject = safeProjects.find((p) => p.id === projectId);
+    return {
+      ...task,
+      fullProject, // Добавляем ссылку на полный объект проекта
+    };
+  });
+
+  const availableTasksWithProjects = safeAvailableTasks.map((task) => {
+    const projectId = task.projectId;
+    const fullProject = safeProjects.find((p) => p.id === projectId);
+    return {
+      ...task,
+      fullProject, // Добавляем ссылку на полный объект проекта
+    };
+  });
 
   return (
     <EmployeeLayout userName={user.name || ""} onLogout={handleLogout}>
@@ -82,17 +102,17 @@ const Employee: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Карточка с назначенными задачами */}
           <EmployeeTasksCard
-            tasks={safeAssignedTasks}
+            tasks={assignedTasksWithProjects}
             onUpdateProgress={handleUpdateTaskProgress}
             onAddComment={handleAddTaskComment}
-            projects={projects} // Передаем массив проектов для получения полных данных
+            projects={safeProjects} // Передаем массив проектов для получения полных данных
           />
 
           {/* Секция с доступными задачами */}
           <AvailableTasksSection
-            tasks={safeAvailableTasks}
+            tasks={availableTasksWithProjects}
             onTakeTask={handleTakeTask}
-            projects={projects} // Передаем все проекты для отображения дополнительной информации
+            projects={safeProjects} // Передаем все проекты для отображения дополнительной информации
           />
         </div>
       </EmployeeContent>

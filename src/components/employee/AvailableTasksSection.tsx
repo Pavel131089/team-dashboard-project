@@ -130,12 +130,12 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                 </h3>
               </div>
 
-              {/* Блок с датами проекта - упрощаем для стабильности */}
+              {/* Блок с датами проекта - проверяем наличие полного объекта проекта */}
               <div className="flex flex-wrap gap-x-4 text-xs mb-3">
                 <div className="flex items-center gap-1">
                   <span className="font-medium">Начало:</span>
                   <span>
-                    {projectInfo.project?.startDate
+                    {projectInfo.project && projectInfo.project.startDate
                       ? formatDate(projectInfo.project.startDate)
                       : "Не указано"}
                   </span>
@@ -143,7 +143,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                 <div className="flex items-center gap-1">
                   <span className="font-medium">Окончание:</span>
                   <span>
-                    {projectInfo.project?.endDate
+                    {projectInfo.project && projectInfo.project.endDate
                       ? formatDate(projectInfo.project.endDate)
                       : "Не указано"}
                   </span>
@@ -165,7 +165,12 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                       task.id ||
                       `task-${Math.random().toString(36).substring(2, 11)}`
                     }
-                    task={task}
+                    task={{
+                      ...task,
+                      // Добавляем явно данные о датах проекта
+                      projectStartDate: projectInfo.project?.startDate,
+                      projectEndDate: projectInfo.project?.endDate,
+                    }}
                     projectName={projectInfo.projectName}
                     onTakeTask={() => {
                       if (task.id && task.projectId) {

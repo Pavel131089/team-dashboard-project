@@ -65,6 +65,9 @@ export function useEmployeeData(navigate: NavigateFunction) {
               ...task,
               projectId: project.id,
               projectName: project.name || "Без названия",
+              // Добавляем ссылки на даты проекта для корректного отображения
+              projectStartDate: project.startDate,
+              projectEndDate: project.endDate,
             };
 
             // Проверка назначения задачи текущему пользователю

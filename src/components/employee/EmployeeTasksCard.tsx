@@ -101,6 +101,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     return Object.values(projectMap);
   }, [safeTasks]);
 
+  // ... keep existing code
   // Компонент для отображения проекта с задачами
   const ProjectGroup = ({
     projectInfo,
@@ -117,11 +118,50 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
         Math.max(projectInfo.tasks.length, 1),
     );
 
-    // Находим полную информацию о проекте
+    // Находим полную информацию о проекте - проверяем все возможные источники данных
     const fullProject = useMemo(() => {
-      if (!Array.isArray(projects)) return null;
-      return projects.find((p) => p.id === projectInfo.projectId) || null;
-    }, [projectInfo.projectId]);
+      // Проверяем, доступны ли данные в task.fullProject (если передано из родительского компонента)
+      const taskWithFullProject = projectInfo.tasks.find((t) => t.fullProject);
+      if (taskWithFullProject?.fullProject) {
+        return taskWithFullProject.fullProject;
+      }
+
+      // Пробуем найти проект по ID в массиве projects
+      if (Array.isArray(projects)) {
+        const projectFromList = projects.find(
+          (p) => p.id === projectInfo.projectId,
+        );
+        if (projectFromList) {
+          return projectFromList;
+        }
+      }
+
+      // Если ни один способ не сработал, ищем даты напрямую в задачах
+      const firstTask = projectInfo.tasks[0];
+      if (firstTask) {
+        // Если в задаче есть ссылки на даты проекта, используем их
+        if (firstTask.projectStartDate || firstTask.projectEndDate) {
+          return {
+            id: projectInfo.projectId,
+            name: projectInfo.projectName,
+            startDate: firstTask.projectStartDate,
+            endDate: firstTask.projectEndDate,
+            description: "",
+            tasks: [],
+            createdAt: "",
+            createdBy: "",
+          };
+        }
+      }
+
+      return null;
+    }, [projectInfo.projectId, projectInfo.tasks]);
+
+    // Получаем даты проекта напрямую из задачи, если они есть
+    const projectStartDate =
+      fullProject?.startDate || projectInfo.tasks[0]?.projectStartDate;
+    const projectEndDate =
+      fullProject?.endDate || projectInfo.tasks[0]?.projectEndDate;
 
     return (
       <div className="mb-6 border rounded-md overflow-hidden">
@@ -134,18 +174,18 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
             <span className="text-sm">{projectProgress}% выполнено</span>
           </div>
 
-          {/* Даты проекта */}
+          {/* Даты проекта - проверяем все возможные источники данных */}
           <div className="flex flex-wrap gap-x-4 text-xs mb-3">
             <div className="flex items-center gap-1">
               <span className="font-medium">Начало:</span>
               <span>
-                {fullProject ? formatDate(fullProject.startDate) : "Не указано"}
+                {projectStartDate ? formatDate(projectStartDate) : "Не указано"}
               </span>
             </div>
             <div className="flex items-center gap-1">
               <span className="font-medium">Окончание:</span>
               <span>
-                {fullProject ? formatDate(fullProject.endDate) : "Не указано"}
+                {projectEndDate ? formatDate(projectEndDate) : "Не указано"}
               </span>
             </div>
           </div>
@@ -169,6 +209,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
       </div>
     );
   };
+  // ... keep existing code
 
   // Компонент для отображения задачи
   const TaskItem = ({ task }: { task: TaskWithProject }) => {

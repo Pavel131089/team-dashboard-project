@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardTabs from "@/components/dashboard/DashboardTabs";
@@ -10,8 +9,8 @@ import { toast } from "sonner";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("projects");
-  
+  const [activeTab, setActiveTab] = React.useState("projects");
+
   // Получаем данные и функции из хука
   const {
     projects,
@@ -26,6 +25,7 @@ const Dashboard: React.FC = () => {
   // Проверка и восстановление данных при монтировании
   useEffect(() => {
     if (!isLoading && (!user || user.role !== "manager")) {
+      // Перенос вызова toast в useEffect
       toast.error("Доступ запрещен. Перенаправление на страницу входа.");
       navigate("/login");
     }
@@ -51,17 +51,14 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Заголовок с именем пользователя и кнопкой выхода */}
-      <DashboardHeader 
-        username={user?.name || ""} 
-        onLogout={handleLogout} 
-      />
-      
+      <DashboardHeader username={user?.name || ""} onLogout={handleLogout} />
+
       {/* Основное содержимое */}
       <main className="flex-1 container mx-auto py-6 px-4">
         <h1 className="text-3xl font-bold mb-6">Панель руководителя</h1>
-        
+
         {/* Вкладки с проектами, импортом, экспортом и пользователями */}
-        <DashboardTabs 
+        <DashboardTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
           projects={projects}
@@ -70,7 +67,7 @@ const Dashboard: React.FC = () => {
           onDeleteProject={handleDeleteProject}
         />
       </main>
-      
+
       {/* Компонент диагностики для отладки */}
       <StorageDiagnostics onReloadProjects={() => window.location.reload()} />
     </div>

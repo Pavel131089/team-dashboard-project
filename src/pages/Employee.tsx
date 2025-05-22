@@ -1,7 +1,12 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import Icon from "@/components/ui/icon";
@@ -13,38 +18,47 @@ const Employee: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Обработчик выхода из системы
+  const handleLogout = useCallback(() => {
+    sessionService.clearSession();
+    // Используем setTimeout для предотвращения вызова toast во время рендеринга
+    setTimeout(() => {
+      toast.success("Вы вышли из системы");
+      navigate("/login");
+    }, 0);
+  }, [navigate]);
+
   // Проверка авторизации при загрузке страницы
   useEffect(() => {
     const checkAuth = () => {
       setIsLoading(true);
       const session = sessionService.getCurrentSession();
-      
+
       if (!session || !session.isAuthenticated) {
-        toast.error("Необходимо войти в систему");
-        navigate("/login");
+        // Перенос вызова toast в useEffect
+        setTimeout(() => {
+          toast.error("Необходимо войти в систему");
+          navigate("/login");
+        }, 0);
         return;
       }
-      
+
       // Если пользователь менеджер, перенаправляем на панель руководителя
       if (session.role === "manager") {
-        toast.info("Перенаправление на панель руководителя");
-        navigate("/dashboard");
+        // Перенос вызова toast в useEffect
+        setTimeout(() => {
+          toast.info("Перенаправление на панель руководителя");
+          navigate("/dashboard");
+        }, 0);
         return;
       }
-      
+
       setUser(session);
       setIsLoading(false);
     };
-    
+
     checkAuth();
   }, [navigate]);
-
-  // Выход из системы
-  const handleLogout = () => {
-    sessionService.clearSession();
-    toast.success("Вы вышли из системы");
-    navigate("/login");
-  };
 
   // Пока загружаются данные, показываем скелетон
   if (isLoading) {
@@ -88,9 +102,14 @@ const Employee: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="p-8 text-center text-gray-500">
-              <Icon name="ClipboardList" className="mx-auto mb-4 h-12 w-12 opacity-50" />
+              <Icon
+                name="ClipboardList"
+                className="mx-auto mb-4 h-12 w-12 opacity-50"
+              />
               <p className="mb-2">У вас пока нет назначенных задач</p>
-              <p className="text-sm">Задачи появятся здесь, когда руководитель назначит их вам</p>
+              <p className="text-sm">
+                Задачи появятся здесь, когда руководитель назначит их вам
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -99,13 +118,20 @@ const Employee: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle>Доступные проекты</CardTitle>
-            <CardDescription>Проекты, в которых вы можете принять участие</CardDescription>
+            <CardDescription>
+              Проекты, в которых вы можете принять участие
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="p-8 text-center text-gray-500">
-              <Icon name="Briefcase" className="mx-auto mb-4 h-12 w-12 opacity-50" />
+              <Icon
+                name="Briefcase"
+                className="mx-auto mb-4 h-12 w-12 opacity-50"
+              />
               <p className="mb-2">Нет доступных проектов</p>
-              <p className="text-sm">Здесь будут отображаться проекты, требующие вашего участия</p>
+              <p className="text-sm">
+                Здесь будут отображаться проекты, требующие вашего участия
+              </p>
             </div>
           </CardContent>
         </Card>

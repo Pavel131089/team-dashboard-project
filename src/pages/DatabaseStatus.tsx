@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -20,11 +19,7 @@ const DatabaseStatus: React.FC = () => {
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <h1 className="text-xl font-bold truncate">Статус базы данных</h1>
           <div className="flex items-center gap-2 md:gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(-1)}
-            >
+            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
               <Icon name="ArrowLeft" className="mr-2 h-4 w-4" />
               Вернуться назад
             </Button>
@@ -37,7 +32,7 @@ const DatabaseStatus: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Компонент проверки подключения к хранилищу */}
           <DatabaseConnectionTester />
-          
+
           {/* Компонент синхронизации с облаком */}
           <CloudStorageStatus />
         </div>

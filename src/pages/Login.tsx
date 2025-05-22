@@ -1,8 +1,14 @@
-
 import React, { useEffect } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import LoginForm, { DemoCredentials } from "@/components/auth/LoginForm";
+import LoginForm from "@/components/auth/LoginForm";
 import Icon from "@/components/ui/icon";
 
 /**
@@ -25,7 +31,7 @@ const Login: React.FC = () => {
     // Проверяем существующую сессию и инициализируем пользователей
     initializeDefaultUsers();
     checkExistingSession();
-  }, []);
+  }, [initializeDefaultUsers, checkExistingSession]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
@@ -34,7 +40,9 @@ const Login: React.FC = () => {
           <div className="flex items-center justify-center mb-2">
             <Icon name="FileText" className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-center">Система управления проектами</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            Система управления проектами
+          </CardTitle>
           <CardDescription className="text-center">
             Войдите, используя ваши учетные данные
           </CardDescription>

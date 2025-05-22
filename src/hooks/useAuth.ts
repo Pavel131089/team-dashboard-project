@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { authService } from "@/services/auth/authService";
@@ -35,32 +34,38 @@ export function useAuth(navigateTo?: string) {
   /**
    * Обработчик изменения полей ввода
    */
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    },
+    [],
+  );
 
   /**
    * Обработчик изменения роли пользователя
    */
-  const handleRoleChange = (value: string) => {
+  const handleRoleChange = useCallback((value: string) => {
     setFormData((prev) => ({ ...prev, role: value as UserRole }));
-  };
+  }, []);
 
   /**
    * Перенаправляет пользователя в зависимости от роли
    */
-  const redirectToRolePage = (role: UserRole) => {
-    const targetPath = role === "manager" ? "/dashboard" : "/employee";
-    const path = navigateTo || targetPath;
-    navigate(path);
-  };
+  const redirectToRolePage = useCallback(
+    (role: UserRole) => {
+      const targetPath = role === "manager" ? "/dashboard" : "/employee";
+      const path = navigateTo || targetPath;
+      navigate(path);
+    },
+    [navigate, navigateTo],
+  );
 
   /**
    * Проверяет существующую сессию пользователя
    * Если сессия найдена, перенаправляет на соответствующую страницу
    */
-  const checkExistingSession = () => {
+  const checkExistingSession = useCallback(() => {
     try {
       // Удостоверимся, что у нас есть дефолтные пользователи
       userService.initializeDefaultUsers();
@@ -70,7 +75,10 @@ export function useAuth(navigateTo?: string) {
 
       // Если сессия существует и пользователь аутентифицирован
       if (session && session.isAuthenticated) {
-        redirectToRolePage(session.role as UserRole);
+        // Используем setTimeout для предотвращения вызова функции во время рендеринга
+        setTimeout(() => {
+          redirectToRolePage(session.role as UserRole);
+        }, 0);
         return true;
       }
 
@@ -87,81 +95,88 @@ export function useAuth(navigateTo?: string) {
       sessionService.clearSession();
       return false;
     }
-  };
+  }, [redirectToRolePage]);
 
   /**
    * Обработчик отправки формы входа
    */
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      setError(null);
 
-    // Валидация формы
-    if (!formData.username.trim() || !formData.password.trim()) {
-      setError("Пожалуйста, заполните все поля");
-      return;
-    }
-
-    try {
-      console.log("Отправка формы авторизации:", formData);
-
-      // Создаем копию данных формы для гарантии отсутствия мутации
-      const credentials = { ...formData };
-
-      // Попытка авторизации
-      const result = authService.login(credentials);
-
-      if (result.success && result.user) {
-        console.log("Успешный вход:", result.user);
-
-        // При успешном входе показываем уведомление
-        toast.success(
-          `Добро пожаловать, ${result.user.name}!`,
-          { duration: 3000 }
-        );
-
-        // Перенаправляем на соответствующую страницу
-        redirectToRolePage(result.user.role);
-      } else {
-        console.error("Ошибка входа:", result.error);
-
-        // При ошибке устанавливаем сообщение об ошибке
-        setError(result.error || "Произошла ошибка при входе");
+      // Валидация формы
+      if (!formData.username.trim() || !formData.password.trim()) {
+        setError("Пожалуйста, заполните все поля");
+        return;
       }
-    } catch (error) {
-      console.error("Ошибка авторизации:", error);
-      setError("Произошла непредвиденная ошибка при входе. Попробуйте позже.");
-    }
-  };
+
+      try {
+        console.log("Отправка формы авторизации:", formData);
+
+        // Создаем копию данных формы для гарантии отсутствия мутации
+        const credentials = { ...formData };
+
+        // Попытка авторизации
+        const result = authService.login(credentials);
+
+        if (result.success && result.user) {
+          console.log("Успешный вход:", result.user);
+
+          // При успешном входе показываем уведомление - переносим в setTimeout
+          setTimeout(() => {
+            toast.success(`Добро пожаловать, ${result.user!.name}!`, {
+              duration: 3000,
+            });
+
+            // Перенаправляем на соответствующую страницу
+            redirectToRolePage(result.user!.role);
+          }, 0);
+        } else {
+          console.error("Ошибка входа:", result.error);
+
+          // При ошибке устанавливаем сообщение об ошибке
+          setError(result.error || "Произошла ошибка при входе");
+        }
+      } catch (error) {
+        console.error("Ошибка авторизации:", error);
+        setError(
+          "Произошла непредвиденная ошибка при входе. Попробуйте позже.",
+        );
+      }
+    },
+    [formData, redirectToRolePage],
+  );
 
   /**
    * Инициализирует дефолтных пользователей в системе
    */
-  const initializeDefaultUsers = () => {
+  const initializeDefaultUsers = useCallback(() => {
     userService.initializeDefaultUsers();
     if (!localStorage.getItem("projects")) {
       localStorage.setItem("projects", JSON.stringify([]));
     }
-  };
+  }, []);
 
   /**
    * Проверяет аутентификацию пользователя и возвращает данные текущего пользователя
    */
-  const checkUserAuth = () => {
+  const checkUserAuth = useCallback(() => {
     return sessionService.getCurrentSession();
-  };
+  }, []);
 
   /**
    * Выход из системы
    */
-  const logout = () => {
+  const logout = useCallback(() => {
     sessionService.clearSession();
 
-    // Уведомление о выходе
-    toast.success("Вы успешно вышли из системы");
-
-    navigate("/login");
-  };
+    // Уведомление о выходе - переносим в setTimeout
+    setTimeout(() => {
+      toast.success("Вы успешно вышли из системы");
+      navigate("/login");
+    }, 0);
+  }, [navigate]);
 
   // Возвращаем объект с методами и состояниями
   return {

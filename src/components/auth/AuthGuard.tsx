@@ -1,10 +1,11 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { UserRole } from "@/hooks/useAuth";
 import { sessionService } from "@/services/auth/sessionService";
 
 interface AuthGuardProps {
   children: ReactNode;
-  requiredRole: "manager" | "employee";
+  requiredRole: UserRole;
 }
 
 /**
@@ -13,21 +14,34 @@ interface AuthGuardProps {
  */
 const AuthGuard = ({ children, requiredRole }: AuthGuardProps) => {
   const location = useLocation();
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
-  // Получаем информацию о текущей сессии
-  const session = sessionService.getCurrentSession();
+  // Используем useEffect вместо прямого вызова во время рендеринга
+  useEffect(() => {
+    // Получаем информацию о текущей сессии
+    const session = sessionService.getCurrentSession();
 
-  // Если пользователь не аутентифицирован, перенаправляем на страницу логина
-  if (!session || !session.isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
+    // Если пользователь не аутентифицирован, устанавливаем редирект на логин
+    if (!session || !session.isAuthenticated) {
+      setRedirectPath("/login");
+      return;
+    }
 
-  // Если требуется определенная роль и она не совпадает с ролью пользователя
-  if (requiredRole && session.role !== requiredRole) {
-    // Перенаправляем на соответствующую страницу в зависимости от роли пользователя
-    const redirectPath =
-      session.role === "manager" ? "/dashboard" : "/employee";
-    return <Navigate to={redirectPath} replace />;
+    // Если требуется определенная роль и она не совпадает с ролью пользователя
+    if (requiredRole && session.role !== requiredRole) {
+      // Перенаправляем на соответствующую страницу в зависимости от роли пользователя
+      const path = session.role === "manager" ? "/dashboard" : "/employee";
+      setRedirectPath(path);
+      return;
+    }
+
+    // Если все проверки пройдены, сбрасываем редирект
+    setRedirectPath(null);
+  }, [requiredRole, location.pathname]);
+
+  // Редирект, если нужно
+  if (redirectPath) {
+    return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 
   // Если все проверки пройдены, рендерим защищенный контент

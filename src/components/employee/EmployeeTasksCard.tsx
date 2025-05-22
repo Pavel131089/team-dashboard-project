@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,9 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   onAddComment,
 }) => {
   const [commentText, setCommentText] = useState<string>("");
-  const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
+  const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>(
+    {},
+  );
 
   // Убедимся, что tasks определен и является массивом
   const safeTasks = Array.isArray(tasks) ? tasks : [];
@@ -103,17 +104,20 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   const ProjectGroup = ({
     projectInfo,
   }: {
-    projectInfo: {
-      projectId: string;
-      projectName: string;
-      tasks: TaskWithProject[];
-    };
+    projectId: string;
+    projectName: string;
+    tasks: TaskWithProject[];
   }) => {
     // Вычисляем прогресс проекта
     const projectProgress = Math.round(
       projectInfo.tasks.reduce((sum, task) => sum + (task.progress || 0), 0) /
-        Math.max(projectInfo.tasks.length, 1)
+        Math.max(projectInfo.tasks.length, 1),
     );
+
+    // Ищем полный проект для получения дат
+    const fullProject = Array.isArray(projects)
+      ? projects.find((p) => p.id === projectInfo.projectId)
+      : undefined;
 
     return (
       <div className="mb-6 border rounded-md overflow-hidden">
@@ -125,17 +129,33 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
             </h3>
             <span className="text-sm">{projectProgress}% выполнено</span>
           </div>
-          <Progress 
-            value={projectProgress} 
-            className="h-1" 
+
+          {fullProject && (
+            <div className="flex flex-wrap gap-x-4 text-xs text-slate-500 mb-2">
+              <div className="flex items-center gap-1">
+                <Icon name="Calendar" className="h-3 w-3" />
+                <span>Начало: {formatDate(fullProject.startDate)}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Icon name="CalendarCheck" className="h-3 w-3" />
+                <span>Окончание: {formatDate(fullProject.endDate)}</span>
+              </div>
+            </div>
+          )}
+
+          <Progress
+            value={projectProgress}
+            className="h-1"
             indicatorClassName={getProgressColorClass(projectProgress)}
           />
         </div>
         <div className="p-3">
           {projectInfo.tasks.map((task) => (
-            <TaskItem 
-              key={task.id || `task-${Math.random().toString(36).substring(2, 11)}`} 
-              task={task} 
+            <TaskItem
+              key={
+                task.id || `task-${Math.random().toString(36).substring(2, 11)}`
+              }
+              task={task}
             />
           ))}
         </div>
@@ -146,16 +166,17 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   // Компонент для отображения задачи
   const TaskItem = ({ task }: { task: TaskWithProject }) => {
     // Генерируем уникальный идентификатор для задачи, если его нет
-    const taskId = task.id || `task-${Math.random().toString(36).substring(2, 11)}`;
+    const taskId =
+      task.id || `task-${Math.random().toString(36).substring(2, 11)}`;
     const isExpanded = expandedTasks[taskId] || false;
-    
+
     // Безопасно получаем progress
     const progress = typeof task.progress === "number" ? task.progress : 0;
 
     return (
       <div className="border rounded-md mb-3 bg-white">
         {/* Заголовок задачи (всегда видимый) */}
-        <div 
+        <div
           className="px-4 py-3 cursor-pointer flex flex-col"
           onClick={() => toggleTaskExpanded(taskId)}
         >
@@ -166,15 +187,15 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
             </Badge>
           </div>
           <div className="flex items-center gap-2 w-full mt-2">
-            <Progress 
-              value={progress} 
-              className="h-2 w-full" 
+            <Progress
+              value={progress}
+              className="h-2 w-full"
               indicatorClassName={getProgressColorClass(progress)}
             />
             <span className="text-xs whitespace-nowrap">{progress}%</span>
-            <Icon 
-              name={isExpanded ? "ChevronUp" : "ChevronDown"} 
-              className="h-4 w-4 ml-1" 
+            <Icon
+              name={isExpanded ? "ChevronUp" : "ChevronDown"}
+              className="h-4 w-4 ml-1"
             />
           </div>
         </div>
@@ -202,7 +223,13 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                   </div>
                   <div className="flex items-center gap-1">
                     <Icon name="CircleDollarSign" className="h-3 w-3" />
-                    <span>Цена: {typeof task.price === "number" ? task.price.toLocaleString() : 0} ₽</span>
+                    <span>
+                      Цена:{" "}
+                      {typeof task.price === "number"
+                        ? task.price.toLocaleString()
+                        : 0}{" "}
+                      ₽
+                    </span>
                   </div>
                 </div>
               </div>
@@ -293,9 +320,11 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     return (
       <div className="space-y-3">
         {taskList.map((task) => (
-          <TaskItem 
-            key={task.id || `task-${Math.random().toString(36).substring(2, 11)}`} 
-            task={task} 
+          <TaskItem
+            key={
+              task.id || `task-${Math.random().toString(36).substring(2, 11)}`
+            }
+            task={task}
           />
         ))}
       </div>
@@ -341,7 +370,10 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
               <div className="space-y-2">
                 {projectGroups.map((projectInfo) => (
                   <ProjectGroup
-                    key={projectInfo.projectId || `project-${Math.random().toString(36).substring(2, 11)}`}
+                    key={
+                      projectInfo.projectId ||
+                      `project-${Math.random().toString(36).substring(2, 11)}`
+                    }
                     projectInfo={projectInfo}
                   />
                 ))}

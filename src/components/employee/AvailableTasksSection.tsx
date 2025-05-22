@@ -97,7 +97,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
             key={projectInfo.projectId || `project-${Math.random()}`}
             className="bg-white rounded-lg shadow-sm border overflow-hidden"
           >
-            {/* Добавляем компонент для информации о проекте */}
+            {/* Добавляем компонент для информации о проекте с датами */}
             <ProjectInfoHeader
               project={projectInfo.project}
               projectName={projectInfo.projectName}
@@ -107,7 +107,10 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
               <div className="space-y-3">
                 {projectInfo.tasks.map((task) => (
                   <AvailableTaskItem
-                    key={task.id || `task-${Math.random()}`}
+                    key={
+                      task.id ||
+                      `task-${Math.random().toString(36).substring(2, 11)}`
+                    }
                     task={task}
                     projectName={projectInfo.projectName}
                     onTakeTask={() => {

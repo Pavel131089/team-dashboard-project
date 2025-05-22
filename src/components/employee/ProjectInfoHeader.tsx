@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Project } from "@/types/project";
 import { Progress } from "@/components/ui/progress";
@@ -20,13 +19,13 @@ const ProjectInfoHeader: React.FC<ProjectInfoHeaderProps> = ({
 
     const totalProgress = project.tasks.reduce(
       (sum, task) => sum + (task.progress || 0),
-      0
+      0,
     );
     return Math.round(totalProgress / project.tasks.length);
   };
 
   const progress = calculateProgress();
-  
+
   // Форматирование даты
   const formatDate = (dateString?: string): string => {
     if (!dateString) return "Не указано";
@@ -47,11 +46,13 @@ const ProjectInfoHeader: React.FC<ProjectInfoHeaderProps> = ({
           </h3>
           <span className="text-sm font-medium">{progress}% выполнено</span>
         </div>
-        
+
         {project?.description && (
-          <p className="text-sm text-slate-600 mt-1 mb-2">{project.description}</p>
+          <p className="text-sm text-slate-600 mt-1 mb-2">
+            {project.description}
+          </p>
         )}
-        
+
         {project && (
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 mt-2 mb-2">
             <div className="flex items-center gap-1">
@@ -68,10 +69,10 @@ const ProjectInfoHeader: React.FC<ProjectInfoHeaderProps> = ({
             </div>
           </div>
         )}
-        
-        <Progress 
-          value={progress} 
-          className="h-2 mt-1" 
+
+        <Progress
+          value={progress}
+          className="h-2 mt-1"
           indicatorClassName={getProgressColorClass(progress)}
         />
       </div>

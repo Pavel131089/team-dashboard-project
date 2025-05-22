@@ -40,6 +40,16 @@ const ProjectInfoBadge: React.FC<ProjectInfoBadgeProps> = ({
     return "bg-red-500";
   };
 
+  // Форматирование даты
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return "Не указано";
+    try {
+      return new Date(dateString).toLocaleDateString("ru-RU");
+    } catch (error) {
+      return "Неверный формат";
+    }
+  };
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -59,6 +69,16 @@ const ProjectInfoBadge: React.FC<ProjectInfoBadgeProps> = ({
                 {project.description}
               </p>
             )}
+            <div className="text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Начало:</span>
+                <span>{formatDate(project.startDate)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Окончание:</span>
+                <span>{formatDate(project.endDate)}</span>
+              </div>
+            </div>
             <div className="flex items-center justify-between text-xs">
               <span>Прогресс проекта:</span>
               <span className="font-medium">{progress}%</span>

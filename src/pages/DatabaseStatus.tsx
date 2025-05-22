@@ -16,7 +16,10 @@ const DatabaseStatus: React.FC = () => {
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <h1 className="text-xl font-bold truncate">Статус базы данных</h1>
           <div className="flex items-center gap-2 md:gap-4">
-            <BackButton fallbackPath="/dashboard" />
+            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+              <Icon name="ArrowLeft" className="mr-2 h-4 w-4" />
+              Вернуться назад
+            </Button>
           </div>
         </div>
       </header>

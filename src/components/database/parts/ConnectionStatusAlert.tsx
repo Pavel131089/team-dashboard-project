@@ -3,47 +3,47 @@ import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Icon from "@/components/ui/icon";
 
-/**
- * Props для компонента статуса подключения
- */
 interface ConnectionStatusAlertProps {
-  /** Статус подключения (true - подключено, false - отключено, null - не проверено) */
   connectionStatus: boolean | null;
 }
 
 /**
- * Компонент для отображения статуса подключения к хранилищу
+ * Компонент для отображения уведомления о статусе подключения
  */
 const ConnectionStatusAlert: React.FC<ConnectionStatusAlertProps> = ({ 
   connectionStatus 
 }) => {
-  // Не отображаем, если статус не определен
-  if (connectionStatus === null) return null;
-
-  // Отображаем предупреждение при отсутствии подключения
-  if (connectionStatus === false) {
+  if (connectionStatus === null) {
     return (
-      <Alert variant="destructive">
-        <Icon name="AlertTriangle" className="h-4 w-4" />
-        <AlertTitle>Ошибка подключения</AlertTitle>
+      <Alert className="bg-blue-50 text-blue-800 border-blue-200">
+        <Icon name="Loader2" className="h-4 w-4 animate-spin" />
+        <AlertTitle>Проверка подключения</AlertTitle>
         <AlertDescription>
-          Не удалось подключиться к хранилищу данных. Проверьте настройки
-          браузера и разрешения для localStorage.
+          Выполняется проверка доступности локального хранилища...
         </AlertDescription>
       </Alert>
     );
   }
-
-  // Отображаем успешное подключение
+  
+  if (connectionStatus === false) {
+    return (
+      <Alert variant="destructive">
+        <Icon name="AlertTriangle" className="h-4 w-4" />
+        <AlertTitle>Проблема с подключением</AlertTitle>
+        <AlertDescription>
+          Локальное хранилище недоступно. Возможно, браузер блокирует доступ к localStorage 
+          или включен режим приватного просмотра.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
   return (
-    <Alert className="bg-green-50 border-green-200">
-      <Icon name="CheckCircle" className="h-4 w-4 text-green-600" />
-      <AlertTitle className="text-green-700">
-        Подключение установлено
-      </AlertTitle>
-      <AlertDescription className="text-green-600">
-        Соединение с хранилищем успешно установлено. Вы можете выполнить
-        тесты операций.
+    <Alert className="bg-green-50 text-green-800 border-green-200">
+      <Icon name="CheckCircle" className="h-4 w-4" />
+      <AlertTitle>Подключение установлено</AlertTitle>
+      <AlertDescription>
+        Локальное хранилище доступно и работает корректно.
       </AlertDescription>
     </Alert>
   );

@@ -1,187 +1,111 @@
 
-import { useState } from "react";
-import { toast } from "sonner";
-import { SyncStatusType } from "../sync/SyncStatusBadge";
+import { useState, useCallback } from "react";
 
-// Тип для функции обновления статуса синхронизации
-type SetSyncStatusFn = (
-  entityType: "users" | "projects", 
-  status: SyncStatusType, 
-  count?: number
-) => void;
+// Типы для состояния синхронизации
+export type SyncStatus = "idle" | "syncing" | "success" | "error";
+
+export interface EntitySyncState {
+  count: number;
+  status: SyncStatus;
+}
+
+export interface SyncState {
+  projects: EntitySyncState;
+  users: EntitySyncState;
+}
 
 /**
  * Хук для управления синхронизацией данных
  */
-export const useDataSync = (setSyncStatus: SetSyncStatusFn) => {
-  // Время последней синхронизации
+export function useDataSync(
+  setSyncStatus: (entity: keyof SyncState, status: SyncStatus) => void
+) {
+  // Последняя синхронизация
   const [lastSync, setLastSync] = useState<string | null>(null);
 
   /**
-   * Обновляет время последней синхронизации
+   * Проверяет количество записей в хранилище
    */
-  const updateLastSyncTime = () => {
-    setLastSync(new Date().toLocaleString());
-  };
-
-  /**
-   * Имитирует задержку сети
-   */
-  const simulateNetworkDelay = () => {
-    return new Promise((resolve) => setTimeout(resolve, 1500));
-  };
-
-  /**
-   * Получение количества записей в локальном хранилище
-   */
-  const checkDataCount = async () => {
+  const checkDataCount = useCallback(() => {
     try {
-      // Получаем пользователей
-      setSyncStatus("users", "syncing");
-      const usersCount = getEntityCount("users");
-      setSyncStatus("users", "success", usersCount);
-
-      // Получаем проекты
-      setSyncStatus("projects", "syncing");
-      const projectsCount = getEntityCount("projects");
-      setSyncStatus("projects", "success", projectsCount);
-
-      // Обновляем время последней синхронизации
-      updateLastSyncTime();
-
-      toast.success("Данные успешно получены из локального хранилища");
-    } catch (error) {
-      handleSyncError("Не удалось получить данные из хранилища");
-    }
-  };
-
-  /**
-   * Получает количество записей для определенного типа сущности
-   */
-  const getEntityCount = (entityType: string): number => {
-    const dataStr = localStorage.getItem(entityType) || "[]";
-    const data = JSON.parse(dataStr);
-    return Array.isArray(data) ? data.length : 0;
-  };
-
-  /**
-   * Обработка ошибки синхронизации
-   */
-  const handleSyncError = (errorMessage: string) => {
-    setSyncStatus("users", "error", 0);
-    setSyncStatus("projects", "error", 0);
-    
-    toast.error(errorMessage);
-  };
-
-  /**
-   * Имитация синхронизации данных с облачным хранилищем
-   */
-  const syncLocalToCloud = async () => {
-    try {
-      // Устанавливаем статус "синхронизация"
-      setSyncStatus("users", "syncing");
-      setSyncStatus("projects", "syncing");
-
-      toast.info("Имитация синхронизации данных с облачным хранилищем...");
-
-      // Получаем данные из localStorage
-      const usersCount = getEntityCount("users");
-      const projectsCount = getEntityCount("projects");
-
-      // Создаем резервные копии
-      await simulateNetworkDelay();
-      backupEntityData("users");
-      backupEntityData("projects");
-
-      // Обновляем статус
-      setSyncStatus("users", "success", usersCount);
-      setSyncStatus("projects", "success", projectsCount);
+      // Получаем данные из локального хранилища
+      const usersStr = localStorage.getItem("users") || "[]";
+      const projectsStr = localStorage.getItem("projects") || "[]";
       
-      // Обновляем время последней синхронизации
-      updateLastSyncTime();
-
-      toast.success(
-        `Синхронизация завершена. Синхронизировано: ${usersCount} пользователей, ${projectsCount} проектов`
-      );
+      // Парсим данные
+      const users = JSON.parse(usersStr);
+      const projects = JSON.parse(projectsStr);
+      
+      // Возвращаем количество записей
+      return {
+        users: Array.isArray(users) ? users.length : 0,
+        projects: Array.isArray(projects) ? projects.length : 0
+      };
     } catch (error) {
-      handleSyncError("Не удалось синхронизировать данные");
+      console.error("Ошибка при проверке количества данных:", error);
+      return { users: 0, projects: 0 };
     }
-  };
+  }, []);
 
   /**
-   * Имитация загрузки данных из облачного хранилища
+   * Синхронизация данных из локального хранилища в облако (имитация)
    */
-  const syncCloudToLocal = async () => {
-    try {
-      // Устанавливаем статус "синхронизация"
-      setSyncStatus("users", "syncing");
-      setSyncStatus("projects", "syncing");
-
-      toast.info("Имитация загрузки данных из облачного хранилища...");
-
-      // Имитируем задержку сети
-      await simulateNetworkDelay();
-
-      // Проверяем наличие резервных копий
-      const hasBackups = checkBackupsExistence();
-
-      if (hasBackups) {
-        // Восстанавливаем данные из резервных копий
-        const usersCount = restoreEntityFromBackup("users");
-        const projectsCount = restoreEntityFromBackup("projects");
-
-        // Обновляем статус
-        setSyncStatus("users", "success", usersCount);
-        setSyncStatus("projects", "success", projectsCount);
-
-        // Обновляем время последней синхронизации
-        updateLastSyncTime();
-
-        toast.success(
-          `Данные загружены из облачного хранилища: ${usersCount} пользователей, ${projectsCount} проектов`
-        );
-      } else {
-        // Если нет резервных копий, сообщаем об этом
-        toast.error("Нет данных для восстановления из облачного хранилища");
-
-        // Обновляем статус
-        setSyncStatus("users", "error", 0);
-        setSyncStatus("projects", "error", 0);
-      }
-    } catch (error) {
-      handleSyncError("Не удалось загрузить данные из облачного хранилища");
-    }
-  };
-
-  /**
-   * Создает резервную копию данных указанной сущности
-   */
-  const backupEntityData = (entityType: string) => {
-    const dataStr = localStorage.getItem(entityType) || "[]";
-    localStorage.setItem(`cloud_${entityType}_backup`, dataStr);
-  };
-
-  /**
-   * Проверяет существование резервных копий
-   */
-  const checkBackupsExistence = (): boolean => {
-    return Boolean(
-      localStorage.getItem("cloud_users_backup") &&
-      localStorage.getItem("cloud_projects_backup")
-    );
-  };
-
-  /**
-   * Восстанавливает данные сущности из резервной копии
-   */
-  const restoreEntityFromBackup = (entityType: string): number => {
-    const backupData = localStorage.getItem(`cloud_${entityType}_backup`) || "[]";
-    localStorage.setItem(entityType, backupData);
+  const syncLocalToCloud = useCallback(async () => {
+    // Устанавливаем статус "синхронизация" для всех сущностей
+    setSyncStatus("users", "syncing");
+    setSyncStatus("projects", "syncing");
     
-    const data = JSON.parse(backupData);
-    return Array.isArray(data) ? data.length : 0;
-  };
+    // Имитация синхронизации
+    setTimeout(() => {
+      try {
+        // Имитация успешной синхронизации пользователей
+        setSyncStatus("users", "success");
+        
+        // Имитация успешной синхронизации проектов через 1 секунду
+        setTimeout(() => {
+          setSyncStatus("projects", "success");
+          
+          // Обновляем время последней синхронизации
+          const now = new Date().toLocaleString();
+          setLastSync(now);
+        }, 1000);
+      } catch (error) {
+        console.error("Ошибка при синхронизации:", error);
+        setSyncStatus("users", "error");
+        setSyncStatus("projects", "error");
+      }
+    }, 2000);
+  }, [setSyncStatus]);
+
+  /**
+   * Синхронизация данных из облака в локальное хранилище (имитация)
+   */
+  const syncCloudToLocal = useCallback(async () => {
+    // Устанавливаем статус "синхронизация" для всех сущностей
+    setSyncStatus("users", "syncing");
+    setSyncStatus("projects", "syncing");
+    
+    // Имитация синхронизации
+    setTimeout(() => {
+      try {
+        // Имитация успешной синхронизации пользователей
+        setSyncStatus("users", "success");
+        
+        // Имитация успешной синхронизации проектов через 1 секунду
+        setTimeout(() => {
+          setSyncStatus("projects", "success");
+          
+          // Обновляем время последней синхронизации
+          const now = new Date().toLocaleString();
+          setLastSync(now);
+        }, 1000);
+      } catch (error) {
+        console.error("Ошибка при синхронизации:", error);
+        setSyncStatus("users", "error");
+        setSyncStatus("projects", "error");
+      }
+    }, 2000);
+  }, [setSyncStatus]);
 
   return {
     checkDataCount,
@@ -190,4 +114,4 @@ export const useDataSync = (setSyncStatus: SetSyncStatusFn) => {
     lastSync,
     setLastSync
   };
-};
+}

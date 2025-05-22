@@ -1,58 +1,57 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-
-/**
- * Типы возможных статусов синхронизации
- */
-export type SyncStatusType = "idle" | "syncing" | "success" | "error";
+import { SyncStatus } from "../hooks/useDataSync";
+import Icon from "@/components/ui/icon";
 
 interface SyncStatusBadgeProps {
-  status: SyncStatusType;
+  status: SyncStatus;
 }
 
 /**
  * Компонент для отображения статуса синхронизации
- * @param status - Текущий статус синхронизации
  */
 const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({ status }) => {
-  // Определяем стили и текст в зависимости от статуса
-  const getBadgeStyles = (status: SyncStatusType): string => {
+  // Определяем стили и содержимое в зависимости от статуса
+  const getStatusStyles = () => {
     switch (status) {
-      case "idle":
-        return "bg-slate-100 text-slate-800";
-      case "syncing":
-        return "bg-blue-100 text-blue-800";
       case "success":
-        return "bg-green-100 text-green-800";
+        return {
+          icon: "CheckCircle",
+          text: "Синхронизировано",
+          badgeClass: "bg-green-100 text-green-800 border-green-200"
+        };
       case "error":
-        return "bg-red-100 text-red-800";
+        return {
+          icon: "AlertTriangle",
+          text: "Ошибка синхронизации",
+          badgeClass: "bg-red-100 text-red-800 border-red-200"
+        };
+      case "syncing":
+        return {
+          icon: "RefreshCw",
+          text: "Синхронизация...",
+          badgeClass: "bg-blue-100 text-blue-800 border-blue-200"
+        };
+      case "idle":
       default:
-        return "bg-slate-100 text-slate-800";
+        return {
+          icon: "Clock",
+          text: "Не синхронизировано",
+          badgeClass: "bg-slate-100 text-slate-800 border-slate-200"
+        };
     }
   };
-
-  const getStatusText = (status: SyncStatusType): string => {
-    switch (status) {
-      case "idle":
-        return "Не синхронизировано";
-      case "syncing":
-        return "Синхронизация...";
-      case "success":
-        return "Синхронизировано";
-      case "error":
-        return "Ошибка синхронизации";
-      default:
-        return "Неизвестный статус";
-    }
-  };
-
+  
+  const { icon, text, badgeClass } = getStatusStyles();
+  
   return (
-    <Badge
-      variant="outline"
-      className={getBadgeStyles(status)}
-    >
-      {getStatusText(status)}
+    <Badge variant="outline" className={`gap-1 px-2 py-1 ${badgeClass}`}>
+      <Icon 
+        name={icon} 
+        className={`h-3.5 w-3.5 ${status === "syncing" ? "animate-spin" : ""}`} 
+      />
+      <span>{text}</span>
     </Badge>
   );
 };

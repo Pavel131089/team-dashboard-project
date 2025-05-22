@@ -1,81 +1,68 @@
 
-import { useState } from "react";
-import { SyncStatusType } from "../sync/SyncStatusBadge";
-
-/**
- * Тип для состояния синхронизации сущности
- */
-interface SyncState {
-  status: SyncStatusType;
-  count: number;
-}
-
-/**
- * Типы состояний синхронизации хранилища
- */
-interface SyncStatus {
-  users: SyncState;
-  projects: SyncState;
-}
+import { useState, useCallback } from "react";
+import { SyncState, EntitySyncState, SyncStatus } from "./useDataSync";
 
 /**
  * Хук для управления состоянием синхронизации
  */
-export const useSyncStatus = () => {
-  // Состояние синхронизации для разных типов данных
-  const [syncState, setSyncState] = useState<SyncStatus>({
-    users: { status: "idle", count: 0 },
-    projects: { status: "idle", count: 0 },
+export function useSyncStatus() {
+  // Начальное состояние
+  const [syncState, setSyncState] = useState<SyncState>({
+    users: { count: 0, status: "idle" },
+    projects: { count: 0, status: "idle" }
   });
 
   /**
-   * Обновляет статус синхронизации для сущности
+   * Обновляет состояние синхронизации для конкретной сущности
    */
-  const setSyncStatus = (
-    entityType: keyof SyncStatus,
-    status: SyncStatusType,
-    count?: number
-  ) => {
-    setSyncState((prev) => ({
+  const setSyncStatus = useCallback((entity: keyof SyncState, status: SyncStatus) => {
+    setSyncState(prev => ({
       ...prev,
-      [entityType]: { 
-        ...prev[entityType],
-        status,
-        ...(count !== undefined && { count }),
-      },
+      [entity]: {
+        ...prev[entity],
+        status
+      }
     }));
-  };
+  }, []);
 
   /**
-   * Устанавливает статус для всех сущностей
+   * Обновляет количество сущностей
    */
-  const setAllEntitiesStatus = (status: SyncStatusType) => {
-    setSyncState({
-      users: { status, count: syncState.users.count },
-      projects: { status, count: syncState.projects.count },
-    });
-  };
+  const setEntityCount = useCallback((entity: keyof SyncState, count: number) => {
+    setSyncState(prev => ({
+      ...prev,
+      [entity]: {
+        ...prev[entity],
+        count
+      }
+    }));
+  }, []);
 
   /**
-   * Определяет общее состояние синхронизации
+   * Получает общий статус синхронизации на основе статусов всех сущностей
    */
-  const getOverallStatus = (): SyncStatusType => {
-    if (syncState.users.status === "error" || syncState.projects.status === "error") {
+  const getOverallStatus = useCallback((): SyncStatus => {
+    const statuses = Object.values(syncState).map(entity => entity.status);
+    
+    if (statuses.includes("error")) {
       return "error";
     }
-    if (syncState.users.status === "syncing" || syncState.projects.status === "syncing") {
+    
+    if (statuses.includes("syncing")) {
       return "syncing";
     }
-    if (syncState.users.status === "success" || syncState.projects.status === "success") {
+    
+    if (statuses.every(status => status === "success")) {
       return "success";
     }
+    
     return "idle";
-  };
+  }, [syncState]);
 
   return {
     syncState,
     setSyncStatus,
-    setAllEntitiesStatus,
+    setEntityCount,
     getOverallStatus
   };
-};
+}

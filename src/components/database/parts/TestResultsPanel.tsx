@@ -2,62 +2,36 @@
 import React from "react";
 import TestResultItem from "./TestResultItem";
 
-/**
- * Тип для результатов тестирования
- */
-export interface TestResults {
-  write: boolean | null;
-  read: boolean | null;
-  update: boolean | null;
-  delete: boolean | null;
-  testData: any | null;
+interface TestResult {
+  name: string;
+  status: "success" | "error" | "pending";
+  message: string;
 }
 
-/**
- * Props для компонента отображения результатов тестов
- */
 interface TestResultsPanelProps {
-  /** Результаты тестов */
-  results: TestResults;
+  results: TestResult[];
 }
 
 /**
- * Компонент для отображения панели результатов тестирования
+ * Компонент для отображения панели с результатами тестов
  */
 const TestResultsPanel: React.FC<TestResultsPanelProps> = ({ results }) => {
-  // Не отображаем, если нет результатов тестов
-  const hasResults = results.write !== null || 
-                     results.read !== null || 
-                     results.update !== null || 
-                     results.delete !== null;
+  if (!results.length) {
+    return null;
+  }
   
-  if (!hasResults) return null;
-
   return (
-    <div className="mt-6 border rounded-lg p-4 bg-gray-50">
-      <h3 className="font-medium mb-3">Результаты тестирования:</h3>
-      <ul className="space-y-2">
-        <TestResultItem label="Запись данных" status={results.write} />
-        <TestResultItem label="Чтение данных" status={results.read} />
-        <TestResultItem label="Обновление данных" status={results.update} />
-        <TestResultItem label="Удаление данных" status={results.delete} />
-      </ul>
-
-      {results.testData && <TestDataDisplay data={results.testData} />}
-    </div>
-  );
-};
-
-/**
- * Компонент для отображения тестовых данных
- */
-const TestDataDisplay: React.FC<{ data: any }> = ({ data }) => {
-  return (
-    <div className="mt-4">
-      <h4 className="text-sm font-medium mb-2">Тестовые данные:</h4>
-      <pre className="bg-gray-100 p-3 rounded text-xs overflow-auto max-h-40">
-        {JSON.stringify(data, null, 2)}
-      </pre>
+    <div className="mt-4 space-y-3">
+      <h3 className="text-sm font-medium mb-2">Результаты тестирования:</h3>
+      
+      {results.map((result, index) => (
+        <TestResultItem
+          key={index}
+          name={result.name}
+          status={result.status}
+          message={result.message}
+        />
+      ))}
     </div>
   );
 };

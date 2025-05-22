@@ -33,7 +33,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
     return map;
   }, [projects]);
 
-  // Безопасно группируем задачи по проектам
+  // Правильно обрабатываем задачи, чтобы передать информацию о датах проекта
   const projectsWithTasks = useMemo(() => {
     // Проверяем, что tasks это массив
     if (!Array.isArray(tasks)) {
@@ -65,7 +65,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
 
         // Создаем запись для проекта, если ее еще нет
         if (!projectMap[projectId]) {
-          // Находим полную информацию о проекте из нашей карты
+          // Находим полную информацию о проекте из нашей карте
           const fullProject = projectsMap[projectId];
 
           projectMap[projectId] = {
@@ -76,8 +76,17 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
           };
         }
 
-        // Добавляем задачу в соответствующий проект
-        projectMap[projectId].tasks.push(task);
+        // Добавляем задачу в соответствующий проект с датами проекта
+        const projectDates = projectMap[projectId].project || {};
+
+        // Создаем задачу с информацией о проекте
+        const taskWithProjectInfo = {
+          ...task,
+          projectStartDate: projectDates.startDate || task.projectStartDate,
+          projectEndDate: projectDates.endDate || task.projectEndDate,
+        };
+
+        projectMap[projectId].tasks.push(taskWithProjectInfo);
       });
 
       // Преобразуем объект в массив для отображения
@@ -105,6 +114,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
     }
   };
 
+  // Правильно передаем задачи с информацией о проекте
   return (
     <div className="mt-6 lg:mt-0">
       <div className="flex items-center gap-2 mb-4">
@@ -130,12 +140,12 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                 </h3>
               </div>
 
-              {/* Блок с датами проекта - проверяем наличие полного объекта проекта */}
+              {/* Даты проекта */}
               <div className="flex flex-wrap gap-x-4 text-xs mb-3">
                 <div className="flex items-center gap-1">
                   <span className="font-medium">Начало:</span>
                   <span>
-                    {projectInfo.project && projectInfo.project.startDate
+                    {projectInfo.project?.startDate
                       ? formatDate(projectInfo.project.startDate)
                       : "Не указано"}
                   </span>
@@ -143,7 +153,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                 <div className="flex items-center gap-1">
                   <span className="font-medium">Окончание:</span>
                   <span>
-                    {projectInfo.project && projectInfo.project.endDate
+                    {projectInfo.project?.endDate
                       ? formatDate(projectInfo.project.endDate)
                       : "Не указано"}
                   </span>
@@ -167,7 +177,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                     }
                     task={{
                       ...task,
-                      // Добавляем явно данные о датах проекта
+                      // Явно передаем даты проекта в задачу
                       projectStartDate: projectInfo.project?.startDate,
                       projectEndDate: projectInfo.project?.endDate,
                     }}

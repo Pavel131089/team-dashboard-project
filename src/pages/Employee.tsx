@@ -52,14 +52,14 @@ const Employee: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Карточка с назначенными задачами */}
           <EmployeeTasksCard
-            tasks={assignedTasks}
+            tasks={assignedTasks || []}
             onUpdateProgress={handleUpdateTaskProgress}
             onAddComment={handleAddTaskComment}
           />
 
           {/* Секция с доступными задачами */}
           <AvailableTasksSection
-            tasks={availableTasks}
+            tasks={availableTasks || []}
             onTakeTask={handleTakeTask}
           />
         </div>

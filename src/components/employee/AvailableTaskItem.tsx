@@ -7,7 +7,7 @@ import Icon from "@/components/ui/icon";
 import { Task } from "@/types/project";
 
 interface AvailableTaskItemProps {
-  task: Task & { projectName: string };
+  task: Task & { projectName?: string };
   projectName: string;
   onTakeTask: () => void;
 }
@@ -18,7 +18,7 @@ const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
   onTakeTask 
 }) => {
   // Форматирование даты
-  const formatDate = (dateString: string | undefined) => {
+  const formatDate = (dateString: string | undefined | null) => {
     if (!dateString) return "Не указано";
     try {
       const date = new Date(dateString);
@@ -33,13 +33,13 @@ const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
       <CardContent className="pt-4">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="font-medium">{task.name}</h3>
+            <h3 className="font-medium">{task.name || "Без названия"}</h3>
             <p className="text-sm text-slate-600 line-clamp-2 mt-1">
               {task.description || "Нет описания"}
             </p>
           </div>
           <Badge variant="outline" className="ml-2">
-            {projectName}
+            {projectName || "Проект"}
           </Badge>
         </div>
         

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import "./App.css";
@@ -19,16 +20,21 @@ function App() {
   // Проверяем состояние сессии при загрузке приложения
   useEffect(() => {
     const checkSession = () => {
-      const session = sessionService.getCurrentSession();
-      if (session && session.isAuthenticated) {
-        // Определяем начальный маршрут на основе роли
-        if (session.role === "manager") {
-          setInitialRoute("/dashboard");
-        } else if (session.role === "employee") {
-          setInitialRoute("/employee");
+      try {
+        const session = sessionService.getCurrentSession();
+        if (session && session.isAuthenticated) {
+          // Определяем начальный маршрут на основе роли
+          if (session.role === "manager") {
+            setInitialRoute("/dashboard");
+          } else if (session.role === "employee") {
+            setInitialRoute("/employee");
+          }
         }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setSessionChecked(true);
       }
-      setSessionChecked(true);
     };
 
     checkSession();
@@ -39,7 +45,10 @@ function App() {
     if (sessionChecked && initialRoute) {
       // Проверяем, что текущий путь не совпадает с целевым,
       // чтобы избежать ненужных перенаправлений
-      if (window.location.pathname !== initialRoute) {
+      const currentPath = window.location.pathname;
+      if (currentPath !== initialRoute && 
+          currentPath === "/" || 
+          currentPath === "/login") {
         navigate(initialRoute);
       }
     }
@@ -52,7 +61,7 @@ function App() {
 
   return (
     <>
-      {/* Добавляем Toaster для уведомлений */}
+      {/* Определяем Toaster вне маршрутов */}
       <Toaster position="top-right" closeButton richColors />
 
       <Routes>

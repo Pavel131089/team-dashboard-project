@@ -271,24 +271,21 @@ export function useEmployeeData(navigate: NavigateFunction) {
     // после изменения состояния компонента
   }, [assignedTasks, availableTasks]);
 
-  // Обработчик принятия задачи в работу
+  // Обработчик для принятия задачи в работу
   const handleTakeTask = useCallback(
     (taskId: string, projectId: string) => {
       if (!user) {
-        console.error("Необходимо войти в систему");
         return false;
       }
 
       try {
         const project = projects.find((p) => p.id === projectId);
         if (!project) {
-          console.error("Проект не найден");
           return false;
         }
 
         const task = project.tasks.find((t) => t.id === taskId);
         if (!task) {
-          console.error("Задача не найдена");
           return false;
         }
 

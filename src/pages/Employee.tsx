@@ -62,14 +62,18 @@ const Employee: React.FC = () => {
   // Обработчик для принятия задачи с последующим уведомлением
   const handleTaskTake = useCallback(
     (taskId: string, projectId: string) => {
-      const success = handleTakeTask(taskId, projectId);
+      const result = handleTakeTask(taskId, projectId);
 
-      // Показываем уведомление после выполнения операции, не во время рендеринга
-      if (success) {
-        toast.success("Задача принята в работу");
-      } else {
-        toast.error("Не удалось принять задачу");
-      }
+      // Отложенное уведомление для предотвращения обновления состояния во время рендеринга
+      setTimeout(() => {
+        if (result) {
+          toast.success("Задача принята в работу");
+        } else {
+          toast.error("Не удалось принять задачу");
+        }
+      }, 0);
+
+      return result;
     },
     [handleTakeTask],
   );
@@ -77,14 +81,18 @@ const Employee: React.FC = () => {
   // Обработчик для обновления прогресса с последующим уведомлением
   const handleProgressUpdate = useCallback(
     (taskId: string, projectId: string, progress: number) => {
-      const success = handleUpdateTaskProgress(taskId, projectId, progress);
+      const result = handleUpdateTaskProgress(taskId, projectId, progress);
 
-      // Показываем уведомление после выполнения операции, не во время рендеринга
-      if (success) {
-        toast.success(`Прогресс обновлен: ${progress}%`);
-      } else {
-        toast.error("Не удалось обновить прогресс");
-      }
+      // Отложенное уведомление для предотвращения обновления состояния во время рендеринга
+      setTimeout(() => {
+        if (result) {
+          toast.success(`Прогресс обновлен: ${progress}%`);
+        } else {
+          toast.error("Не удалось обновить прогресс");
+        }
+      }, 0);
+
+      return result;
     },
     [handleUpdateTaskProgress],
   );
@@ -92,14 +100,18 @@ const Employee: React.FC = () => {
   // Обработчик для добавления комментария с последующим уведомлением
   const handleCommentAdd = useCallback(
     (taskId: string, projectId: string, comment: string) => {
-      const success = handleAddTaskComment(taskId, projectId, comment);
+      const result = handleAddTaskComment(taskId, projectId, comment);
 
-      // Показываем уведомление после выполнения операции, не во время рендеринга
-      if (success) {
-        toast.success("Комментарий добавлен");
-      } else {
-        toast.error("Не удалось добавить комментарий");
-      }
+      // Отложенное уведомление для предотвращения обновления состояния во время рендеринга
+      setTimeout(() => {
+        if (result) {
+          toast.success("Комментарий добавлен");
+        } else {
+          toast.error("Не удалось добавить комментарий");
+        }
+      }, 0);
+
+      return result;
     },
     [handleAddTaskComment],
   );

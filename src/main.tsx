@@ -1,13 +1,11 @@
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
-import { Toaster } from "sonner";
-
-// Инициализация дефолтных пользователей при запуске приложения
-import { userService } from "./services/auth/userService";
 import { fixProjectDates } from "./utils/storageUtils";
+import { userService } from "./services/auth/userService";
 
 // Инициализируем пользователей
 userService.initializeDefaultUsers();
@@ -23,7 +21,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
       <App />
-      <Toaster position="top-right" richColors />
     </BrowserRouter>
   </React.StrictMode>,
 );

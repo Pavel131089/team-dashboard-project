@@ -33,32 +33,45 @@ export const addCommentToTask = (
 };
 
 /**
- * Разбирает комментарий на дату и текст
- * @param comment Строка комментария
- * @returns Объект с датой и текстом комментария
+ * Парсит строку комментария в объект
+ * @param comment Строка или объект комментария
+ * @returns Объект с текстом и датой комментария
  */
-export const parseComment = (
-  comment: string,
-): { date: string; text: string } => {
-  const parts = comment.split("|");
-
-  if (parts.length < 2) {
-    return { date: "", text: comment };
+export function parseComment(comment: any): {
+  text: string;
+  date: string | null;
+} {
+  // Проверяем тип комментария
+  if (comment === null || comment === undefined) {
+    return { text: "", date: null };
   }
 
-  try {
-    const dateStr = parts[0];
-    const date = new Date(dateStr);
-    const formattedDate = date.toLocaleString();
-
-    return {
-      date: formattedDate,
-      text: parts.slice(1).join("|"),
-    };
-  } catch (error) {
-    return { date: "", text: comment };
+  // Если комментарий это строка
+  if (typeof comment === "string") {
+    return { text: comment, date: null };
   }
-};
+
+  // Если комментарий это объект
+  if (typeof comment === "object") {
+    try {
+      return {
+        // Получаем текст комментария, если есть
+        text:
+          comment.text ||
+          (typeof comment.toString === "function" ? comment.toString() : ""),
+
+        // Получаем и форматируем дату, если есть
+        date: comment.date ? new Date(comment.date).toLocaleString() : null,
+      };
+    } catch (error) {
+      console.error("Ошибка при парсинге комментария:", error);
+      return { text: "Ошибка отображения комментария", date: null };
+    }
+  }
+
+  // В остальных случаях
+  return { text: String(comment), date: null };
+}
 
 /**
  * Проверяет, есть ли у задачи комментарии

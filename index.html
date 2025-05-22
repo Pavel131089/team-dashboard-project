@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
   <head>
@@ -7,15 +6,56 @@
     <title>Система управления проектами</title>
     <meta name="description" content="Система управления проектами и задачами для команд" />
     
-    <!-- Предотвращение кэширования для отладки -->
+    <!-- Предотвращение кэширования -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     
-    <!-- Стили для экрана загрузки -->
+    <!-- Полифиллы для поддержки старых браузеров -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default,fetch,Object.assign,Array.from"></script>
+    
+    <!-- Статический контент, который отобразится даже если JavaScript не загрузится -->
     <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f9fafb;
+      }
+      
+      #static-content {
+        display: none;
+        text-align: center;
+        padding: 40px 20px;
+        max-width: 500px;
+        margin: 100px auto;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      
+      #static-content h1 {
+        color: #4f46e5;
+        margin-bottom: 20px;
+      }
+      
+      #static-content p {
+        color: #6b7280;
+        margin-bottom: 20px;
+      }
+      
+      #static-content .button {
+        display: inline-block;
+        background-color: #4f46e5;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: bold;
+      }
+      
       #initial-loader {
         display: flex;
         justify-content: center;
@@ -47,7 +87,11 @@
         display: none;
       }
       
-      .error-message {
+      #root:not(:empty) ~ #static-content {
+        display: none;
+      }
+      
+      #error-message {
         display: none;
         text-align: center;
         color: #ef4444;
@@ -56,15 +100,63 @@
         margin: 0 auto;
         padding: 20px;
       }
+      
+      /* Показать статический контент через 5 секунд, если React не загрузился */
+      @media (prefers-reduced-motion: no-preference) {
+        body.js-loading #static-content {
+          animation: showStatic 1s ease 5s forwards;
+        }
+        
+        @keyframes showStatic {
+          to {
+            display: block;
+          }
+        }
+      }
     </style>
       <meta name="pp-name" value="team-dashboard-project">
       <script src="https://cdn.poehali.dev/intertnal/js/pp-min-2.js"></script>
       <script src="https://cdn.poehali.dev/intertnal/js/route-min.js"></script>
   </head>
 
-  <body>
+  <body class="js-loading">
     <!-- Корневой элемент для React -->
     <div id="root"></div>
+    
+    <!-- Запасной статический контент -->
+    <div id="static-content">
+      <h1>Система управления проектами</h1>
+      <p>Добро пожаловать в систему управления проектами!</p>
+      <p>Для продолжения работы, выполните вход:</p>
+      
+      <form id="static-login-form" onsubmit="handleStaticLogin(event)" style="margin-bottom: 20px">
+        <div style="margin-bottom: 15px">
+          <label for="static-username" style="display: block; text-align: left; margin-bottom: 5px">Имя пользователя:</label>
+          <input type="text" id="static-username" name="username" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" value="manager">
+        </div>
+        
+        <div style="margin-bottom: 15px">
+          <label for="static-password" style="display: block; text-align: left; margin-bottom: 5px">Пароль:</label>
+          <input type="password" id="static-password" name="password" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" value="manager123">
+        </div>
+        
+        <div style="margin-bottom: 15px">
+          <label style="display: block; text-align: left; margin-bottom: 5px">Роль:</label>
+          <div style="display: flex; gap: 20px;">
+            <label style="display: flex; align-items: center;">
+              <input type="radio" name="role" value="manager" checked style="margin-right: 5px;"> Руководитель
+            </label>
+            <label style="display: flex; align-items: center;">
+              <input type="radio" name="role" value="employee" style="margin-right: 5px;"> Сотрудник
+            </label>
+          </div>
+        </div>
+        
+        <button type="submit" class="button">Войти в систему</button>
+      </form>
+      
+      <p style="font-size: 0.9em; color: #9ca3af;">Если вы видите эту страницу, возможно у вас возникли проблемы с загрузкой JavaScript.</p>
+    </div>
     
     <!-- Начальный загрузчик -->
     <div id="initial-loader">
@@ -83,24 +175,92 @@
       </button>
     </div>
     
-    <!-- Скрипт для проверки загрузки -->
+    <!-- Обработчик для статической формы входа -->
     <script>
-      // Устанавливаем таймер - если через 10 секунд приложение не загрузилось,
-      // показываем сообщение об ошибке
-      setTimeout(function() {
-        if (document.getElementById('initial-loader').style.display !== 'none') {
-          document.getElementById('initial-loader').style.display = 'none';
-          document.getElementById('error-message').style.display = 'block';
-          console.error('Приложение не загрузилось в течение 10 секунд');
+      // Функция для обработки статической формы входа
+      function handleStaticLogin(event) {
+        event.preventDefault();
+        try {
+          const username = document.getElementById('static-username').value;
+          const password = document.getElementById('static-password').value;
+          const roleInputs = document.getElementsByName('role');
+          let role = 'manager';
+          
+          for (let i = 0; i < roleInputs.length; i++) {
+            if (roleInputs[i].checked) {
+              role = roleInputs[i].value;
+              break;
+            }
+          }
+          
+          // Создаем объект пользователя для локального хранилища
+          const user = {
+            id: role === 'manager' ? 'default-manager' : 'default-employee',
+            name: role === 'manager' ? 'Менеджер' : 'Сотрудник',
+            username: username,
+            role: role,
+            isAuthenticated: true,
+            loginTime: new Date().toISOString()
+          };
+          
+          // Сохраняем в localStorage
+          localStorage.setItem('user', JSON.stringify(user));
+          
+          // Перенаправляем пользователя
+          window.location.href = role === 'manager' ? '/dashboard' : '/employee';
+        } catch (error) {
+          alert('Произошла ошибка при входе: ' + error.message);
+          console.error('Ошибка входа:', error);
         }
-      }, 10000);
+      }
+      
+      // Устанавливаем таймер - если через 8 секунд React приложение не загрузилось,
+      // показываем статический контент и убираем загрузчик
+      setTimeout(function() {
+        const root = document.getElementById('root');
+        const loader = document.getElementById('initial-loader');
+        const staticContent = document.getElementById('static-content');
+        
+        if (root && (!root.children.length || root.innerHTML === '')) {
+          if (loader) loader.style.display = 'none';
+          if (staticContent) staticContent.style.display = 'block';
+          console.log('React не загрузился, показываем статический контент');
+        }
+      }, 8000);
+      
+      // Убираем класс js-loading когда документ загружен
+      document.addEventListener('DOMContentLoaded', function() {
+        document.body.classList.remove('js-loading');
+      });
       
       // Отлавливаем глобальные ошибки загрузки
       window.addEventListener('error', function(event) {
         console.error('Глобальная ошибка загрузки:', event.error);
-        document.getElementById('initial-loader').style.display = 'none';
-        document.getElementById('error-message').style.display = 'block';
+        const loader = document.getElementById('initial-loader');
+        const errorMessage = document.getElementById('error-message');
+        
+        if (loader) loader.style.display = 'none';
+        if (errorMessage) errorMessage.style.display = 'block';
       }, true);
+    </script>
+    
+    <!-- Базовый скрипт для проверки совместимости -->
+    <script>
+      // Проверка базовой совместимости с современным JavaScript
+      try {
+        // Проверяем поддержку современных функций
+        const testPromise = Promise.resolve(1);
+        const testArray = [1, 2, 3].map(x => x * 2);
+        const testObject = { ...{ a: 1 }, b: 2 };
+        
+        console.log('Базовая проверка JavaScript пройдена');
+      } catch (error) {
+        console.error('Ваш браузер не поддерживает современный JavaScript:', error);
+        
+        // Показываем статический контент, если JS не поддерживается
+        document.getElementById('initial-loader').style.display = 'none';
+        document.getElementById('static-content').style.display = 'block';
+      }
     </script>
     
     <!-- Основной скрипт приложения -->

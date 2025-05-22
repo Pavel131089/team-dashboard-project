@@ -20,28 +20,35 @@ export default defineConfig({
     port: 5173,
     allowedHosts: true,
     hmr: {
-      overlay: false // Отключаем overlay ошибок - будем показывать свои сообщения
+      overlay: false // Отключает наложение ошибок, чтобы показывать только ошибки в консоли
     }
   },
   build: {
-    // Выводим больше информации при сборке
-    sourcemap: true,
-    // Настройки оптимизации
     rollupOptions: {
       output: {
-        // Разделяем код на чанки
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
+          react: ['react', 'react-dom', 'react-router-dom'],
           ui: [
-            '@/components/ui/button', 
-            '@/components/ui/card',
-            '@/components/ui/toast'
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-label',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-tabs',
+            'class-variance-authority'
           ]
         }
       }
     },
-    // Настройки для улучшения совместимости
-    target: 'es2015', // Целевая версия ES для более широкой совместимости
-    outDir: 'dist', // Явно указываем директорию сборки
-  }
+    target: 'es2015', // Совместимость со старыми браузерами
+    sourcemap: true, // Включаем sourcemap для отладки
+    minify: 'terser', // Используем terser для минификации
+    cssMinify: true, // Минификация CSS
+    assetsInlineLimit: 4096, // Инлайним маленькие ассеты
+    outDir: 'dist', // Директория для сборки
+    emptyOutDir: true, // Очищаем директорию перед сборкой
+    manifest: true, // Создаем manifest.json
+    ssrManifest: false, // Не создаем SSR manifest
+    reportCompressedSize: false, // Отключаем отчет о размере сжатых файлов
+    chunkSizeWarningLimit: 500 // Увеличиваем лимит предупреждения о размере чанка
+  },
+  base: '/', // Базовый путь для всех ассетов
 });

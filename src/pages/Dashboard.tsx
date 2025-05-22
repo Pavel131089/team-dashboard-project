@@ -41,16 +41,31 @@ const Dashboard: React.FC = () => {
   // Если данные загружаются, показываем заглушку
   if (isLoading) {
     return (
-      <div className="p-4 space-y-4">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-4 gap-4">
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-full" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Загрузка данных...</p>
         </div>
-        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  // В случае ошибки показываем сообщение
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center p-6 max-w-md">
+          <h2 className="text-xl mb-4">Доступ запрещен</h2>
+          <p className="mb-4">
+            У вас нет доступа к этой странице или произошла ошибка авторизации.
+          </p>
+          <button
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+            onClick={() => navigate("/login")}
+          >
+            Вернуться на страницу входа
+          </button>
+        </div>
       </div>
     );
   }

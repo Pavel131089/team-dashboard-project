@@ -65,12 +65,11 @@ const Employee: React.FC = () => {
     );
   }
 
-  // Безопасно получаем массивы задач и проектов
+  // Безопасно получаем массивы задач
   const safeAssignedTasks = Array.isArray(assignedTasks) ? assignedTasks : [];
   const safeAvailableTasks = Array.isArray(availableTasks)
     ? availableTasks
     : [];
-  const safeProjects = Array.isArray(projects) ? projects : [];
 
   return (
     <EmployeeLayout userName={user.name || ""} onLogout={handleLogout}>
@@ -87,7 +86,7 @@ const Employee: React.FC = () => {
           <AvailableTasksSection
             tasks={safeAvailableTasks}
             onTakeTask={handleTakeTask}
-            projects={safeProjects} // Передаем массив проектов
+            projects={projects} // Передаем все проекты для отображения дополнительной информации
           />
         </div>
       </EmployeeContent>

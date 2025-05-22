@@ -50,3 +50,39 @@ export const processProgressChange = (task: any, newProgress: number): any => {
 
   return updatedTask;
 };
+
+/**
+ * Рассчитывает количество дней до дедлайна
+ * @param endDateStr Дата дедлайна в ISO формате
+ * @returns Количество дней до дедлайна, отрицательное число если дедлайн прошел
+ */
+export const getDaysUntilDeadline = (endDateStr?: string): number | null => {
+  if (!endDateStr) return null;
+
+  try {
+    const endDate = new Date(endDateStr);
+    if (isNaN(endDate.getTime())) return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const timeDiff = endDate.getTime() - today.getTime();
+    return Math.ceil(timeDiff / (1000 * 3600 * 24));
+  } catch (error) {
+    console.error("Ошибка при расчете дней до дедлайна:", error);
+    return null;
+  }
+};
+
+/**
+ * Возвращает CSS класс для отображения статуса дедлайна
+ * @param daysLeft Количество дней до дедлайна
+ * @returns CSS класс для отображения статуса
+ */
+export const getDeadlineStatusClass = (daysLeft: number | null): string => {
+  if (daysLeft === null) return "text-slate-500";
+  if (daysLeft < 0) return "text-red-600";
+  if (daysLeft <= 3) return "text-orange-500";
+  if (daysLeft <= 7) return "text-yellow-600";
+  return "text-green-600";
+};

@@ -1,15 +1,10 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Task } from "@/types/project";
 import Icon from "@/components/ui/icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,8 +30,8 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   onUpdateProgress,
   onAddComment,
 }) => {
-  const [activeTask, setActiveTask] = useState<string | null>(null);
   const [commentText, setCommentText] = useState<string>("");
+  const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
 
   // Убедимся, что tasks определен и является массивом
   const safeTasks = Array.isArray(tasks) ? tasks : [];
@@ -46,6 +41,14 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
   const completedTasks = safeTasks.filter(
     (task) => (task.progress || 0) === 100,
   );
+
+  // Функция для тоггла раскрытия/закрытия задачи
+  const toggleTaskExpanded = (taskId: string) => {
+    setExpandedTasks((prev) => ({
+      ...prev,
+      [taskId]: !prev[taskId],
+    }));
+  };
 
   // Обработчик отправки комментария
   const handleSubmitComment = (taskId: string, projectId: string) => {
@@ -78,7 +81,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     > = {};
 
     safeTasks.forEach((task) => {
-      if (!task || !task.projectId) return;
+      if (!task.projectId) return;
 
       if (!projectMap[task.projectId]) {
         projectMap[task.projectId] = {
@@ -96,7 +99,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
 
   const projectGroups = groupTasksByProject();
 
-  // Компонент для отображения проекта
+  // Компонент для отображения проекта с задачами
   const ProjectGroup = ({
     projectInfo,
   }: {
@@ -109,7 +112,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     // Вычисляем прогресс проекта
     const projectProgress = Math.round(
       projectInfo.tasks.reduce((sum, task) => sum + (task.progress || 0), 0) /
-        Math.max(projectInfo.tasks.length, 1),
+        Math.max(projectInfo.tasks.length, 1)
     );
 
     return (
@@ -122,145 +125,180 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
             </h3>
             <span className="text-sm">{projectProgress}% выполнено</span>
           </div>
-          <Progress value={projectProgress} className="h-1" />
+          <Progress 
+            value={projectProgress} 
+            className="h-1" 
+            indicatorClassName={getProgressColorClass(projectProgress)}
+          />
         </div>
         <div className="p-3">
           {projectInfo.tasks.map((task) => (
-            <TaskItem key={task.id || `task-${Math.random()}`} task={task} />
+            <TaskItem 
+              key={task.id || `task-${Math.random().toString(36).substring(2, 11)}`} 
+              task={task} 
+            />
           ))}
         </div>
       </div>
     );
   };
 
-  // Компонент для отображения одной задачи
+  // Компонент для отображения задачи
   const TaskItem = ({ task }: { task: TaskWithProject }) => {
-    // Проверяем, что задача существует и имеет id
-    if (!task) {
-      return null;
-    }
-
     // Генерируем уникальный идентификатор для задачи, если его нет
-    const taskId = task.id || `task-${Math.random()}`;
-
+    const taskId = task.id || `task-${Math.random().toString(36).substring(2, 11)}`;
+    const isExpanded = expandedTasks[taskId] || false;
+    
     // Безопасно получаем progress
     const progress = typeof task.progress === "number" ? task.progress : 0;
 
     return (
-      <AccordionItem value={taskId} className="border rounded-md mb-3 bg-white">
-        <AccordionTrigger className="px-4 py-3 hover:no-underline">
-          <div className="flex flex-col items-start w-full text-left">
-            <div className="flex justify-between w-full">
-              <div className="font-medium">{task.name || "Без названия"}</div>
-              <Badge variant="outline" className="ml-2">
-                {task.projectName || "Проект"}
-              </Badge>
-            </div>
-            <Progress value={progress} className="h-2 mt-2 w-full" />
+      <div className="border rounded-md mb-3 bg-white">
+        {/* Заголовок задачи (всегда видимый) */}
+        <div 
+          className="px-4 py-3 cursor-pointer flex flex-col"
+          onClick={() => toggleTaskExpanded(taskId)}
+        >
+          <div className="flex justify-between w-full">
+            <div className="font-medium">{task.name || "Без названия"}</div>
+            <Badge variant="outline" className="ml-2">
+              {task.projectName || "Проект"}
+            </Badge>
           </div>
-        </AccordionTrigger>
-        <AccordionContent className="px-4 pb-4">
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-slate-600 mb-2">
-                {task.description || "Без описания"}
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
-                <div className="flex items-center gap-1">
-                  <Icon name="Calendar" className="h-3 w-3" />
-                  <span>Начало: {formatDate(task.startDate)}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Icon name="CalendarClock" className="h-3 w-3" />
-                  <span>Дедлайн: {formatDate(task.endDate)}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Icon name="Clock" className="h-3 w-3" />
-                  <span>Время: {task.estimatedTime || 0} ч.</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Icon name="DollarSign" className="h-3 w-3" />
-                  <span>
-                    Цена:{" "}
-                    {typeof task.price === "number"
-                      ? task.price.toLocaleString()
-                      : 0}{" "}
-                    ₽
-                  </span>
-                </div>
-              </div>
-            </div>
+          <div className="flex items-center gap-2 w-full mt-2">
+            <Progress 
+              value={progress} 
+              className="h-2 w-full" 
+              indicatorClassName={getProgressColorClass(progress)}
+            />
+            <span className="text-xs whitespace-nowrap">{progress}%</span>
+            <Icon 
+              name={isExpanded ? "ChevronUp" : "ChevronDown"} 
+              className="h-4 w-4 ml-1" 
+            />
+          </div>
+        </div>
 
-            <div>
-              <p className="text-sm font-medium mb-2">Прогресс выполнения</p>
-              <div className="flex items-center space-x-2 mb-3">
-                <span className="text-sm">{progress}%</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {[0, 25, 50, 75, 100].map((value) => (
-                  <Button
-                    key={value}
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      onUpdateProgress(taskId, task.projectId, value)
-                    }
-                    className={
-                      progress === value
-                        ? "bg-primary text-primary-foreground"
-                        : ""
-                    }
-                  >
-                    {value}%
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm font-medium mb-2">Комментарии</p>
-              <div className="bg-slate-50 p-3 rounded-md mb-3 max-h-40 overflow-y-auto">
-                {task.comments &&
-                Array.isArray(task.comments) &&
-                task.comments.length > 0 ? (
-                  <div className="space-y-2">
-                    {task.comments.map((comment, index) => (
-                      <div
-                        key={comment?.id || index}
-                        className="text-sm border-l-2 border-slate-300 pl-2"
-                      >
-                        <p className="text-xs text-slate-500">
-                          {comment?.author || "Система"} •{" "}
-                          {formatDate(comment?.date)}
-                        </p>
-                        <p>{comment?.text || ""}</p>
-                      </div>
-                    ))}
+        {/* Развернутая информация о задаче */}
+        {isExpanded && (
+          <div className="px-4 pb-4 border-t">
+            <div className="space-y-4 pt-3">
+              <div>
+                <p className="text-sm text-slate-600 mb-2">
+                  {task.description || "Без описания"}
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
+                  <div className="flex items-center gap-1">
+                    <Icon name="Calendar" className="h-3 w-3" />
+                    <span>Начало: {formatDate(task.startDate)}</span>
                   </div>
-                ) : (
-                  <p className="text-sm text-slate-500">Нет комментариев</p>
-                )}
+                  <div className="flex items-center gap-1">
+                    <Icon name="CalendarClock" className="h-3 w-3" />
+                    <span>Дедлайн: {formatDate(task.endDate)}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Icon name="Clock" className="h-3 w-3" />
+                    <span>Время: {task.estimatedTime || 0} ч.</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Icon name="CircleDollarSign" className="h-3 w-3" />
+                    <span>Цена: {typeof task.price === "number" ? task.price.toLocaleString() : 0} ₽</span>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Textarea
-                  placeholder="Добавить комментарий..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  className="w-full h-20 resize-none"
-                />
-                <Button
-                  onClick={() => handleSubmitComment(taskId, task.projectId)}
-                  disabled={!commentText.trim()}
-                  size="sm"
-                  className="w-full"
-                >
-                  Отправить
-                </Button>
+
+              <div>
+                <p className="text-sm font-medium mb-2">Прогресс выполнения</p>
+                <div className="flex flex-wrap gap-2">
+                  {[0, 25, 50, 75, 100].map((value) => (
+                    <Button
+                      key={value}
+                      variant={progress === value ? "default" : "outline"}
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUpdateProgress(taskId, task.projectId, value);
+                      }}
+                    >
+                      {value}%
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium mb-2">Комментарии</p>
+                <div className="bg-slate-50 p-3 rounded-md mb-3 max-h-40 overflow-y-auto">
+                  {Array.isArray(task.comments) && task.comments.length > 0 ? (
+                    <div className="space-y-2">
+                      {task.comments.map((comment, index) => (
+                        <div
+                          key={index}
+                          className="text-sm border-l-2 border-slate-300 pl-2"
+                        >
+                          <p className="text-xs text-slate-500">
+                            {comment?.author || "Система"} •{" "}
+                            {formatDate(comment?.date)}
+                          </p>
+                          <p>{comment?.text || ""}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">Нет комментариев</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="Добавить комментарий..."
+                    value={commentText}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    className="w-full h-20 resize-none"
+                  />
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSubmitComment(taskId, task.projectId);
+                    }}
+                    disabled={!commentText.trim()}
+                    size="sm"
+                    className="w-full"
+                  >
+                    Отправить
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        </AccordionContent>
-      </AccordionItem>
+        )}
+      </div>
+    );
+  };
+
+  // Отображение списка задач
+  const renderTaskList = (taskList: TaskWithProject[]) => {
+    if (taskList.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <Icon
+            name="ClipboardList"
+            className="mx-auto h-12 w-12 text-slate-300"
+          />
+          <p className="mt-2 text-slate-500">Нет задач</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {taskList.map((task) => (
+          <TaskItem 
+            key={task.id || `task-${Math.random().toString(36).substring(2, 11)}`} 
+            task={task} 
+          />
+        ))}
+      </div>
     );
   };
 
@@ -270,8 +308,12 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
         <CardTitle className="text-xl">Мои задачи</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="active">
+        <Tabs defaultValue="projects">
           <TabsList className="w-full mb-4">
+            <TabsTrigger value="projects" className="flex-1">
+              По проектам{" "}
+              <Badge className="ml-2 bg-primary">{projectGroups.length}</Badge>
+            </TabsTrigger>
             <TabsTrigger value="active" className="flex-1">
               Активные{" "}
               <Badge className="ml-2 bg-primary">{activeTasks.length}</Badge>
@@ -282,61 +324,7 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                 {completedTasks.length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="projects" className="flex-1">
-              По проектам{" "}
-              <Badge className="ml-2 bg-primary">{projectGroups.length}</Badge>
-            </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="active">
-            {activeTasks.length === 0 ? (
-              <div className="text-center py-8">
-                <Icon
-                  name="ClipboardList"
-                  className="mx-auto h-12 w-12 text-slate-300"
-                />
-                <p className="mt-2 text-slate-500">У вас нет активных задач</p>
-              </div>
-            ) : (
-              <Accordion
-                type="single"
-                collapsible
-                value={activeTask || undefined}
-                onValueChange={(value) => setActiveTask(value)}
-              >
-                {activeTasks.map((task) => {
-                  const safeTaskId = task.id || `task-${Math.random()}`;
-                  return <TaskItem key={safeTaskId} task={task} />;
-                })}
-              </Accordion>
-            )}
-          </TabsContent>
-
-          <TabsContent value="completed">
-            {completedTasks.length === 0 ? (
-              <div className="text-center py-8">
-                <Icon
-                  name="CheckCircle"
-                  className="mx-auto h-12 w-12 text-slate-300"
-                />
-                <p className="mt-2 text-slate-500">
-                  У вас нет завершенных задач
-                </p>
-              </div>
-            ) : (
-              <Accordion
-                type="single"
-                collapsible
-                value={activeTask || undefined}
-                onValueChange={(value) => setActiveTask(value)}
-              >
-                {completedTasks.map((task) => {
-                  const safeTaskId = task.id || `task-${Math.random()}`;
-                  return <TaskItem key={safeTaskId} task={task} />;
-                })}
-              </Accordion>
-            )}
-          </TabsContent>
 
           <TabsContent value="projects">
             {projectGroups.length === 0 ? (
@@ -353,12 +341,20 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
               <div className="space-y-2">
                 {projectGroups.map((projectInfo) => (
                   <ProjectGroup
-                    key={projectInfo.projectId || `project-${Math.random()}`}
+                    key={projectInfo.projectId || `project-${Math.random().toString(36).substring(2, 11)}`}
                     projectInfo={projectInfo}
                   />
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="active">
+            {renderTaskList(activeTasks)}
+          </TabsContent>
+
+          <TabsContent value="completed">
+            {renderTaskList(completedTasks)}
           </TabsContent>
         </Tabs>
       </CardContent>

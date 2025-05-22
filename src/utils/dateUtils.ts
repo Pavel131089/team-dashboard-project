@@ -3,14 +3,12 @@
  * @param dateString строка с датой в формате ISO
  * @returns отформатированная дата
  */
-export function formatDate(dateString: string | undefined | null): string {
-  if (!dateString) return "";
+export function formatDate(dateString?: string | null): string {
+  if (!dateString) return "Не указано";
 
   try {
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      return "Неверная дата";
-    }
+    if (isNaN(date.getTime())) return "Неверная дата";
 
     return new Intl.DateTimeFormat("ru-RU", {
       day: "2-digit",
@@ -28,11 +26,13 @@ export function formatDate(dateString: string | undefined | null): string {
  * @param dateString строка с датой в формате ISO
  * @returns true, если дата сегодняшняя
  */
-export function isToday(dateString: string): boolean {
+export function isToday(dateString?: string | null): boolean {
   if (!dateString) return false;
 
   try {
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return false;
+
     const today = new Date();
 
     return (
@@ -51,11 +51,13 @@ export function isToday(dateString: string): boolean {
  * @param dateString строка с датой в формате ISO
  * @returns true, если дата в прошлом
  */
-export function isOverdue(dateString: string): boolean {
+export function isOverdue(dateString?: string | null): boolean {
   if (!dateString) return false;
 
   try {
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return false;
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -63,6 +65,66 @@ export function isOverdue(dateString: string): boolean {
   } catch (error) {
     console.error("Ошибка проверки просроченной даты:", error);
     return false;
+  }
+}
+
+/**
+ * Разбирает комментарий и извлекает дату и текст
+ * @param comment комментарий в виде строки или объекта
+ * @returns объект с датой и текстом комментария
+ */
+export function parseComment(comment: any): {
+  date: string | null;
+  text: string;
+} {
+  if (!comment) return { date: null, text: "" };
+
+  try {
+    // Если комментарий это строка
+    if (typeof comment === "string") {
+      return { date: null, text: comment };
+    }
+
+    // Если комментарий это объект с полями date и text
+    if (typeof comment === "object") {
+      const date = comment.date ? formatDate(comment.date) : null;
+      const text = comment.text || "";
+      return { date, text };
+    }
+
+    return { date: null, text: String(comment) };
+  } catch (error) {
+    console.error("Ошибка при разборе комментария:", error);
+    return { date: null, text: String(comment) };
+  }
+}
+
+/**
+ * Форматирует дату в формат "осталось X дней" или "просрочено X дней"
+ * @param dateString строка с датой в формате ISO
+ * @returns форматированная строка
+ */
+export function formatRemainingTime(dateString?: string | null): string {
+  if (!dateString) return "Срок не указан";
+
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Неверная дата";
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const timeDiff = date.getTime() - today.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+    if (daysDiff === 0) return "Сегодня";
+    if (daysDiff === 1) return "Завтра";
+    if (daysDiff > 1) return `Осталось ${daysDiff} дн.`;
+    if (daysDiff === -1) return "Вчера";
+    return `Просрочено ${Math.abs(daysDiff)} дн.`;
+  } catch (error) {
+    console.error("Ошибка форматирования оставшегося времени:", error);
+    return "Ошибка даты";
   }
 }
 

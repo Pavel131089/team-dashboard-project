@@ -1,13 +1,10 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { NavigateFunction } from "react-router-dom";
-import { Project, Task, User, TaskComment } from "@/types/project";
-import {
-  getProjectsFromStorage,
-  saveProjectsToStorage,
-} from "@/utils/storageUtils";
+import { Project, Task, User } from "@/types/project";
 import { toast } from "sonner";
 
-// Расширенный интерфейс задачи с информацией о проекте
+// Интерфейс для задачи с информацией о проекте
 interface TaskWithProject extends Task {
   projectId: string;
   projectName: string;
@@ -23,17 +20,90 @@ export function useEmployeeData(navigate: NavigateFunction) {
   const [availableTasks, setAvailableTasks] = useState<TaskWithProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Загрузка данных пользователя и проектов
-  useEffect(() => {
-    loadUserAndProjects();
-  }, [loadUserAndProjects]); // Добавляем зависимость
+  // Перенаправление на страницу входа - выносим отдельно, чтобы избежать циклической зависимости
+  const redirectToLogin = useCallback((message?: string) => {
+    if (message) {
+      sessionStorage.setItem('auth_message', message);
+    }
+    localStorage.removeItem('user');
+    navigate('/login');
+  }, [navigate]);
 
-  // Загружаем пользователя и проекты из хранилища
-  const loadUserAndProjects = useCallback(async () => {
+  // Обработка проектов для получения задач
+  const processProjects = useCallback((projectsList: Project[], userData: User): { 
+    userTasks: TaskWithProject[], 
+    otherTasks: TaskWithProject[] 
+  } => {
+    const userTasks: TaskWithProject[] = [];
+    const otherTasks: TaskWithProject[] = [];
+
+    // Проверяем, что projectsList - массив
+    if (!Array.isArray(projectsList)) {
+      console.error('projectsList не является массивом');
+      return { userTasks, otherTasks };
+    }
+
+    try {
+      projectsList.forEach(project => {
+        // Проверяем, что project существует и tasks - массив
+        if (!project || !Array.isArray(project.tasks)) {
+          return;
+        }
+
+        project.tasks.forEach(task => {
+          // Проверяем, что task существует
+          if (!task) return;
+
+          // Создаем копию задачи с дополнительными полями
+          const taskWithProject: TaskWithProject = {
+            ...task,
+            projectId: project.id,
+            projectName: project.name || 'Без названия'
+          };
+
+          // Проверка назначения задачи текущему пользователю
+          let isAssigned = false;
+
+          // Проверяем по ID пользователя
+          if (task.assignedTo && userData.id && task.assignedTo === userData.id) {
+            isAssigned = true;
+          }
+          
+          // Проверяем по имени, имени пользователя или email
+          if (!isAssigned && Array.isArray(task.assignedToNames)) {
+            isAssigned = task.assignedToNames.some(name => {
+              if (!name) return false;
+              
+              const nameStr = String(name).toLowerCase();
+              const userName = userData.name ? String(userData.name).toLowerCase() : '';
+              const userUsername = userData.username ? String(userData.username).toLowerCase() : '';
+              const userEmail = userData.email ? String(userData.email).toLowerCase() : '';
+              
+              return nameStr === userName || nameStr === userUsername || nameStr === userEmail;
+            });
+          }
+
+          if (isAssigned) {
+            userTasks.push(taskWithProject);
+          } else if (!task.assignedTo && (!task.assignedToNames || task.assignedToNames.length === 0)) {
+            // Если задача не назначена никому, она доступна
+            otherTasks.push(taskWithProject);
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Ошибка при обработке проектов:', error);
+    }
+
+    return { userTasks, otherTasks };
+  }, []);
+
+  // Загрузка пользователя и проектов - теперь без useCallback, чтобы избежать циклической зависимости
+  const loadUserAndProjects = () => {
     setIsLoading(true);
     try {
       // Загрузка пользователя из localStorage
-      const userJson = localStorage.getItem("user");
+      const userJson = localStorage.getItem('user');
       if (!userJson) {
         redirectToLogin();
         return;
@@ -43,19 +113,19 @@ export function useEmployeeData(navigate: NavigateFunction) {
       try {
         userData = JSON.parse(userJson);
       } catch (error) {
-        console.error("Ошибка при парсинге данных пользователя:", error);
-        redirectToLogin("Проблема с данными пользователя");
+        console.error('Ошибка при парсинге данных пользователя:', error);
+        redirectToLogin('Проблема с данными пользователя');
         return;
       }
 
       if (!userData || !userData.isAuthenticated) {
-        redirectToLogin("Сессия истекла. Пожалуйста, войдите снова.");
+        redirectToLogin('Сессия истекла. Пожалуйста, войдите снова.');
         return;
       }
 
       // Проверяем роль пользователя
-      if (userData.role === "manager") {
-        navigate("/dashboard");
+      if (userData.role === 'manager') {
+        navigate('/dashboard');
         return;
       }
 
@@ -64,19 +134,19 @@ export function useEmployeeData(navigate: NavigateFunction) {
       // Загрузка проектов
       let projectsList = [];
       try {
-        const projectsData = localStorage.getItem("projects");
+        const projectsData = localStorage.getItem('projects');
         projectsList = projectsData ? JSON.parse(projectsData) : [];
-
+        
         // Проверяем, что projectsList действительно массив
         if (!Array.isArray(projectsList)) {
-          console.error("Данные проектов не являются массивом");
+          console.error('Данные проектов не являются массивом');
           projectsList = [];
         }
       } catch (error) {
-        console.error("Ошибка при загрузке проектов:", error);
+        console.error('Ошибка при загрузке проектов:', error);
         projectsList = [];
       }
-
+      
       setProjects(projectsList);
 
       // Обработка проектов для получения задач
@@ -84,296 +154,209 @@ export function useEmployeeData(navigate: NavigateFunction) {
       setAssignedTasks(processedTasks.userTasks);
       setAvailableTasks(processedTasks.otherTasks);
     } catch (error) {
-      console.error("Ошибка при загрузке данных:", error);
-      toast.error("Произошла ошибка при загрузке данных");
-      redirectToLogin("Ошибка загрузки данных. Пожалуйста, войдите снова.");
+      console.error('Ошибка при загрузке данных:', error);
+      toast.error('Произошла ошибка при загрузке данных');
+      redirectToLogin('Ошибка загрузки данных. Пожалуйста, войдите снова.');
     } finally {
       setIsLoading(false);
     }
-  }, [navigate, redirectToLogin]); // Включаем только внешние зависимости
+  };
 
-  // Перенаправление на страницу входа
-  const redirectToLogin = useCallback(
-    (message?: string) => {
-      if (message) {
-        sessionStorage.setItem("auth_message", message);
-      }
-      localStorage.removeItem("user");
-      navigate("/login");
-    },
-    [navigate],
-  );
+  // Загрузка данных пользователя и проектов при монтировании компонента
+  useEffect(() => {
+    loadUserAndProjects();
+  }, []);
 
-  // Выход из системы
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem("user");
-    navigate("/login");
-  }, [navigate]);
-
-  // Обработка проектов для получения задач
-  const processProjects = useCallback(
-    (
-      projectsList: Project[],
-      userData: User,
-    ): {
-      userTasks: TaskWithProject[];
-      otherTasks: TaskWithProject[];
-    } => {
-      const userTasks: TaskWithProject[] = [];
-      const otherTasks: TaskWithProject[] = [];
-
-      // Проверяем, что projectsList - массив
-      if (!Array.isArray(projectsList)) {
-        console.error("projectsList не является массивом");
-        return { userTasks, otherTasks };
+  // Обработчик обновления прогресса задачи
+  const handleUpdateTaskProgress = useCallback((taskId: string, projectId: string, progress: number) => {
+    try {
+      // Находим проект и задачу
+      const project = projects.find(p => p.id === projectId);
+      if (!project) {
+        console.error(`Проект с ID ${projectId} не найден`);
+        return false;
       }
 
-      try {
-        projectsList.forEach((project) => {
-          // Проверяем, что project существует и tasks - массив
-          if (!project || !Array.isArray(project.tasks)) {
-            return;
-          }
-
-          project.tasks.forEach((task) => {
-            // Проверяем, что task существует
-            if (!task) return;
-
-            // Создаем копию задачи с дополнительными полями
-            const taskWithProject: TaskWithProject = {
-              ...task,
-              projectId: project.id,
-              projectName: project.name || "Без названия",
-            };
-
-            // Проверка назначения задачи текущему пользователю
-            let isAssigned = false;
-
-            // Проверяем по ID пользователя
-            if (
-              task.assignedTo &&
-              userData.id &&
-              task.assignedTo === userData.id
-            ) {
-              isAssigned = true;
-            }
-
-            // Проверяем по имени, имени пользователя или email
-            if (!isAssigned && Array.isArray(task.assignedToNames)) {
-              isAssigned = task.assignedToNames.some((name) => {
-                if (!name) return false;
-
-                const nameStr = String(name).toLowerCase();
-                const userName = userData.name
-                  ? String(userData.name).toLowerCase()
-                  : "";
-                const userUsername = userData.username
-                  ? String(userData.username).toLowerCase()
-                  : "";
-                const userEmail = userData.email
-                  ? String(userData.email).toLowerCase()
-                  : "";
-
-                return (
-                  nameStr === userName ||
-                  nameStr === userUsername ||
-                  nameStr === userEmail
-                );
-              });
-            }
-
-            if (isAssigned) {
-              userTasks.push(taskWithProject);
-            } else if (
-              !task.assignedTo &&
-              (!task.assignedToNames || task.assignedToNames.length === 0)
-            ) {
-              // Если задача не назначена никому, она доступна
-              otherTasks.push(taskWithProject);
-            }
-          });
-        });
-      } catch (error) {
-        console.error("Ошибка при обработке проектов:", error);
+      const task = project.tasks.find(t => t.id === taskId);
+      if (!task) {
+        console.error(`Задача с ID ${taskId} не найдена`);
+        return false;
       }
 
-      return { userTasks, otherTasks };
-    },
-    [],
-  );
+      // Обновляем данные задачи
+      const updatedTask: Task = {
+        ...task,
+        progress,
+        actualStartDate: task.actualStartDate || new Date().toISOString(),
+        // Если прогресс 100%, устанавливаем дату завершения, иначе убираем её
+        actualEndDate: progress === 100 
+          ? (task.actualEndDate || new Date().toISOString()) 
+          : (progress < 100 ? null : task.actualEndDate)
+      };
 
-  // Обновление задачи
-  const updateProjectTask = useCallback(
-    (projectId: string, updatedTask: Task): boolean => {
-      const updatedProjects = projects.map((project) => {
-        if (project.id === projectId) {
+      // Обновляем задачу в проекте
+      const updatedProjects = projects.map(p => {
+        if (p.id === projectId) {
           return {
-            ...project,
-            tasks: project.tasks.map((task) =>
-              task.id === updatedTask.id ? updatedTask : task,
-            ),
+            ...p,
+            tasks: p.tasks.map(t => t.id === taskId ? updatedTask : t)
           };
         }
-        return project;
+        return p;
       });
 
-      saveProjectsToStorage(updatedProjects);
+      // Сохраняем изменения в localStorage
+      localStorage.setItem("projects", JSON.stringify(updatedProjects));
+      
+      // Обновляем состояние проектов
       setProjects(updatedProjects);
-
+      
       // Обновляем списки задач
       if (user) {
-        const { userTasks, otherTasks } = processProjects(
-          updatedProjects,
-          user,
-        );
+        const { userTasks, otherTasks } = processProjects(updatedProjects, user);
         setAssignedTasks(userTasks);
         setAvailableTasks(otherTasks);
       }
 
+      toast.success(`Прогресс обновлен: ${progress}%`);
       return true;
-    },
-    [projects, user],
-  );
+    } catch (error) {
+      console.error('Ошибка при обновлении прогресса:', error);
+      toast.error('Ошибка при обновлении прогресса');
+      return false;
+    }
+  }, [projects, user, processProjects]);
 
   // Обработчик принятия задачи в работу
-  const handleTakeTask = useCallback(
-    (taskId: string, projectId: string) => {
-      if (!user) {
-        toast.error("Необходимо войти в систему");
+  const handleTakeTask = useCallback((taskId: string, projectId: string) => {
+    if (!user) {
+      toast.error('Необходимо войти в систему');
+      return false;
+    }
+
+    try {
+      // Находим проект и задачу
+      const project = projects.find(p => p.id === projectId);
+      if (!project) {
+        toast.error('Проект не найден');
         return false;
       }
 
-      try {
-        // Находим проект и задачу
-        const project = projects.find((p) => p.id === projectId);
-        if (!project) {
-          toast.error("Проект не найден");
-          return false;
-        }
-
-        const task = project.tasks.find((t) => t.id === taskId);
-        if (!task) {
-          toast.error("Задача не найдена");
-          return false;
-        }
-
-        // Обновляем данные задачи
-        const updatedTask: Task = {
-          ...task,
-          assignedTo: user.id,
-          assignedToNames: [...(task.assignedToNames || []), user.name],
-          actualStartDate: task.actualStartDate || new Date().toISOString(),
-        };
-
-        // Обновляем задачу в проекте
-        const success = updateProjectTask(projectId, updatedTask);
-        if (success) {
-          toast.success("Задача принята в работу");
-        }
-        return success;
-      } catch (error) {
-        console.error("Ошибка при принятии задачи:", error);
-        toast.error("Ошибка при принятии задачи");
+      const task = project.tasks.find(t => t.id === taskId);
+      if (!task) {
+        toast.error('Задача не найдена');
         return false;
       }
-    },
-    [projects, user, updateProjectTask],
-  );
 
-  // Обработчик обновления прогресса задачи
-  const handleUpdateTaskProgress = useCallback(
-    (taskId: string, projectId: string, progress: number) => {
-      try {
-        // Находим проект и задачу
-        const project = projects.find((p) => p.id === projectId);
-        if (!project) {
-          toast.error("Проект не найден");
-          return false;
+      // Обновляем данные задачи
+      const updatedTask: Task = {
+        ...task,
+        assignedTo: user.id,
+        assignedToNames: [...(task.assignedToNames || []), user.name],
+        actualStartDate: task.actualStartDate || new Date().toISOString()
+      };
+
+      // Обновляем проекты
+      const updatedProjects = projects.map(p => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            tasks: p.tasks.map(t => t.id === taskId ? updatedTask : t)
+          };
         }
+        return p;
+      });
 
-        const task = project.tasks.find((t) => t.id === taskId);
-        if (!task) {
-          toast.error("Задача не найдена");
-          return false;
-        }
+      // Сохраняем изменения в localStorage
+      localStorage.setItem("projects", JSON.stringify(updatedProjects));
+      
+      // Обновляем состояние проектов
+      setProjects(updatedProjects);
+      
+      // Обновляем списки задач
+      const { userTasks, otherTasks } = processProjects(updatedProjects, user);
+      setAssignedTasks(userTasks);
+      setAvailableTasks(otherTasks);
 
-        // Обновляем данные задачи
-        const updatedTask: Task = {
-          ...task,
-          progress,
-          actualStartDate: task.actualStartDate || new Date().toISOString(),
-          actualEndDate:
-            progress === 100
-              ? task.actualEndDate || new Date().toISOString()
-              : progress < 100
-                ? null
-                : task.actualEndDate,
-        };
-
-        // Обновляем задачу в проекте
-        const success = updateProjectTask(projectId, updatedTask);
-        if (success) {
-          toast.success(`Прогресс обновлен: ${progress}%`);
-        }
-        return success;
-      } catch (error) {
-        console.error("Ошибка при обновлении прогресса:", error);
-        toast.error("Ошибка при обновлении прогресса");
-        return false;
-      }
-    },
-    [projects, updateProjectTask],
-  );
+      toast.success('Задача принята в работу');
+      return true;
+    } catch (error) {
+      console.error('Ошибка при принятии задачи:', error);
+      toast.error('Ошибка при принятии задачи');
+      return false;
+    }
+  }, [projects, user, processProjects]);
 
   // Обработчик добавления комментария к задаче
-  const handleAddTaskComment = useCallback(
-    (taskId: string, projectId: string, commentText: string) => {
-      if (!user || !commentText.trim()) {
+  const handleAddTaskComment = useCallback((taskId: string, projectId: string, commentText: string) => {
+    if (!user || !commentText.trim()) {
+      return false;
+    }
+
+    try {
+      // Находим проект и задачу
+      const project = projects.find(p => p.id === projectId);
+      if (!project) {
+        toast.error('Проект не найден');
         return false;
       }
 
-      try {
-        // Находим проект и задачу
-        const project = projects.find((p) => p.id === projectId);
-        if (!project) {
-          toast.error("Проект не найден");
-          return false;
-        }
-
-        const task = project.tasks.find((t) => t.id === taskId);
-        if (!task) {
-          toast.error("Задача не найдена");
-          return false;
-        }
-
-        // Создаем новый комментарий
-        const newComment: TaskComment = {
-          id: `comment-${Date.now()}`,
-          text: commentText,
-          author: user.name,
-          date: new Date().toISOString(),
-        };
-
-        // Обновляем данные задачи
-        const updatedTask: Task = {
-          ...task,
-          comments: [...(task.comments || []), newComment],
-        };
-
-        // Обновляем задачу в проекте
-        const success = updateProjectTask(projectId, updatedTask);
-        if (success) {
-          toast.success("Комментарий добавлен");
-        }
-        return success;
-      } catch (error) {
-        console.error("Ошибка при добавлении комментария:", error);
-        toast.error("Ошибка при добавлении комментария");
+      const task = project.tasks.find(t => t.id === taskId);
+      if (!task) {
+        toast.error('Задача не найдена');
         return false;
       }
-    },
-    [projects, user, updateProjectTask],
-  );
+
+      // Создаем новый комментарий
+      const newComment = {
+        id: `comment-${Date.now()}`,
+        text: commentText,
+        author: user.name || 'Сотрудник',
+        date: new Date().toISOString()
+      };
+
+      // Обновляем данные задачи
+      const updatedTask: Task = {
+        ...task,
+        comments: [...(task.comments || []), newComment]
+      };
+
+      // Обновляем проекты
+      const updatedProjects = projects.map(p => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            tasks: p.tasks.map(t => t.id === taskId ? updatedTask : t)
+          };
+        }
+        return p;
+      });
+
+      // Сохраняем изменения в localStorage
+      localStorage.setItem("projects", JSON.stringify(updatedProjects));
+      
+      // Обновляем состояние проектов
+      setProjects(updatedProjects);
+      
+      // Обновляем списки задач
+      const { userTasks, otherTasks } = processProjects(updatedProjects, user);
+      setAssignedTasks(userTasks);
+      setAvailableTasks(otherTasks);
+
+      toast.success('Комментарий добавлен');
+      return true;
+    } catch (error) {
+      console.error('Ошибка при добавлении комментария:', error);
+      toast.error('Ошибка при добавлении комментария');
+      return false;
+    }
+  }, [projects, user, processProjects]);
+
+  // Выход из системы
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('user');
+    navigate('/login');
+  }, [navigate]);
 
   return {
     user,
@@ -383,6 +366,6 @@ export function useEmployeeData(navigate: NavigateFunction) {
     handleTakeTask,
     handleUpdateTaskProgress,
     handleAddTaskComment,
-    handleLogout,
+    handleLogout
   };
 }

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import EmployeeLayout from "@/components/employee/EmployeeLayout";
 import EmployeeContent from "@/components/employee/EmployeeContent";
 import AvailableTasksSection from "@/components/employee/AvailableTasksSection";
@@ -7,8 +8,6 @@ import EmployeeTasksCard from "@/components/employee/EmployeeTasksCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEmployeeData } from "@/hooks/useEmployeeData";
 import { initializeProjectsStorage } from "@/utils/storageUtils";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 
 const Employee: React.FC = () => {
   const navigate = useNavigate();

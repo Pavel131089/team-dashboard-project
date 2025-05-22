@@ -1,57 +1,71 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Skeleton } from "@/components/ui/skeleton";
-import Icon from "@/components/ui/icon";
-import { toast } from "sonner";
-import { useEmployeeData } from "@/hooks/useEmployeeData";
+import EmployeeLayout from "@/components/employee/EmployeeLayout";
 import EmployeeContent from "@/components/employee/EmployeeContent";
+import AvailableTasksSection from "@/components/employee/AvailableTasksSection";
+import EmployeeTasksCard from "@/components/employee/EmployeeTasksCard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useEmployeeData } from "@/hooks/useEmployeeData";
+import { initializeProjectsStorage } from "@/utils/storageUtils";
 
-/**
- * Страница сотрудника
- */
 const Employee: React.FC = () => {
   const navigate = useNavigate();
 
-  // Используем хук для получения данных сотрудника
+  // Инициализируем хранилище проектов при первой загрузке
+  useEffect(() => {
+    initializeProjectsStorage();
+  }, []);
+
   const {
+    assignedTasks,
+    availableTasks,
     user,
-    projects,
-    userTasks,
     isLoading,
-    handleTaskUpdate,
+    handleTakeTask,
+    handleUpdateTaskProgress,
+    handleAddTaskComment,
     handleLogout,
+    loadTasks,
   } = useEmployeeData(navigate);
 
-  // Если данные загружаются, показываем скелетон
+  // Перезагружаем данные задач при изменении
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  // Если данные загружаются, показываем заглушку
   if (isLoading) {
     return (
       <div className="p-4 space-y-4">
         <Skeleton className="h-12 w-full" />
         <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-64 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
       </div>
     );
   }
 
-  // Если пользователь не найден или не является сотрудником, перенаправляем на страницу входа
-  if (!user) {
-    // Используем setTimeout для предотвращения вызова toast во время рендеринга
-    setTimeout(() => {
-      toast.error("Необходимо войти в систему");
-      navigate("/login");
-    }, 0);
-
-    return null;
-  }
-
   return (
-    <EmployeeContent
-      user={user}
-      projects={projects}
-      userTasks={userTasks}
-      onTaskUpdate={handleTaskUpdate}
-      onLogout={handleLogout}
-    />
+    <EmployeeLayout userName={user?.name || ""} onLogout={handleLogout}>
+      <EmployeeContent>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Карточка с назначенными задачами */}
+          <EmployeeTasksCard
+            tasks={assignedTasks}
+            onUpdateProgress={handleUpdateTaskProgress}
+            onAddComment={handleAddTaskComment}
+          />
+
+          {/* Секция с доступными задачами */}
+          <AvailableTasksSection
+            tasks={availableTasks}
+            onTakeTask={handleTakeTask}
+          />
+        </div>
+      </EmployeeContent>
+    </EmployeeLayout>
   );
 };
 

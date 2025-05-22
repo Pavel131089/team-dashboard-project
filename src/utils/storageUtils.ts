@@ -109,6 +109,7 @@ export function initializeProjectsStorage(): void {
       ];
 
       saveProjectsToStorage(demoProjects);
+      console.log("Инициализировано хранилище с демо-проектами");
     }
   } catch (error) {
     console.error("Ошибка инициализации хранилища проектов:", error);
@@ -163,6 +164,7 @@ export function createSampleProject(): boolean {
     };
 
     saveProjectsToStorage([...projects, newProject]);
+    console.log("Создан тестовый проект", newProject);
     return true;
   } catch (error) {
     console.error("Ошибка создания тестового проекта:", error);
@@ -177,6 +179,7 @@ export function createSampleProject(): boolean {
 export function resetProjectsStorage(): boolean {
   try {
     saveProjectsToStorage([]);
+    console.log("Проекты сброшены");
     return true;
   } catch (error) {
     console.error("Ошибка при сбросе проектов:", error);

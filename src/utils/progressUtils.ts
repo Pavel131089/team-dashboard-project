@@ -1,13 +1,15 @@
-
 /**
  * Возвращает класс цвета для прогресс-бара в зависимости от процента выполнения
  * @param percent Процент выполнения задачи
  * @returns CSS класс для цвета прогресс-бара
  */
 export const getProgressColorClass = (percent: number): string => {
-  if (percent >= 75) return "bg-green-500";
-  if (percent >= 50) return "bg-blue-500";
-  if (percent >= 25) return "bg-yellow-500";
+  // Проверяем, что передано числовое значение
+  const validPercent = typeof percent === "number" ? percent : 0;
+
+  if (validPercent >= 75) return "bg-green-500";
+  if (validPercent >= 50) return "bg-blue-500";
+  if (validPercent >= 25) return "bg-yellow-500";
   return "bg-red-500";
 };
 
@@ -18,17 +20,30 @@ export const getProgressColorClass = (percent: number): string => {
  * @returns Обновленная задача
  */
 export const processProgressChange = (task: any, newProgress: number): any => {
-  const updatedTask = { ...task, progress: newProgress };
-  
+  // Проверка на null/undefined
+  if (!task) return null;
+
+  // Убедимся, что передано числовое значение прогресса
+  const validProgress = typeof newProgress === "number" ? newProgress : 0;
+
+  const updatedTask = { ...task, progress: validProgress };
+
   // Если прогресс достиг 100%, устанавливаем дату завершения
-  if (newProgress === 100 && !updatedTask.actualEndDate) {
+  if (validProgress === 100 && !updatedTask.actualEndDate) {
     updatedTask.actualEndDate = new Date().toISOString();
+  } else if (validProgress < 100) {
+    // Если прогресс меньше 100%, убираем дату завершения
+    updatedTask.actualEndDate = null;
   }
-  
+
   // Если прогресс изменился с 0%, и нет даты начала, устанавливаем ее
-  if (newProgress > 0 && task.progress === 0 && !updatedTask.actualStartDate) {
+  if (
+    validProgress > 0 &&
+    (!task.progress || task.progress === 0) &&
+    !updatedTask.actualStartDate
+  ) {
     updatedTask.actualStartDate = new Date().toISOString();
   }
-  
+
   return updatedTask;
 };

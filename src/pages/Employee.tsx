@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import EmployeeLayout from "@/components/employee/EmployeeLayout";
@@ -26,7 +25,7 @@ const Employee: React.FC = () => {
     handleTakeTask,
     handleUpdateTaskProgress,
     handleAddTaskComment,
-    handleLogout
+    handleLogout,
   } = useEmployeeData(navigate);
 
   // Если данные загружаются, показываем заглушку
@@ -44,10 +43,7 @@ const Employee: React.FC = () => {
   }
 
   return (
-    <EmployeeLayout
-      userName={user?.name || ""}
-      onLogout={handleLogout}
-    >
+    <EmployeeLayout userName={user?.name || ""} onLogout={handleLogout}>
       <EmployeeContent>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Карточка с назначенными задачами */}

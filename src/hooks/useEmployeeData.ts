@@ -28,26 +28,32 @@ export function useEmployeeData(navigate: NavigateFunction) {
     loadUserAndProjects();
   }, [navigate]);
 
-  // Загружаем пользователя и проекты из хранилища
+  // Обработчик загрузки пользователя и проектов
   const loadUserAndProjects = useCallback(async () => {
     setIsLoading(true);
     try {
       // Загрузка пользователя из localStorage
       const userJson = localStorage.getItem("user");
       if (!userJson) {
-        redirectToLogin();
+        setTimeout(() => {
+          redirectToLogin();
+        }, 0);
         return;
       }
 
       const userData = JSON.parse(userJson);
       if (!userData.isAuthenticated) {
-        redirectToLogin("Сессия истекла. Пожалуйста, войдите снова.");
+        setTimeout(() => {
+          redirectToLogin("Сессия истекла. Пожалуйста, войдите снова.");
+        }, 0);
         return;
       }
 
       // Проверяем роль пользователя
       if (userData.role === "manager") {
-        navigate("/dashboard");
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 0);
         return;
       }
 
@@ -57,18 +63,29 @@ export function useEmployeeData(navigate: NavigateFunction) {
       const projectsList = getProjectsFromStorage();
       setProjects(projectsList);
 
-      // Обработка проектов для получения задач
-      const { userTasks, otherTasks } = processProjects(projectsList, userData);
-      setAssignedTasks(userTasks);
-      setAvailableTasks(otherTasks);
+      // Обработка проектов для получения задач - перенесено в useEffect
     } catch (error) {
       console.error("Ошибка при загрузке данных:", error);
-      toast.error("Произошла ошибка при загрузке данных");
-      redirectToLogin("Ошибка загрузки данных. Пожалуйста, войдите снова.");
+      setTimeout(() => {
+        redirectToLogin("Ошибка загрузки данных. Пожалуйста, войдите снова.");
+      }, 0);
     } finally {
       setIsLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, redirectToLogin]);
+
+  // Используем отдельный useEffect для обработки проектов и задач
+  useEffect(() => {
+    if (user && projects.length > 0) {
+      try {
+        const { userTasks, otherTasks } = processProjects(projects, user);
+        setAssignedTasks(userTasks);
+        setAvailableTasks(otherTasks);
+      } catch (error) {
+        console.error("Ошибка при обработке задач:", error);
+      }
+    }
+  }, [user, projects]);
 
   // Перенаправление на страницу входа
   const redirectToLogin = useCallback(

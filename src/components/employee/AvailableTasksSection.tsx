@@ -169,26 +169,34 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
 
             <div className="p-4">
               <div className="space-y-3">
-                {projectInfo.tasks.map((task) => (
-                  <AvailableTaskItem
-                    key={
-                      task.id ||
-                      `task-${Math.random().toString(36).substring(2, 11)}`
-                    }
-                    task={{
-                      ...task,
-                      // Явно передаем даты проекта в задачу
-                      projectStartDate: projectInfo.project?.startDate,
-                      projectEndDate: projectInfo.project?.endDate,
-                    }}
-                    projectName={projectInfo.projectName}
-                    onTakeTask={() => {
-                      if (task.id && task.projectId) {
-                        onTakeTask(task.id, task.projectId);
+                {projectInfo.tasks.map((task) => {
+                  // Получаем полную информацию о проекте для этой задачи
+                  // Даты проекта берем из нескольких возможных источников
+                  const projectDates = {
+                    startDate: projectInfo.project?.startDate,
+                    endDate: projectInfo.project?.endDate,
+                  };
+
+                  // Отладочная информация (можно убрать в продакшене)
+                  console.log("Project dates for task", task.id, projectDates);
+
+                  return (
+                    <AvailableTaskItem
+                      key={
+                        task.id ||
+                        `task-${Math.random().toString(36).substring(2, 11)}`
                       }
-                    }}
-                  />
-                ))}
+                      task={task}
+                      projectName={projectInfo.projectName}
+                      projectDates={projectDates}
+                      onTakeTask={() => {
+                        if (task.id && task.projectId) {
+                          onTakeTask(task.id, task.projectId);
+                        }
+                      }}
+                    />
+                  );
+                })}
               </div>
             </div>
           </div>

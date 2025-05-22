@@ -172,6 +172,17 @@ export function useEmployeeData(navigate: NavigateFunction) {
             console.error("Данные проектов не являются массивом");
             projectsList = [];
           }
+
+          // Отладка проектов для проверки дат
+          console.log(
+            "Loaded projects:",
+            projectsList.map((p) => ({
+              id: p.id,
+              name: p.name,
+              startDate: p.startDate,
+              endDate: p.endDate,
+            })),
+          );
         } catch (error) {
           console.error("Ошибка при загрузке проектов:", error);
           projectsList = [];
@@ -181,6 +192,29 @@ export function useEmployeeData(navigate: NavigateFunction) {
 
         // Обработка проектов для получения задач
         const processedTasks = processProjects(projectsList, userData);
+
+        // Отладка задач для проверки, что даты были добавлены
+        console.log("Processed tasks:", {
+          userTasks: processedTasks.userTasks.map((t) => ({
+            id: t.id,
+            name: t.name,
+            projectId: t.projectId,
+            startDate: t.startDate,
+            endDate: t.endDate,
+            projectStartDate: t.projectStartDate,
+            projectEndDate: t.projectEndDate,
+          })),
+          availableTasks: processedTasks.otherTasks.map((t) => ({
+            id: t.id,
+            name: t.name,
+            projectId: t.projectId,
+            startDate: t.startDate,
+            endDate: t.endDate,
+            projectStartDate: t.projectStartDate,
+            projectEndDate: t.projectEndDate,
+          })),
+        });
+
         setAssignedTasks(processedTasks.userTasks);
         setAvailableTasks(processedTasks.otherTasks);
       } catch (error) {

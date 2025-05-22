@@ -221,6 +221,16 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     // Безопасно получаем progress
     const progress = typeof task.progress === "number" ? task.progress : 0;
 
+    // Отладка дат задачи
+    console.log("TaskItem dates:", {
+      taskId: task.id,
+      name: task.name,
+      taskStartDate: task.startDate,
+      taskEndDate: task.endDate,
+      projectStartDate: task.projectStartDate,
+      projectEndDate: task.projectEndDate,
+    });
+
     return (
       <div className="border rounded-md mb-3 bg-white">
         {/* Заголовок задачи (всегда видимый) */}

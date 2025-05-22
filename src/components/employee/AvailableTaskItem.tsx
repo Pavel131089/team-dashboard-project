@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -6,14 +7,19 @@ import Icon from "@/components/ui/icon";
 import { Task } from "@/types/project";
 
 interface AvailableTaskItemProps {
-  task: Task & { projectName?: string };
+  task: Task;
   projectName: string;
+  projectDates?: {
+    startDate?: string;
+    endDate?: string;
+  };
   onTakeTask: () => void;
 }
 
 const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
   task,
   projectName,
+  projectDates,
   onTakeTask,
 }) => {
   // Безопасное форматирование даты
@@ -34,6 +40,27 @@ const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
     return null;
   }
 
+  // Получаем даты для отображения
+  // Приоритет: даты задачи -> даты проекта из projectDates -> даты из task.projectStartDate/projectEndDate
+  const taskStartDate = task.startDate;
+  const taskEndDate = task.endDate;
+  
+  const projectStartDate = projectDates?.startDate || task.projectStartDate;
+  const projectEndDate = projectDates?.endDate || task.projectEndDate;
+  
+  const displayStartDate = taskStartDate || projectStartDate;
+  const displayEndDate = taskEndDate || projectEndDate;
+
+  // Отладочная информация (можно убрать в продакшене)
+  console.log('Task dates:', { 
+    taskStartDate, 
+    taskEndDate, 
+    projectStartDate, 
+    projectEndDate,
+    displayStartDate,
+    displayEndDate
+  });
+
   return (
     <Card className="border-l-4 border-l-blue-500">
       <CardContent className="pt-4">
@@ -52,11 +79,11 @@ const AvailableTaskItem: React.FC<AvailableTaskItemProps> = ({
         <div className="grid grid-cols-2 gap-2 mt-3 text-xs text-slate-500">
           <div className="flex items-center gap-1">
             <Icon name="Calendar" className="h-3 w-3" />
-            <span>Начало: {formatDate(task.startDate)}</span>
+            <span>Начало: {formatDate(displayStartDate)}</span>
           </div>
           <div className="flex items-center gap-1">
             <Icon name="CalendarClock" className="h-3 w-3" />
-            <span>Дедлайн: {formatDate(task.endDate)}</span>
+            <span>Дедлайн: {formatDate(displayEndDate)}</span>
           </div>
           <div className="flex items-center gap-1">
             <Icon name="Clock" className="h-3 w-3" />

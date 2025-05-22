@@ -80,12 +80,40 @@ const Employee: React.FC = () => {
     );
   }
 
-  // Безопасно получаем массивы задач
+  // Безопасно получаем массивы задач и проектов
   const safeAssignedTasks = Array.isArray(assignedTasks) ? assignedTasks : [];
   const safeAvailableTasks = Array.isArray(availableTasks)
     ? availableTasks
     : [];
   const safeProjects = Array.isArray(projects) ? projects : [];
+
+  // Отладка данных перед рендерингом
+  console.log("Employee page data:", {
+    projects: safeProjects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      startDate: p.startDate,
+      endDate: p.endDate,
+    })),
+    assignedTasks: safeAssignedTasks.map((t) => ({
+      id: t.id,
+      name: t.name,
+      projectId: t.projectId,
+      startDate: t.startDate,
+      endDate: t.endDate,
+      projectStartDate: t.projectStartDate,
+      projectEndDate: t.projectEndDate,
+    })),
+    availableTasks: safeAvailableTasks.map((t) => ({
+      id: t.id,
+      name: t.name,
+      projectId: t.projectId,
+      startDate: t.startDate,
+      endDate: t.endDate,
+      projectStartDate: t.projectStartDate,
+      projectEndDate: t.projectEndDate,
+    })),
+  });
 
   return (
     <EmployeeLayout userName={user.name || ""} onLogout={handleLogout}>
@@ -96,14 +124,14 @@ const Employee: React.FC = () => {
             tasks={safeAssignedTasks}
             onUpdateProgress={handleUpdateTaskProgress}
             onAddComment={handleAddTaskComment}
-            projects={safeProjects} // Передаем массив проектов для получения полных данных
+            projects={safeProjects}
           />
 
           {/* Секция с доступными задачами */}
           <AvailableTasksSection
             tasks={safeAvailableTasks}
             onTakeTask={handleTakeTask}
-            projects={safeProjects} // Передаем все проекты для отображения дополнительной информации
+            projects={safeProjects}
           />
         </div>
       </EmployeeContent>

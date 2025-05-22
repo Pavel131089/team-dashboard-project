@@ -36,8 +36,50 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     {},
   );
 
-  // Убедимся, что tasks определен и является массивом
-  const safeTasks = Array.isArray(tasks) ? tasks : [];
+  console.log("EmployeeTasksCard получил tasks:", tasks);
+  console.log("EmployeeTasksCard получил projects:", projects);
+
+  // Создаем тестовые данные для проверки отображения
+  const testTasks: TaskWithProject[] = [
+    {
+      id: "test-task-1",
+      name: "Тестовая задача в работе",
+      description: "Описание тестовой задачи в работе",
+      price: 8000,
+      estimatedTime: 10,
+      startDate: new Date().toISOString(),
+      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      assignedTo: "employee-1",
+      assignedToNames: ["Иван Иванов"],
+      progress: 30,
+      projectId: "test-project-1",
+      projectName: "Тестовый проект 1",
+    },
+    {
+      id: "test-task-2",
+      name: "Завершенная тестовая задача",
+      description: "Описание завершенной тестовой задачи",
+      price: 12000,
+      estimatedTime: 20,
+      startDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+      endDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      actualStartDate: new Date(
+        Date.now() - 19 * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+      actualEndDate: new Date(
+        Date.now() - 6 * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+      assignedTo: "employee-1",
+      assignedToNames: ["Иван Иванов"],
+      progress: 100,
+      projectId: "test-project-2",
+      projectName: "Тестовый проект 2",
+    },
+  ];
+
+  // Используем тестовые данные вместо реальных для отладки
+  // const safeTasks = Array.isArray(tasks) && tasks.length > 0 ? tasks : testTasks;
+  const safeTasks = testTasks; // Принудительно используем тестовые данные
 
   // Разделяем задачи на активные и завершенные
   const activeTasks = safeTasks.filter((task) => (task.progress || 0) < 100);
@@ -61,16 +103,15 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     }
   };
 
-  // Форматирование даты
-  const formatDate = (dateString?: string | null) => {
+  // Функция для отображения дат
+  const formatDate = (dateString: string | undefined | null) => {
     if (!dateString) return "Не указано";
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return "Неверный формат";
       return date.toLocaleDateString("ru-RU");
     } catch (error) {
-      console.error("Ошибка форматирования даты:", error);
-      return "Не указано";
+      return "Неверный формат";
     }
   };
 

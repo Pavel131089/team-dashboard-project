@@ -31,138 +31,86 @@ export function saveProjectsToStorage(projects: Project[]): void {
  */
 export function initializeProjectsStorage(): void {
   try {
-    // Проверяем наличие проектов в хранилище
-    const projectsStr = localStorage.getItem("projects");
-    let projects = [];
+    // Текущая дата и даты с диапазоном для демо-проектов
+    const currentDate = new Date();
+    const oneMonthLater = new Date(currentDate);
+    oneMonthLater.setMonth(currentDate.getMonth() + 1);
 
-    // Если проекты уже есть, проверяем их валидность
-    if (projectsStr) {
-      try {
-        const parsedProjects = JSON.parse(projectsStr);
-        if (Array.isArray(parsedProjects)) {
-          projects = parsedProjects;
+    // Создаем несколько демо-проектов с явно указанными датами
+    const demoProjects = [
+      {
+        id: "project-1",
+        name: "Веб-сайт компании",
+        description: "Разработка корпоративного веб-сайта",
+        createdAt: currentDate.toISOString(),
+        createdBy: "default-manager",
+        startDate: currentDate.toISOString(),
+        endDate: oneMonthLater.toISOString(),
+        tasks: [
+          {
+            id: "task-1",
+            name: "Дизайн главной страницы",
+            description: "Создание дизайна главной страницы сайта",
+            price: 10000,
+            estimatedTime: 16,
+            startDate: currentDate.toISOString(),
+            endDate: new Date(
+              currentDate.getTime() + 5 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            assignedTo: "",
+            assignedToNames: [],
+            progress: 0,
+          },
+          {
+            id: "task-2",
+            name: "Вёрстка главной страницы",
+            description: "HTML/CSS вёрстка по готовому дизайну",
+            price: 7000,
+            estimatedTime: 12,
+            startDate: new Date(
+              currentDate.getTime() + 6 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            endDate: new Date(
+              currentDate.getTime() + 10 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            assignedTo: "",
+            assignedToNames: [],
+            progress: 0,
+          },
+        ],
+      },
+      {
+        id: "project-2",
+        name: "Мобильное приложение",
+        description: "Разработка мобильного приложения для iOS и Android",
+        createdAt: currentDate.toISOString(),
+        createdBy: "default-manager",
+        startDate: currentDate.toISOString(),
+        endDate: new Date(
+          currentDate.getTime() + 60 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+        tasks: [
+          {
+            id: "task-3",
+            name: "Прототип интерфейса",
+            description: "Создание прототипа интерфейса в Figma",
+            price: 15000,
+            estimatedTime: 24,
+            startDate: currentDate.toISOString(),
+            endDate: new Date(
+              currentDate.getTime() + 7 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            assignedTo: "",
+            assignedToNames: [],
+            progress: 0,
+          },
+        ],
+      },
+    ];
 
-          // Проверяем наличие дат в проектах и добавляем, если их нет
-          const projectsUpdated = parsedProjects.map((project) => {
-            if (!project.startDate || !project.endDate) {
-              console.log(
-                `Проект ${project.name} не имеет дат, добавляем дефолтные даты`,
-              );
-              return {
-                ...project,
-                startDate: project.startDate || new Date().toISOString(),
-                endDate:
-                  project.endDate ||
-                  new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              };
-            }
-            return project;
-          });
-
-          // Если были обновления, сохраняем обновленные проекты
-          if (
-            JSON.stringify(projectsUpdated) !== JSON.stringify(parsedProjects)
-          ) {
-            console.log("Обновляем проекты с дополненными датами");
-            localStorage.setItem("projects", JSON.stringify(projectsUpdated));
-            projects = projectsUpdated;
-          }
-        } else {
-          // Если данные есть, но не являются массивом, сбрасываем их
-          console.error(
-            "Данные проектов в хранилище не являются массивом, сброс данных",
-          );
-          projects = [];
-        }
-      } catch (error) {
-        console.error("Ошибка при парсинге проектов из хранилища:", error);
-        projects = [];
-      }
-    }
-
-    // Если проектов нет, создаем демо-проекты
-    if (projects.length === 0) {
-      // Текущая дата и даты с диапазоном для демо-проектов
-      const currentDate = new Date();
-      const oneMonthLater = new Date(currentDate);
-      oneMonthLater.setMonth(currentDate.getMonth() + 1);
-
-      // Создаем несколько демо-проектов с явно указанными датами
-      const demoProjects = [
-        {
-          id: "project-1",
-          name: "Веб-сайт компании",
-          description: "Разработка корпоративного веб-сайта",
-          createdAt: currentDate.toISOString(),
-          createdBy: "default-manager",
-          startDate: currentDate.toISOString(),
-          endDate: oneMonthLater.toISOString(),
-          tasks: [
-            {
-              id: "task-1",
-              name: "Дизайн главной страницы",
-              description: "Создание дизайна главной страницы сайта",
-              price: 10000,
-              estimatedTime: 16,
-              startDate: currentDate.toISOString(),
-              endDate: new Date(
-                currentDate.getTime() + 5 * 24 * 60 * 60 * 1000,
-              ).toISOString(),
-              assignedTo: "",
-              assignedToNames: [],
-              progress: 0,
-            },
-            {
-              id: "task-2",
-              name: "Вёрстка главной страницы",
-              description: "HTML/CSS вёрстка по готовому дизайну",
-              price: 7000,
-              estimatedTime: 12,
-              startDate: new Date(
-                currentDate.getTime() + 6 * 24 * 60 * 60 * 1000,
-              ).toISOString(),
-              endDate: new Date(
-                currentDate.getTime() + 10 * 24 * 60 * 60 * 1000,
-              ).toISOString(),
-              assignedTo: "",
-              assignedToNames: [],
-              progress: 0,
-            },
-          ],
-        },
-        {
-          id: "project-2",
-          name: "Мобильное приложение",
-          description: "Разработка мобильного приложения для iOS и Android",
-          createdAt: currentDate.toISOString(),
-          createdBy: "default-manager",
-          startDate: currentDate.toISOString(),
-          endDate: new Date(
-            currentDate.getTime() + 60 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
-          tasks: [
-            {
-              id: "task-3",
-              name: "Прототип интерфейса",
-              description: "Создание прототипа интерфейса в Figma",
-              price: 15000,
-              estimatedTime: 24,
-              startDate: currentDate.toISOString(),
-              endDate: new Date(
-                currentDate.getTime() + 7 * 24 * 60 * 60 * 1000,
-              ).toISOString(),
-              assignedTo: "",
-              assignedToNames: [],
-              progress: 0,
-            },
-          ],
-        },
-      ];
-
-      // Сохраняем демо-проекты в хранилище
-      localStorage.setItem("projects", JSON.stringify(demoProjects));
-      console.log("Инициализировано хранилище с демо-проектами", demoProjects);
-    }
+    // Сохраняем демо-проекты в хранилище
+    localStorage.setItem("projects", JSON.stringify(demoProjects));
+    console.log("Инициализировано хранилище с демо-проектами", demoProjects);
   } catch (error) {
     console.error("Ошибка при инициализации хранилища проектов:", error);
     // В случае ошибки создаем пустой массив проектов
@@ -237,7 +185,7 @@ export function createSampleProject(): boolean {
 }
 
 /**
- * Фиксирует отсутствующие даты проектов и задач в хранилище
+ * Исправляет отсутствующие даты проектов и задач в хранилище
  * @returns true в случае успеха
  */
 export function fixProjectDates(): boolean {
@@ -245,15 +193,29 @@ export function fixProjectDates(): boolean {
     // Получаем проекты из хранилища
     const projectsStr = localStorage.getItem("projects");
     if (!projectsStr) {
-      console.warn("No projects found in storage");
-      return false;
+      console.warn("No projects found in storage, initializing with test data");
+      initializeProjectsStorage();
+      return true;
     }
 
     // Парсим проекты
-    const projects = JSON.parse(projectsStr);
-    if (!Array.isArray(projects)) {
-      console.error("Projects data is not an array");
-      return false;
+    let projects;
+    try {
+      projects = JSON.parse(projectsStr);
+      if (!Array.isArray(projects)) {
+        console.error(
+          "Projects data is not an array, initializing with test data",
+        );
+        initializeProjectsStorage();
+        return true;
+      }
+    } catch (error) {
+      console.error(
+        "Error parsing projects data, initializing with test data",
+        error,
+      );
+      initializeProjectsStorage();
+      return true;
     }
 
     let hasChanges = false;
@@ -286,6 +248,12 @@ export function fixProjectDates(): boolean {
           }
           return task;
         });
+      } else {
+        hasChanges = true;
+        console.log(
+          `Project ${project.name || project.id} has no tasks, adding empty array`,
+        );
+        project.tasks = [];
       }
 
       return project;

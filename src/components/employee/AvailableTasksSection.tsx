@@ -1,6 +1,11 @@
-
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Task, Project } from "@/types/project";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/icon";
@@ -27,7 +32,7 @@ const formatDate = (dateString?: string | null): string => {
 const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
   tasks,
   onTakeTask,
-  projects = []
+  projects = [],
 }) => {
   // Простая проверка на отсутствие задач
   if (!tasks || tasks.length === 0) {
@@ -41,14 +46,16 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
           <Icon name="Briefcase" className="text-primary h-5 w-5" />
           <CardTitle>Доступные задачи</CardTitle>
         </div>
-        <CardDescription>Задачи, которые вы можете взять в работу</CardDescription>
+        <CardDescription>
+          Задачи, которые вы можете взять в работу
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {tasks.map((item, index) => {
           // Определяем структуру элемента
           let task, project;
-          
-          if (item && typeof item === 'object') {
+
+          if (item && typeof item === "object") {
             // Если это объект типа {task, project}
             if (item.task) {
               task = item.task;
@@ -57,7 +64,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
               // Если это просто объект task
               task = item;
               if (task.projectId && projects.length > 0) {
-                project = projects.find(p => p.id === task.projectId) || {};
+                project = projects.find((p) => p.id === task.projectId) || {};
               } else {
                 project = {};
               }
@@ -66,20 +73,22 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
             // Если данные некорректные, пропускаем
             return null;
           }
-          
+
           // Генерируем id, если он отсутствует
           const taskId = task.id || `task-${index}`;
           const projectId = project?.id || "";
-          
+
           // Получаем даты задачи или проекта
           const startDate = task.startDate || (project && project.startDate);
           const endDate = task.endDate || (project && project.endDate);
-          
+
           return (
             <div key={taskId} className="border rounded-lg p-4 bg-white">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-medium text-base">{task.name || "Без названия"}</h3>
+                  <h3 className="font-medium text-base">
+                    {task.name || "Без названия"}
+                  </h3>
                   {task.description && (
                     <p className="text-sm text-slate-600 line-clamp-2 mt-1">
                       {task.description}
@@ -90,7 +99,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                   {project && project.name ? project.name : "Проект"}
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 text-xs text-slate-500">
                 <div className="flex items-center gap-1">
                   <Icon name="Calendar" className="h-3 w-3" />
@@ -113,8 +122,8 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                   </div>
                 ) : null}
               </div>
-              
-              <Button 
+
+              <Button
                 onClick={() => onTakeTask(taskId, projectId)}
                 className="w-full mt-3"
                 size="sm"

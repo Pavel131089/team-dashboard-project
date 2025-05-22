@@ -1,7 +1,6 @@
-
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, HashRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 
@@ -9,29 +8,30 @@ import "./index.css";
 const initApp = () => {
   try {
     console.log("Инициализация приложения...");
-    
+
     // Находим корневой элемент
     const rootElement = document.getElementById("root");
-    
+
     if (!rootElement) {
       throw new Error("Корневой элемент #root не найден");
     }
-    
+
     // Создаем корень React и рендерим приложение
+    // Используем HashRouter вместо BrowserRouter для лучшей совместимости с хостингом
     const root = ReactDOM.createRoot(rootElement);
-    
+
     root.render(
       <React.StrictMode>
-        <BrowserRouter>
+        <HashRouter>
           <App />
-        </BrowserRouter>
-      </React.StrictMode>
+        </HashRouter>
+      </React.StrictMode>,
     );
-    
+
     console.log("Приложение успешно запущено");
   } catch (error) {
     console.error("Критическая ошибка при инициализации приложения:", error);
-    
+
     // Показываем пользователю сообщение об ошибке
     const rootElement = document.getElementById("root");
     if (rootElement) {

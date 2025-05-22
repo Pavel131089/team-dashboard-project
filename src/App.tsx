@@ -1,6 +1,11 @@
-
 import React, { useEffect, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+  HashRouter,
+  BrowserRouter,
+} from "react-router-dom";
 import "./App.css";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -9,16 +14,16 @@ import NotFound from "./pages/NotFound";
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Имитация задержки загрузки для показа индикатора загрузки
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 500);
-    
+
     return () => clearTimeout(timer);
   }, []);
-  
+
   // Пока идет загрузка, показываем простой индикатор
   if (isLoading) {
     return (

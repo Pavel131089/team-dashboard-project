@@ -53,10 +53,9 @@ const Employee: React.FC = () => {
   // Проверяем, что у нас есть пользователь перед рендерингом основного контента
   if (!user) {
     // Используем useEffect для перенаправления вместо прямого вызова navigate
-    // чтобы избежать обновления состояния во время рендеринга
     useEffect(() => {
       navigate("/login");
-    }, [navigate]);
+    }, []);
 
     return (
       <div className="flex items-center justify-center min-h-screen">

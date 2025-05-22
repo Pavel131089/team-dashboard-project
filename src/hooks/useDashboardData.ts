@@ -11,7 +11,7 @@ export const useDashboardData = (navigate: NavigateFunction) => {
   // Загрузка данных пользователя и проектов
   useEffect(() => {
     loadUserAndProjects();
-  }, [navigate]);
+  }, []);
 
   // Функция для перенаправления на страницу входа
   const redirectToLogin = useCallback(
@@ -37,7 +37,7 @@ export const useDashboardData = (navigate: NavigateFunction) => {
 
         // Проверяем, что пользователь аутентифицирован
         if (!parsedUser.isAuthenticated) {
-          // Важно: используем useEffect для перенаправления
+          // Используем отложенный вызов для предотвращения обновления во время рендеринга
           setTimeout(() => {
             redirectToLogin("Сессия истекла. Пожалуйста, войдите снова.");
           }, 0);
@@ -48,7 +48,7 @@ export const useDashboardData = (navigate: NavigateFunction) => {
 
         // Если пользователь не руководитель, перенаправляем на страницу сотрудника
         if (parsedUser.role !== "manager") {
-          // Важно: используем setTimeout для предотвращения обновления во время рендеринга
+          // Используем отложенный вызов для предотвращения обновления во время рендеринга
           setTimeout(() => {
             navigate("/employee");
           }, 0);
@@ -56,7 +56,7 @@ export const useDashboardData = (navigate: NavigateFunction) => {
         }
       } catch (error) {
         console.error("Failed to parse user data:", error);
-        // Важно: используем setTimeout для предотвращения обновления во время рендеринга
+        // Используем отложенный вызов для предотвращения обновления во время рендеринга
         setTimeout(() => {
           redirectToLogin(
             "Проблема с данными сессии. Пожалуйста, войдите снова.",
@@ -65,7 +65,7 @@ export const useDashboardData = (navigate: NavigateFunction) => {
         return;
       }
     } else {
-      // Важно: используем setTimeout для предотвращения обновления во время рендеринга
+      // Используем отложенный вызов для предотвращения обновления во время рендеринга
       setTimeout(() => {
         redirectToLogin();
       }, 0);

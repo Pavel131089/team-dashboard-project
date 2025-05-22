@@ -27,22 +27,28 @@ const StorageDiagnostics: React.FC<StorageDiagnosticsProps> = ({
     const isAvailable = testStorageAvailability();
     setStorageStatus(isAvailable ? "available" : "unavailable");
 
-    toast[isAvailable ? "success" : "error"](
-      isAvailable
-        ? "Хранилище доступно"
-        : "Хранилище недоступно. Возможны проблемы с сохранением данных.",
-    );
+    // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+    setTimeout(() => {
+      toast[isAvailable ? "success" : "error"](
+        isAvailable
+          ? "Хранилище доступно"
+          : "Хранилище недоступно. Возможны проблемы с сохранением данных.",
+      );
+    }, 0);
   };
 
   const addSampleProject = () => {
     const success = createSampleProject();
 
-    if (success) {
-      toast.success("Тестовый проект успешно добавлен");
-      onReloadProjects();
-    } else {
-      toast.error("Не удалось добавить тестовый проект");
-    }
+    // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+    setTimeout(() => {
+      if (success) {
+        toast.success("Тестовый проект успешно добавлен");
+        onReloadProjects();
+      } else {
+        toast.error("Не удалось добавить тестовый проект");
+      }
+    }, 0);
   };
 
   const resetProjects = () => {
@@ -55,11 +61,20 @@ const StorageDiagnostics: React.FC<StorageDiagnosticsProps> = ({
       try {
         // Сохраняем пустой массив проектов
         saveProjectsToStorage([]);
-        toast.success("Все проекты успешно удалены");
+
+        // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+        setTimeout(() => {
+          toast.success("Все проекты успешно удалены");
+        }, 0);
+
         onReloadProjects();
         return true;
       } catch (error) {
-        toast.error("Не удалось удалить проекты");
+        // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+        setTimeout(() => {
+          toast.error("Не удалось удалить проекты");
+        }, 0);
+
         console.error("Ошибка при удалении проектов:", error);
         return false;
       }
@@ -69,10 +84,18 @@ const StorageDiagnostics: React.FC<StorageDiagnosticsProps> = ({
   const checkCurrentStorage = () => {
     try {
       const projects = getProjectsFromStorage();
-      toast.success(`Текущее количество проектов: ${projects.length}`);
+
+      // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+      setTimeout(() => {
+        toast.success(`Текущее количество проектов: ${projects.length}`);
+      }, 0);
+
       console.log("Текущие проекты:", projects);
     } catch (error) {
-      toast.error("Ошибка при чтения проектов: " + (error as Error).message);
+      // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+      setTimeout(() => {
+        toast.error("Ошибка при чтения проектов: " + (error as Error).message);
+      }, 0);
     }
   };
 

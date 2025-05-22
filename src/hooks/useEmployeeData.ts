@@ -258,7 +258,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
           setAvailableTasks(otherTasks);
         }
 
-        // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.success(`Прогресс обновлен: ${progress}%`);
         }, 0);
@@ -266,10 +266,12 @@ export function useEmployeeData(navigate: NavigateFunction) {
         return true;
       } catch (error) {
         console.error("Ошибка при обновлении прогресса:", error);
-        // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+
+        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.error("Ошибка при обновлении прогресса");
         }, 0);
+
         return false;
       }
     },
@@ -280,7 +282,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
   const handleTakeTask = useCallback(
     (taskId: string, projectId: string) => {
       if (!user) {
-        // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.error("Необходимо войти в систему");
         }, 0);
@@ -291,7 +293,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
         // Находим проект и задачу
         const project = projects.find((p) => p.id === projectId);
         if (!project) {
-          // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+          // Используем отложенный вызов toast вместо прямого
           setTimeout(() => {
             toast.error("Проект не найден");
           }, 0);
@@ -300,7 +302,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
 
         const task = project.tasks.find((t) => t.id === taskId);
         if (!task) {
-          // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+          // Используем отложенный вызов toast вместо прямого
           setTimeout(() => {
             toast.error("Задача не найдена");
           }, 0);
@@ -340,7 +342,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
         setAssignedTasks(userTasks);
         setAvailableTasks(otherTasks);
 
-        // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.success("Задача принята в работу");
         }, 0);
@@ -348,10 +350,12 @@ export function useEmployeeData(navigate: NavigateFunction) {
         return true;
       } catch (error) {
         console.error("Ошибка при принятии задачи:", error);
-        // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+
+        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.error("Ошибка при принятии задачи");
         }, 0);
+
         return false;
       }
     },
@@ -369,7 +373,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
         // Находим проект и задачу
         const project = projects.find((p) => p.id === projectId);
         if (!project) {
-          // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+          // Используем отложенный вызов toast вместо прямого
           setTimeout(() => {
             toast.error("Проект не найден");
           }, 0);
@@ -378,7 +382,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
 
         const task = project.tasks.find((t) => t.id === taskId);
         if (!task) {
-          // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+          // Используем отложенный вызов toast вместо прямого
           setTimeout(() => {
             toast.error("Задача не найдена");
           }, 0);
@@ -427,7 +431,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
         setAssignedTasks(userTasks);
         setAvailableTasks(otherTasks);
 
-        // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.success("Комментарий добавлен");
         }, 0);
@@ -435,10 +439,12 @@ export function useEmployeeData(navigate: NavigateFunction) {
         return true;
       } catch (error) {
         console.error("Ошибка при добавлении комментария:", error);
-        // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+
+        // Используем отложенный вызов toast вместо прямого
         setTimeout(() => {
           toast.error("Ошибка при добавлении комментария");
         }, 0);
+
         return false;
       }
     },

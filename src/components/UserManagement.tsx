@@ -35,6 +35,7 @@ const UserManagement: React.FC = () => {
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [newUser, setNewUser] = useState<Omit<User, "id">>({
     name: "",
@@ -50,6 +51,7 @@ const UserManagement: React.FC = () => {
 
   // Загрузка пользователей из localStorage
   const loadUsers = () => {
+    setIsLoading(true);
     try {
       const storedUsers = localStorage.getItem("users");
       if (storedUsers) {
@@ -61,16 +63,26 @@ const UserManagement: React.FC = () => {
             "Данные пользователей не являются массивом:",
             parsedUsers,
           );
-          initializeDefaultUsers();
+          // Вызываем инициализацию в следующем цикле, а не непосредственно в рендере
+          setTimeout(() => {
+            initializeDefaultUsers();
+          }, 0);
         }
       } else {
-        // Если пользователей нет, инициализируем дефолтными
-        initializeDefaultUsers();
+        // Вызываем инициализацию в следующем цикле, а не непосредственно в рендере
+        setTimeout(() => {
+          initializeDefaultUsers();
+        }, 0);
       }
     } catch (error) {
       console.error("Ошибка при загрузке пользователей:", error);
-      toast.error("Не удалось загрузить список пользователей");
-      initializeDefaultUsers();
+      // Используем setTimeout чтобы избежать изменения состояния во время рендеринга
+      setTimeout(() => {
+        toast.error("Не удалось загрузить список пользователей");
+        initializeDefaultUsers();
+      }, 0);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -176,6 +188,16 @@ const UserManagement: React.FC = () => {
     setUserToDelete(null);
     setIsDeleteDialogOpen(false);
   };
+
+  // Показываем индикатор загрузки, пока данные загружаются
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Icon name="Loader2" className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Загрузка пользователей...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

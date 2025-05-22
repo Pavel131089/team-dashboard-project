@@ -172,7 +172,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
     [],
   );
 
-  // Загрузка данных пользователя и проектов
+  // Загрузка данных
   useEffect(() => {
     // Функция для загрузки пользователя и проектов
     const loadData = () => {
@@ -207,77 +207,106 @@ export function useEmployeeData(navigate: NavigateFunction) {
 
         setUser(userData);
 
-        // Загрузка проектов
+        // Загрузка проектов с обработкой дат
         let projectsList = [];
         try {
           const projectsData = localStorage.getItem("projects");
-          if (!projectsData) {
-            console.log(
-              "Проекты не найдены в localStorage, инициализируем хранилище",
-            );
-            // Проверим, нужно ли инициализировать хранилище
-            const storageUtils = require("@/utils/storageUtils");
-            if (typeof storageUtils.initializeProjectsStorage === "function") {
-              storageUtils.initializeProjectsStorage();
-              const newProjectsData = localStorage.getItem("projects");
-              projectsList = newProjectsData ? JSON.parse(newProjectsData) : [];
-            } else {
-              projectsList = [];
-            }
-          } else {
+          if (projectsData) {
             projectsList = JSON.parse(projectsData);
-          }
 
-          // Проверяем, что projectsList действительно массив
-          if (!Array.isArray(projectsList)) {
-            console.error("Данные проектов не являются массивом");
-            projectsList = [];
-          }
+            // Проверяем, что projectsList действительно массив
+            if (!Array.isArray(projectsList)) {
+              console.error("Данные проектов не являются массивом");
+              projectsList = [];
+            } else {
+              // Для каждого проекта проверяем даты
+              projectsList = projectsList.map((project) => {
+                // Если у проекта нет дат, добавляем их
+                if (!project.startDate || !project.endDate) {
+                  return {
+                    ...project,
+                    startDate: project.startDate || new Date().toISOString(),
+                    endDate:
+                      project.endDate ||
+                      new Date(
+                        Date.now() + 30 * 24 * 60 * 60 * 1000,
+                      ).toISOString(),
+                  };
+                }
+                return project;
+              });
 
-          // Добавляем даты проектам, у которых их нет
-          projectsList = projectsList.map((project: Project) => {
-            if (!project.startDate || !project.endDate) {
-              console.log(
-                `Проект ${project.name || project.id} не имеет дат, добавляем дефолтные`,
-              );
-              return {
-                ...project,
-                startDate: project.startDate || new Date().toISOString(),
-                endDate:
-                  project.endDate ||
-                  new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              };
+              // Сохраняем проекты с исправленными датами
+              localStorage.setItem("projects", JSON.stringify(projectsList));
             }
-            return project;
-          });
 
-          // Сохраняем проекты с добавленными датами
-          localStorage.setItem("projects", JSON.stringify(projectsList));
+            // Отладка - выводим проекты с их ID и датами
+            console.log(
+              "Projects loaded:",
+              projectsList.map((p) => ({
+                id: p.id,
+                name: p.name,
+                startDate: p.startDate,
+                endDate: p.endDate,
+              })),
+            );
+          }
         } catch (error) {
           console.error("Ошибка при загрузке проектов:", error);
           projectsList = [];
         }
 
-        // Отладка проектов
+        setProjects(projectsList);
+
+        // Для отладки - выводим полную информацию о проектах перед обработкой
         console.log(
-          "Loaded projects:",
-          projectsList.map((p: Project) => ({
-            id: p.id,
-            name: p.name,
-            startDate: p.startDate,
-            endDate: p.endDate,
+          "Full projects before processing:",
+          JSON.stringify(projectsList, null, 2),
+        );
+
+        // Измененная обработка проектов - создаем структуру для доступных задач
+        const { userTasks, otherTasks } = processProjects(
+          projectsList,
+          userData,
+        );
+
+        // ВАЖНОЕ ИЗМЕНЕНИЕ - меняем формат otherTasks для передачи в компонент
+        // Преобразуем otherTasks в формат, ожидаемый компонентом AvailableTasksSection
+        const formattedOtherTasks = otherTasks.map((task) => {
+          // Находим полную информацию о проекте для каждой задачи
+          const projectId = task.projectId;
+          const fullProject =
+            projectsList.find((p) => p.id === projectId) || null;
+
+          return {
+            task: task,
+            project: fullProject || {
+              id: projectId,
+              name: task.projectName || "Проект",
+              startDate: task.projectStartDate,
+              endDate: task.projectEndDate,
+            },
+          };
+        });
+
+        // Для отладки - выводим информацию о задачах после обработки
+        console.log(
+          "Available tasks after processing:",
+          formattedOtherTasks.map((t) => ({
+            taskId: t.task.id,
+            taskName: t.task.name,
+            hasProject: !!t.project,
+            projectId: t.project?.id,
+            projectStartDate: t.project?.startDate,
+            projectEndDate: t.project?.endDate,
           })),
         );
 
-        setProjects(projectsList);
-
-        // Обработка проектов для получения задач
-        const processedTasks = processProjects(projectsList, userData);
-        setAssignedTasks(processedTasks.userTasks);
-        setAvailableTasks(processedTasks.otherTasks);
+        setAssignedTasks(userTasks);
+        setAvailableTasks(formattedOtherTasks);
       } catch (error) {
         console.error("Ошибка при загрузке данных:", error);
-        // Перемещаем вызов toast в setTimeout, чтобы избежать обновления состояния во время рендеринга
+        // Используем setTimeout для вызова toast, чтобы избежать проблем с рендерингом
         setTimeout(() => {
           toast.error("Произошла ошибка при загрузке данных");
         }, 0);

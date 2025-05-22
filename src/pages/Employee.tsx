@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import EmployeeLayout from "@/components/employee/EmployeeLayout";
@@ -111,6 +111,32 @@ const Employee: React.FC = () => {
     handleLogout,
   } = useEmployeeData(navigate);
 
+  // Проверяем формат данных для отладки
+  useEffect(() => {
+    if (!isLoading) {
+      console.log("Employee data loaded:", {
+        hasUser: !!user,
+        projectsCount: projects?.length || 0,
+        assignedTasksCount: assignedTasks?.length || 0,
+        availableTasksCount: availableTasks?.length || 0,
+      });
+
+      // Проверяем формат доступных задач
+      if (Array.isArray(availableTasks) && availableTasks.length > 0) {
+        // Проверяем структуру первой доступной задачи
+        const firstTask = availableTasks[0];
+        console.log("First available task format:", {
+          hasTaskProperty: !!firstTask.task,
+          hasProjectProperty: !!firstTask.project,
+          taskId: firstTask.task?.id,
+          projectId: firstTask.project?.id,
+          projectStartDate: firstTask.project?.startDate,
+          projectEndDate: firstTask.project?.endDate,
+        });
+      }
+    }
+  }, [isLoading, user, projects, assignedTasks, availableTasks]);
+
   // Обработка перенаправления, если нет пользователя
   useEffect(() => {
     if (!isLoading && !user) {
@@ -156,9 +182,42 @@ const Employee: React.FC = () => {
 
   // Безопасно получаем массивы задач и проектов
   const safeAssignedTasks = Array.isArray(assignedTasks) ? assignedTasks : [];
-  const safeAvailableTasks = Array.isArray(availableTasks)
-    ? availableTasks
-    : [];
+
+  // Убедимся, что данные имеют правильный формат перед передачей в компоненты
+  const safeAvailableTasks = useMemo(() => {
+    if (!Array.isArray(availableTasks)) {
+      console.error("availableTasks is not an array");
+      return [];
+    }
+
+    // Проверяем каждую задачу на корректность структуры
+    return availableTasks.map((item) => {
+      // Если item уже в формате {task, project}, возвращаем его
+      if (item.task && item.project) {
+        return item;
+      }
+
+      // Иначе пытаемся создать правильную структуру
+      const taskData = item.task || item;
+      let projectData = item.project;
+
+      // Если нет данных о проекте, пытаемся найти их
+      if (!projectData && taskData.projectId && Array.isArray(projects)) {
+        projectData = projects.find((p) => p.id === taskData.projectId) || {
+          id: taskData.projectId,
+          name: taskData.projectName || "Проект",
+          startDate: taskData.projectStartDate,
+          endDate: taskData.projectEndDate,
+        };
+      }
+
+      return {
+        task: taskData,
+        project: projectData || { id: "", name: "Проект" },
+      };
+    });
+  }, [availableTasks, projects]);
+
   const safeProjects = Array.isArray(projects) ? projects : [];
 
   // Отладка данных перед рендерингом

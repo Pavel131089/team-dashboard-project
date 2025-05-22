@@ -61,15 +61,16 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     }
   };
 
-  // Функция для отображения дат
-  const formatDate = (dateString: string | undefined | null) => {
+  // Форматирование даты
+  const formatDate = (dateString?: string | null) => {
     if (!dateString) return "Не указано";
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return "Неверный формат";
       return date.toLocaleDateString("ru-RU");
     } catch (error) {
-      return "Неверный формат";
+      console.error("Ошибка форматирования даты:", error);
+      return "Не указано";
     }
   };
 
@@ -213,6 +214,28 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
 
   // Компонент для отображения задачи
   const TaskItem = ({ task }: { task: TaskWithProject }) => {
+    // Получаем данные проекта (либо из fullProject, либо из других полей)
+    const projectData = task.fullProject || {
+      id: task.projectId,
+      name: task.projectName || "Без названия",
+      startDate: task.projectStartDate,
+      endDate: task.projectEndDate,
+    };
+
+    // Отладка данных задачи и проекта
+    console.log(`TaskItem in EmployeeTasksCard (${task.id}):`, {
+      taskStartDate: task.startDate,
+      taskEndDate: task.endDate,
+      projectStartDate: projectData.startDate,
+      projectEndDate: projectData.endDate,
+    });
+
+    // Приоритет: сначала даты задачи, затем проекта
+    const startDate = task.startDate || projectData.startDate;
+    const endDate = task.endDate || projectData.endDate;
+
+    // ... keep existing code
+
     // Генерируем уникальный идентификатор для задачи, если его нет
     const taskId =
       task.id || `task-${Math.random().toString(36).substring(2, 11)}`;
@@ -220,16 +243,6 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
 
     // Безопасно получаем progress
     const progress = typeof task.progress === "number" ? task.progress : 0;
-
-    // Отладка дат задачи
-    console.log("TaskItem dates:", {
-      taskId: task.id,
-      name: task.name,
-      taskStartDate: task.startDate,
-      taskEndDate: task.endDate,
-      projectStartDate: task.projectStartDate,
-      projectEndDate: task.projectEndDate,
-    });
 
     return (
       <div className="border rounded-md mb-3 bg-white">
@@ -269,11 +282,11 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
                 <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
                   <div className="flex items-center gap-1">
                     <Icon name="Calendar" className="h-3 w-3" />
-                    <span>Начало: {formatDate(task.startDate)}</span>
+                    <span>Начало: {formatDate(startDate)}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Icon name="CalendarClock" className="h-3 w-3" />
-                    <span>Дедлайн: {formatDate(task.endDate)}</span>
+                    <span>Дедлайн: {formatDate(endDate)}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Icon name="Clock" className="h-3 w-3" />

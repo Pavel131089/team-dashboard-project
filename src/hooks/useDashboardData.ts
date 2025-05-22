@@ -121,12 +121,20 @@ export const useDashboardData = (navigate: NavigateFunction) => {
       // Сохраняем обновленный массив в localStorage
       try {
         localStorage.setItem("projects", JSON.stringify(updatedProjects));
-        toast.success(`Проект "${importedProject.name}" успешно импортирован`);
+        // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+        setTimeout(() => {
+          toast.success(
+            `Проект "${importedProject.name}" успешно импортирован`,
+          );
+        }, 0);
       } catch (error) {
         console.error("Ошибка при сохранении проектов:", error);
-        toast.error(
-          "Не удалось сохранить проект. Проверьте хранилище браузера.",
-        );
+        // Используем setTimeout для предотвращения обновления состояния во время рендеринга
+        setTimeout(() => {
+          toast.error(
+            "Не удалось сохранить проект. Проверьте хранилище браузера.",
+          );
+        }, 0);
       }
     },
     [projects],

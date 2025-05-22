@@ -123,7 +123,8 @@ export function useAuth(navigateTo?: string) {
         if (result.success && result.user) {
           console.log("Успешный вход:", result.user);
 
-          // При успешном входе показываем уведомление - переносим в setTimeout
+          // При успешном входе показываем уведомление - используем setTimeout
+          // для предотвращения обновления состояния во время рендеринга
           setTimeout(() => {
             toast.success(`Добро пожаловать, ${result.user!.name}!`, {
               duration: 3000,
@@ -171,7 +172,7 @@ export function useAuth(navigateTo?: string) {
   const logout = useCallback(() => {
     sessionService.clearSession();
 
-    // Уведомление о выходе - переносим в setTimeout
+    // Используем setTimeout для предотвращения обновления состояния во время рендеринга
     setTimeout(() => {
       toast.success("Вы успешно вышли из системы");
       navigate("/login");

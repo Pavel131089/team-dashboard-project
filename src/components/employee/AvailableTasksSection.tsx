@@ -19,7 +19,7 @@ interface AvailableTasksSectionProps {
 const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
   tasks,
   onTakeTask,
-  projects = [],
+  projects = [], // Значение по умолчанию - пустой массив
 }) => {
   // Безопасно группируем задачи по проектам
   const projectsWithTasks = useMemo(() => {
@@ -54,7 +54,9 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
         // Создаем запись для проекта, если ее еще нет
         if (!projectMap[projectId]) {
           // Находим полную информацию о проекте
-          const fullProject = projects.find((p) => p.id === projectId);
+          const fullProject = Array.isArray(projects)
+            ? projects.find((p) => p.id === projectId)
+            : undefined;
 
           projectMap[projectId] = {
             projectId,
@@ -95,10 +97,13 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
             className="bg-white rounded-lg shadow-sm border overflow-hidden"
           >
             {/* Добавляем новый компонент для информации о проекте */}
-            <ProjectInfoHeader
-              project={projectInfo.project}
-              projectName={projectInfo.projectName}
-            />
+            {projectInfo.project ? (
+              <ProjectInfoHeader project={projectInfo.project} />
+            ) : (
+              <div className="px-4 py-3 border-b bg-slate-50">
+                <h3 className="font-medium">{projectInfo.projectName}</h3>
+              </div>
+            )}
 
             <div className="p-4">
               <div className="space-y-3">

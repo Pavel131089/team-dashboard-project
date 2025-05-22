@@ -33,6 +33,7 @@ const Employee: React.FC = () => {
     handleUpdateTaskProgress,
     handleAddTaskComment,
     handleLogout,
+    projects,
   } = useEmployeeData(navigate);
 
   // Если данные загружаются или хранилище еще не инициализировано, показываем заглушку
@@ -85,7 +86,7 @@ const Employee: React.FC = () => {
           <AvailableTasksSection
             tasks={safeAvailableTasks}
             onTakeTask={handleTakeTask}
-            projects={projects} // Передаем все проекты для отображения дополнительной информации
+            projects={projects} // Используем проекты из хука useEmployeeData
           />
         </div>
       </EmployeeContent>

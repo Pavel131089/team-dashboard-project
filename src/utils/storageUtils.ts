@@ -288,3 +288,123 @@ export function resetProjectsStorage(): boolean {
     return false;
   }
 }
+
+/**
+ * Создает и добавляет тестовые проекты в хранилище
+ * @returns true в случае успеха
+ */
+export function setupTestProjects(): boolean {
+  try {
+    // Получаем текущие проекты
+    const existingProjects = getProjectsFromStorage();
+
+    // Если есть проекты, не добавляем тестовые данные
+    if (existingProjects.length > 0) {
+      console.log("Проекты уже существуют, не добавляем тестовые данные");
+      return true;
+    }
+
+    // Текущая дата и даты с диапазоном для тестовых проектов
+    const currentDate = new Date();
+
+    // Тестовые проекты с наглядными датами
+    const testProjects = [
+      {
+        id: "test-project-1",
+        name: "Тестовый веб-проект",
+        description: "Разработка тестового веб-проекта для демонстрации",
+        createdAt: currentDate.toISOString(),
+        createdBy: "default-manager",
+        startDate: currentDate.toISOString(),
+        endDate: new Date(
+          currentDate.getTime() + 30 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+        tasks: [
+          {
+            id: "test-task-1",
+            name: "Дизайн интерфейса",
+            description: "Создание дизайна пользовательского интерфейса",
+            price: 15000,
+            estimatedTime: 20,
+            startDate: currentDate.toISOString(),
+            endDate: new Date(
+              currentDate.getTime() + 10 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            assignedTo: "",
+            assignedToNames: [],
+            progress: 0,
+          },
+          {
+            id: "test-task-2",
+            name: "Разработка API",
+            description: "Разработка API для взаимодействия с сервером",
+            price: 25000,
+            estimatedTime: 30,
+            startDate: new Date(
+              currentDate.getTime() + 5 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            endDate: new Date(
+              currentDate.getTime() + 20 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            assignedTo: "",
+            assignedToNames: [],
+            progress: 0,
+          },
+        ],
+      },
+      {
+        id: "test-project-2",
+        name: "Тестовое мобильное приложение",
+        description:
+          "Разработка тестового мобильного приложения для демонстрации",
+        createdAt: currentDate.toISOString(),
+        createdBy: "default-manager",
+        startDate: currentDate.toISOString(),
+        endDate: new Date(
+          currentDate.getTime() + 45 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+        tasks: [
+          {
+            id: "test-task-3",
+            name: "Дизайн приложения",
+            description: "Создание дизайна мобильного приложения",
+            price: 18000,
+            estimatedTime: 24,
+            startDate: currentDate.toISOString(),
+            endDate: new Date(
+              currentDate.getTime() + 12 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            assignedTo: "",
+            assignedToNames: [],
+            progress: 0,
+          },
+          {
+            id: "test-task-4",
+            name: "Разработка клиентской части",
+            description: "Разработка клиентской части мобильного приложения",
+            price: 30000,
+            estimatedTime: 40,
+            startDate: new Date(
+              currentDate.getTime() + 7 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            endDate: new Date(
+              currentDate.getTime() + 25 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            assignedTo: "",
+            assignedToNames: [],
+            progress: 0,
+          },
+        ],
+      },
+    ];
+
+    // Сохраняем тестовые проекты в хранилище
+    localStorage.setItem("projects", JSON.stringify(testProjects));
+    console.log("Тестовые проекты успешно добавлены", testProjects);
+
+    return true;
+  } catch (error) {
+    console.error("Ошибка при добавлении тестовых проектов:", error);
+    return false;
+  }
+}

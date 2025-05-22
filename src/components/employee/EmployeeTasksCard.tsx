@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Task, Project } from "@/types/project";
@@ -36,8 +36,11 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     {},
   );
 
-  console.log("EmployeeTasksCard получил tasks:", tasks);
-  console.log("EmployeeTasksCard получил projects:", projects);
+  // Используем useEffect для логирования данных при монтировании компонента
+  useEffect(() => {
+    console.log("EmployeeTasksCard получил tasks:", tasks);
+    console.log("EmployeeTasksCard получил projects:", projects);
+  }, [tasks, projects]);
 
   // Создаем тестовые данные для проверки отображения
   const testTasks: TaskWithProject[] = [

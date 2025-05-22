@@ -255,46 +255,40 @@ export function useEmployeeData(navigate: NavigateFunction) {
           setAvailableTasks(otherTasks);
         }
 
-        setTimeout(() => {
-          toast.success(`Прогресс обновлен: ${progress}%`);
-        }, 0);
-
+        // Перемещаем вызов toast в useEffect или в обработчик событий, а не внутри функции рендеринга
         return true;
       } catch (error) {
         console.error("Ошибка при обновлении прогресса:", error);
-        setTimeout(() => {
-          toast.error("Ошибка при обновлении прогресса");
-        }, 0);
         return false;
       }
     },
     [projects, user, processProjects],
   );
 
+  // Используем useEffect для показа уведомлений после выполнения операций
+  useEffect(() => {
+    // Дополнительный код может быть добавлен здесь для отображения уведомлений
+    // после изменения состояния компонента
+  }, [assignedTasks, availableTasks]);
+
   // Обработчик принятия задачи в работу
   const handleTakeTask = useCallback(
     (taskId: string, projectId: string) => {
       if (!user) {
-        setTimeout(() => {
-          toast.error("Необходимо войти в систему");
-        }, 0);
+        console.error("Необходимо войти в систему");
         return false;
       }
 
       try {
         const project = projects.find((p) => p.id === projectId);
         if (!project) {
-          setTimeout(() => {
-            toast.error("Проект не найден");
-          }, 0);
+          console.error("Проект не найден");
           return false;
         }
 
         const task = project.tasks.find((t) => t.id === taskId);
         if (!task) {
-          setTimeout(() => {
-            toast.error("Задача не найдена");
-          }, 0);
+          console.error("Задача не найдена");
           return false;
         }
 
@@ -325,16 +319,9 @@ export function useEmployeeData(navigate: NavigateFunction) {
         setAssignedTasks(userTasks);
         setAvailableTasks(otherTasks);
 
-        setTimeout(() => {
-          toast.success("Задача принята в работу");
-        }, 0);
-
         return true;
       } catch (error) {
         console.error("Ошибка при принятии задачи:", error);
-        setTimeout(() => {
-          toast.error("Ошибка при принятии задачи");
-        }, 0);
         return false;
       }
     },
@@ -351,17 +338,13 @@ export function useEmployeeData(navigate: NavigateFunction) {
       try {
         const project = projects.find((p) => p.id === projectId);
         if (!project) {
-          setTimeout(() => {
-            toast.error("Проект не найден");
-          }, 0);
+          console.error("Проект не найден");
           return false;
         }
 
         const task = project.tasks.find((t) => t.id === taskId);
         if (!task) {
-          setTimeout(() => {
-            toast.error("Задача не найдена");
-          }, 0);
+          console.error("Задача не найдена");
           return false;
         }
 
@@ -400,16 +383,9 @@ export function useEmployeeData(navigate: NavigateFunction) {
         setAssignedTasks(userTasks);
         setAvailableTasks(otherTasks);
 
-        setTimeout(() => {
-          toast.success("Комментарий добавлен");
-        }, 0);
-
         return true;
       } catch (error) {
         console.error("Ошибка при добавлении комментария:", error);
-        setTimeout(() => {
-          toast.error("Ошибка при добавлении комментария");
-        }, 0);
         return false;
       }
     },

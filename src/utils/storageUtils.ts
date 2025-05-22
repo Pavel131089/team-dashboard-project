@@ -193,14 +193,24 @@ export function createSampleProject(): boolean {
   try {
     const projects = getProjectsFromStorage();
 
+    // Создаем даты для проекта
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + 14); // Проект на 2 недели
+
+    // Создаем даты для задачи
+    const taskStartDate = new Date();
+    const taskEndDate = new Date();
+    taskEndDate.setDate(taskStartDate.getDate() + 7); // Задача на 1 неделю
+
     const newProject: Project = {
       id: `project-${Date.now()}`,
       name: "Тестовый проект",
       description: "Автоматически созданный тестовый проект",
       createdAt: new Date().toISOString(),
       createdBy: "default-manager",
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      startDate: startDate.toISOString(), // Явно задаем дату начала
+      endDate: endDate.toISOString(), // Явно задаем дату окончания
       tasks: [
         {
           id: `task-${Date.now()}`,
@@ -208,8 +218,8 @@ export function createSampleProject(): boolean {
           description: "Описание тестовой задачи",
           price: 5000,
           estimatedTime: 8,
-          startDate: new Date().toISOString(),
-          endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+          startDate: taskStartDate.toISOString(), // Явно задаем дату начала задачи
+          endDate: taskEndDate.toISOString(), // Явно задаем дату окончания задачи
           assignedTo: "",
           assignedToNames: [],
           progress: 0,

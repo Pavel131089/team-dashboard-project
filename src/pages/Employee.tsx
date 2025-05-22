@@ -104,27 +104,16 @@ const Employee: React.FC = () => {
   const safeProjects = Array.isArray(projects) ? projects : [];
 
   // Отладка данных перед рендерингом
-  console.log("Employee page data:", {
-    projectsCount: safeProjects.length,
-    projects: safeProjects.map((p) => ({
-      id: p.id,
-      name: p.name,
-      startDate: p.startDate,
-      endDate: p.endDate,
-    })),
-    assignedTasksCount: safeAssignedTasks.length,
-    availableTasksCount: safeAvailableTasks.length,
-
-    // Проверяем даты в доступных задачах
-    availableTasks: safeAvailableTasks.slice(0, 3).map((t) => ({
+  console.log("Employee page full data:", {
+    availableTasks: safeAvailableTasks.map((t) => ({
       id: t.id,
       name: t.name,
       startDate: t.startDate,
       endDate: t.endDate,
-      projectId: t.projectId,
-      projectName: t.projectName,
       projectStartDate: t.projectStartDate,
       projectEndDate: t.projectEndDate,
+      // Добавляем полные данные первой задачи для отладки
+      ...(t.id === safeAvailableTasks[0]?.id ? { fullTask: t } : {}),
     })),
   });
 

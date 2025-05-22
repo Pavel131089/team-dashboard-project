@@ -50,28 +50,17 @@ export function useEmployeeData(navigate: NavigateFunction) {
           return { userTasks, otherTasks };
         }
 
-        // Проверяем даты проектов и их задач
-        const projectsWithDates = projectsList.map((project) => {
-          console.log(`Проект ${project.name}:`, {
-            id: project.id,
-            startDate: project.startDate,
-            endDate: project.endDate,
-            tasksCount: project.tasks?.length || 0,
-          });
-
-          // Проверяем задачи проекта на наличие дат
-          if (project.tasks && project.tasks.length > 0) {
-            project.tasks.forEach((task) => {
-              console.log(`  Задача ${task.name}:`, {
-                id: task.id,
-                startDate: task.startDate,
-                endDate: task.endDate,
-              });
-            });
-          }
-
-          return project;
-        });
+        // Выводим информацию о всех проектах для отладки
+        console.log(
+          "Processing projects:",
+          projectsList.map((p) => ({
+            id: p.id,
+            name: p.name,
+            startDate: p.startDate,
+            endDate: p.endDate,
+            tasksCount: p.tasks?.length || 0,
+          })),
+        );
 
         projectsList.forEach((project) => {
           // Проверяем, что project существует и tasks - массив
@@ -79,6 +68,7 @@ export function useEmployeeData(navigate: NavigateFunction) {
             return;
           }
 
+          // Для каждой задачи в проекте
           project.tasks.forEach((task) => {
             // Проверяем, что task существует
             if (!task) return;
@@ -88,9 +78,14 @@ export function useEmployeeData(navigate: NavigateFunction) {
               ...task,
               projectId: project.id,
               projectName: project.name || "Без названия",
-              // Очень важно: явно передаем даты проекта для каждой задачи
+              // Явно добавляем даты проекта, если даты задачи отсутствуют
+              startDate: task.startDate || project.startDate,
+              endDate: task.endDate || project.endDate,
+              // Добавляем также ссылки на даты проекта для возможности их использования
               projectStartDate: project.startDate,
               projectEndDate: project.endDate,
+              // Добавляем ссылку на полный проект для доступа ко всем данным
+              fullProject: project,
             };
 
             // Проверка назначения задачи текущему пользователю
@@ -141,22 +136,22 @@ export function useEmployeeData(navigate: NavigateFunction) {
           });
         });
 
-        // Отладка: проверяем, что даты проекта корректно передаются в доступные задачи
-        if (otherTasks.length > 0) {
-          console.log(
-            "Доступные задачи с информацией о датах:",
-            otherTasks.slice(0, 3).map((task) => ({
-              id: task.id,
-              name: task.name,
-              startDate: task.startDate,
-              endDate: task.endDate,
-              projectId: task.projectId,
-              projectName: task.projectName,
-              projectStartDate: task.projectStartDate,
-              projectEndDate: task.projectEndDate,
-            })),
-          );
-        }
+        // Отладочная информация о первых нескольких задачах с полями дат
+        console.log(
+          "First available tasks processed:",
+          otherTasks.slice(0, 3).map((t) => ({
+            id: t.id,
+            name: t.name,
+            // Показываем все возможные поля дат для отладки
+            startDate: t.startDate,
+            endDate: t.endDate,
+            projectStartDate: t.projectStartDate,
+            projectEndDate: t.projectEndDate,
+            // Проверяем, что полный проект доступен
+            hasFullProject: !!t.fullProject,
+            projectName: t.projectName,
+          })),
+        );
       } catch (error) {
         console.error("Ошибка при обработке проектов:", error);
       }
@@ -205,7 +200,22 @@ export function useEmployeeData(navigate: NavigateFunction) {
         let projectsList = [];
         try {
           const projectsData = localStorage.getItem("projects");
-          projectsList = projectsData ? JSON.parse(projectsData) : [];
+          if (!projectsData) {
+            console.log(
+              "Проекты не найдены в localStorage, инициализируем хранилище",
+            );
+            // Проверим, нужно ли инициализировать хранилище
+            const storageUtils = require("@/utils/storageUtils");
+            if (typeof storageUtils.initializeProjectsStorage === "function") {
+              storageUtils.initializeProjectsStorage();
+              const newProjectsData = localStorage.getItem("projects");
+              projectsList = newProjectsData ? JSON.parse(newProjectsData) : [];
+            } else {
+              projectsList = [];
+            }
+          } else {
+            projectsList = JSON.parse(projectsData);
+          }
 
           // Проверяем, что projectsList действительно массив
           if (!Array.isArray(projectsList)) {
@@ -213,48 +223,45 @@ export function useEmployeeData(navigate: NavigateFunction) {
             projectsList = [];
           }
 
-          // Отладка проектов для проверки дат
-          console.log(
-            "Loaded projects:",
-            projectsList.map((p) => ({
-              id: p.id,
-              name: p.name,
-              startDate: p.startDate,
-              endDate: p.endDate,
-            })),
-          );
+          // Добавляем даты проектам, у которых их нет
+          projectsList = projectsList.map((project: Project) => {
+            if (!project.startDate || !project.endDate) {
+              console.log(
+                `Проект ${project.name || project.id} не имеет дат, добавляем дефолтные`,
+              );
+              return {
+                ...project,
+                startDate: project.startDate || new Date().toISOString(),
+                endDate:
+                  project.endDate ||
+                  new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              };
+            }
+            return project;
+          });
+
+          // Сохраняем проекты с добавленными датами
+          localStorage.setItem("projects", JSON.stringify(projectsList));
         } catch (error) {
           console.error("Ошибка при загрузке проектов:", error);
           projectsList = [];
         }
 
+        // Отладка проектов
+        console.log(
+          "Loaded projects:",
+          projectsList.map((p: Project) => ({
+            id: p.id,
+            name: p.name,
+            startDate: p.startDate,
+            endDate: p.endDate,
+          })),
+        );
+
         setProjects(projectsList);
 
         // Обработка проектов для получения задач
         const processedTasks = processProjects(projectsList, userData);
-
-        // Отладка задач для проверки, что даты были добавлены
-        console.log("Processed tasks:", {
-          userTasks: processedTasks.userTasks.map((t) => ({
-            id: t.id,
-            name: t.name,
-            projectId: t.projectId,
-            startDate: t.startDate,
-            endDate: t.endDate,
-            projectStartDate: t.projectStartDate,
-            projectEndDate: t.projectEndDate,
-          })),
-          availableTasks: processedTasks.otherTasks.map((t) => ({
-            id: t.id,
-            name: t.name,
-            projectId: t.projectId,
-            startDate: t.startDate,
-            endDate: t.endDate,
-            projectStartDate: t.projectStartDate,
-            projectEndDate: t.projectEndDate,
-          })),
-        });
-
         setAssignedTasks(processedTasks.userTasks);
         setAvailableTasks(processedTasks.otherTasks);
       } catch (error) {

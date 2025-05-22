@@ -7,3 +7,28 @@
   from = "/*"
   to = "/index.html"
   status = 200
+  force = true
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Дополнительные настройки для улучшения производительности
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "ALLOWALL"
+    Content-Security-Policy = "frame-ancestors *"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer-when-downgrade"
+
+# Кэширование статических ресурсов
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Без кэширования для HTML
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

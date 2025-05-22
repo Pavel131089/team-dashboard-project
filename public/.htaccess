@@ -9,6 +9,19 @@ RewriteCond %{REQUEST_FILENAME} !-d
 # Перенаправляем все запросы на index.html
 RewriteRule ^ index.html [QSA,L]
 
+# Устанавливаем заголовки кэширования
+<IfModule mod_expires.c>
+  ExpiresActive On
+  # Кэшируем CSS, JavaScript и изображения на месяц
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  # Не кэшируем HTML
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
 # Устанавливаем заголовки для iframe
 <IfModule mod_headers.c>
     # Разрешаем встраивание в iframe с любого источника
@@ -16,5 +29,12 @@ RewriteRule ^ index.html [QSA,L]
     Header set Content-Security-Policy "frame-ancestors *"
     
     # Устанавливаем политику реферера
-    Header set Referrer-Policy "no-referrer"
+    Header set Referrer-Policy "no-referrer-when-downgrade"
+    
+    # Запрещаем кэширование для index.html
+    <FilesMatch "index\.html$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
 </IfModule>

@@ -24,66 +24,8 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
   onTakeTask,
   projects = [],
 }) => {
-  console.log("AvailableTasksSection получил tasks:", tasks);
-  console.log("AvailableTasksSection получил projects:", projects);
-
-  // Создаем тестовые данные, чтобы проверить отображение
-  const testTasks = [
-    {
-      task: {
-        id: "test-task-1",
-        name: "Тестовая задача 1",
-        description: "Описание тестовой задачи 1",
-        price: 5000,
-        estimatedTime: 8,
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        assignedTo: "",
-        assignedToNames: [],
-        progress: 0,
-      },
-      project: {
-        id: "test-project-1",
-        name: "Тестовый проект 1",
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        tasks: [
-          // Задачи проекта для расчета прогресса
-          { progress: 100 },
-          { progress: 50 },
-          { progress: 0 },
-        ],
-      },
-    },
-    {
-      task: {
-        id: "test-task-2",
-        name: "Тестовая задача 2",
-        description: "Описание тестовой задачи 2",
-        price: 7500,
-        estimatedTime: 12,
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-        assignedTo: "",
-        assignedToNames: [],
-        progress: 0,
-      },
-      project: {
-        id: "test-project-2",
-        name: "Тестовый проект 2",
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
-        tasks: [
-          // Задачи проекта для расчета прогресса
-          { progress: 80 },
-          { progress: 30 },
-        ],
-      },
-    },
-  ];
-
-  // Используем тестовые данные или данные из props
-  const displayTasks = tasks && tasks.length > 0 ? tasks : testTasks;
+  // Проверяем, что у нас есть задачи для отображения
+  const hasAvailableTasks = Array.isArray(tasks) && tasks.length > 0;
 
   // Простая функция форматирования даты
   const formatDate = (dateString?: string | null): string => {
@@ -113,6 +55,17 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
     return Math.round(totalProgress / project.tasks.length);
   };
 
+  // Функция для поиска полной информации о проекте
+  const getFullProject = (projectId: string): Project | undefined => {
+    if (!Array.isArray(projects)) return undefined;
+    return projects.find((p) => p.id === projectId);
+  };
+
+  // Если нет задач, показываем пустое состояние
+  if (!hasAvailableTasks) {
+    return <EmptyAvailableTasks />;
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -125,17 +78,31 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {displayTasks.map((item, index) => {
+        {tasks.map((item, index) => {
           // Извлекаем task и project из структуры
-          const task = item.task || {};
-          const project = item.project || {};
+          const task = item.task || item;
+          const itemProject = item.project || {};
+
+          // Ищем полную информацию о проекте
+          const projectId = task.projectId || itemProject.id;
+          const fullProject = getFullProject(projectId) || itemProject;
+
+          // Получаем название проекта
+          const projectName = fullProject.name || itemProject.name || "Проект";
 
           // Рассчитываем прогресс проекта
-          const projectProgress = calculateProjectProgress(project);
+          const projectProgress = calculateProjectProgress(fullProject);
+
+          // Получаем даты проекта и задачи
+          const projectStartDate =
+            fullProject.startDate || itemProject.startDate;
+          const projectEndDate = fullProject.endDate || itemProject.endDate;
+          const taskStartDate = task.startDate || projectStartDate;
+          const taskEndDate = task.endDate || projectEndDate;
 
           return (
             <div
-              key={task.id || `test-${index}`}
+              key={task.id || `task-${index}`}
               className="border rounded-lg p-4 bg-white"
             >
               <div className="flex justify-between items-start">
@@ -150,7 +117,7 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                   )}
                 </div>
                 <div className="bg-slate-100 px-2 py-1 rounded text-xs">
-                  {project.name || "Проект"}
+                  {projectName}
                 </div>
               </div>
 
@@ -160,8 +127,8 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
                   <div className="flex items-center gap-1">
                     <Icon name="Calendar" className="h-3 w-3" />
                     <span>
-                      Проект: {formatDate(project.startDate)} —{" "}
-                      {formatDate(project.endDate)}
+                      Проект: {formatDate(projectStartDate)} —{" "}
+                      {formatDate(projectEndDate)}
                     </span>
                   </div>
                   <span>{projectProgress}% выполнено</span>
@@ -176,29 +143,28 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 text-xs text-slate-500">
                 <div className="flex items-center gap-1">
                   <Icon name="Calendar" className="h-3 w-3" />
-                  <span>Начало задачи: {formatDate(task.startDate)}</span>
+                  <span>Начало задачи: {formatDate(taskStartDate)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Icon name="CalendarClock" className="h-3 w-3" />
-                  <span>Окончание задачи: {formatDate(task.endDate)}</span>
+                  <span>Окончание задачи: {formatDate(taskEndDate)}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Icon name="Clock" className="h-3 w-3" />
-                  <span>Время: {task.estimatedTime || 0} ч.</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Icon name="CircleDollarSign" className="h-3 w-3" />
-                  <span>Цена: {task.price || 0} ₽</span>
-                </div>
+                {task.estimatedTime !== undefined && (
+                  <div className="flex items-center gap-1">
+                    <Icon name="Clock" className="h-3 w-3" />
+                    <span>Время: {task.estimatedTime || 0} ч.</span>
+                  </div>
+                )}
+                {task.price !== undefined && (
+                  <div className="flex items-center gap-1">
+                    <Icon name="CircleDollarSign" className="h-3 w-3" />
+                    <span>Цена: {task.price || 0} ₽</span>
+                  </div>
+                )}
               </div>
 
               <Button
-                onClick={() =>
-                  onTakeTask(
-                    task.id || `test-${index}`,
-                    project.id || `test-project-${index}`,
-                  )
-                }
+                onClick={() => onTakeTask(task.id, projectId)}
                 className="w-full mt-3"
                 size="sm"
               >
@@ -208,8 +174,6 @@ const AvailableTasksSection: React.FC<AvailableTasksSectionProps> = ({
             </div>
           );
         })}
-
-        {displayTasks.length === 0 && <EmptyAvailableTasks />}
       </CardContent>
     </Card>
   );

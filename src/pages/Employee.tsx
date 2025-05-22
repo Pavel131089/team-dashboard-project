@@ -8,6 +8,7 @@ import EmployeeTasksCard from "@/components/employee/EmployeeTasksCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEmployeeData } from "@/hooks/useEmployeeData";
 import { initializeProjectsStorage } from "@/utils/storageUtils";
+import { toast } from "sonner";
 
 const Employee: React.FC = () => {
   // Важно! Все хуки должны быть на верхнем уровне компонента
@@ -28,38 +29,11 @@ const Employee: React.FC = () => {
     handleLogout,
   } = useEmployeeData(navigate);
 
-  // Безопасно получаем массивы - используем useMemo
-  const safeData = useMemo(() => {
-    // Нормализуем данные задач с более сложной обработкой
-    const normalizeTaskWithProject = (taskWithProject: any) => {
-      // Убедимся, что задача и проект всегда объекты
-      const task = taskWithProject?.task || taskWithProject || {};
-      const project = taskWithProject?.project || {};
-
-      // Обеспечиваем, что у задачи всегда есть ID
-      const safeTask = {
-        ...task,
-        id: task.id || `task-${Math.random().toString(36).substring(7)}`,
-      };
-
-      return { task: safeTask, project };
-    };
-
-    return {
-      assignedTasks: Array.isArray(assignedTasks)
-        ? assignedTasks.map(normalizeTaskWithProject)
-        : [],
-      availableTasks: Array.isArray(availableTasks)
-        ? availableTasks.map(normalizeTaskWithProject)
-        : [],
-      projects: Array.isArray(projects) ? projects : [],
-    };
-  }, [assignedTasks, availableTasks, projects]);
-
-  // Инициализируем хранилище проектов при первой загрузке - без условий
+  // Инициализируем хранилище при монтировании - если оно пусто, просто создаем пустой массив
   useEffect(() => {
     const initStorage = async () => {
       try {
+        // Инициализируем хранилище (пустой массив, если данных нет)
         await initializeProjectsStorage();
         setInitialized(true);
       } catch (error) {
@@ -84,6 +58,51 @@ const Employee: React.FC = () => {
       navigate("/login");
     }
   }, [shouldRedirect, navigate]);
+
+  // Обработчик для принятия задачи с последующим уведомлением
+  const handleTaskTake = useCallback(
+    (taskId: string, projectId: string) => {
+      const success = handleTakeTask(taskId, projectId);
+
+      // Показываем уведомление после выполнения операции, не во время рендеринга
+      if (success) {
+        toast.success("Задача принята в работу");
+      } else {
+        toast.error("Не удалось принять задачу");
+      }
+    },
+    [handleTakeTask],
+  );
+
+  // Обработчик для обновления прогресса с последующим уведомлением
+  const handleProgressUpdate = useCallback(
+    (taskId: string, projectId: string, progress: number) => {
+      const success = handleUpdateTaskProgress(taskId, projectId, progress);
+
+      // Показываем уведомление после выполнения операции, не во время рендеринга
+      if (success) {
+        toast.success(`Прогресс обновлен: ${progress}%`);
+      } else {
+        toast.error("Не удалось обновить прогресс");
+      }
+    },
+    [handleUpdateTaskProgress],
+  );
+
+  // Обработчик для добавления комментария с последующим уведомлением
+  const handleCommentAdd = useCallback(
+    (taskId: string, projectId: string, comment: string) => {
+      const success = handleAddTaskComment(taskId, projectId, comment);
+
+      // Показываем уведомление после выполнения операции, не во время рендеринга
+      if (success) {
+        toast.success("Комментарий добавлен");
+      } else {
+        toast.error("Не удалось добавить комментарий");
+      }
+    },
+    [handleAddTaskComment],
+  );
 
   // Если данные загружаются или хранилище еще не инициализировано, показываем заглушку
   if (isLoading || !initialized) {
@@ -121,17 +140,17 @@ const Employee: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Карточка с назначенными задачами */}
           <EmployeeTasksCard
-            tasks={safeData.assignedTasks}
-            onUpdateProgress={handleUpdateTaskProgress}
-            onAddComment={handleAddTaskComment}
-            projects={safeData.projects}
+            tasks={assignedTasks}
+            onUpdateProgress={handleProgressUpdate}
+            onAddComment={handleCommentAdd}
+            projects={projects}
           />
 
           {/* Секция с доступными задачами */}
           <AvailableTasksSection
-            tasks={safeData.availableTasks}
-            onTakeTask={handleTakeTask}
-            projects={safeData.projects}
+            tasks={availableTasks}
+            onTakeTask={handleTaskTake}
+            projects={projects}
           />
         </div>
       </EmployeeContent>

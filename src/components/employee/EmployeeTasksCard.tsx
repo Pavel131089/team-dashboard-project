@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Task, Project } from "@/types/project";
@@ -36,53 +36,8 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     {},
   );
 
-  // Используем useEffect для логирования данных при монтировании компонента
-  useEffect(() => {
-    console.log("EmployeeTasksCard получил tasks:", tasks);
-    console.log("EmployeeTasksCard получил projects:", projects);
-  }, [tasks, projects]);
-
-  // Создаем тестовые данные для проверки отображения
-  const testTasks: TaskWithProject[] = [
-    {
-      id: "test-task-1",
-      name: "Тестовая задача в работе",
-      description: "Описание тестовой задачи в работе",
-      price: 8000,
-      estimatedTime: 10,
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      assignedTo: "employee-1",
-      assignedToNames: ["Иван Иванов"],
-      progress: 30,
-      projectId: "test-project-1",
-      projectName: "Тестовый проект 1",
-    },
-    {
-      id: "test-task-2",
-      name: "Завершенная тестовая задача",
-      description: "Описание завершенной тестовой задачи",
-      price: 12000,
-      estimatedTime: 20,
-      startDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-      endDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      actualStartDate: new Date(
-        Date.now() - 19 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      actualEndDate: new Date(
-        Date.now() - 6 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      assignedTo: "employee-1",
-      assignedToNames: ["Иван Иванов"],
-      progress: 100,
-      projectId: "test-project-2",
-      projectName: "Тестовый проект 2",
-    },
-  ];
-
-  // Используем тестовые данные вместо реальных для отладки
-  // const safeTasks = Array.isArray(tasks) && tasks.length > 0 ? tasks : testTasks;
-  const safeTasks = testTasks; // Принудительно используем тестовые данные
+  // Убедимся, что tasks определен и является массивом
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
 
   // Разделяем задачи на активные и завершенные
   const activeTasks = safeTasks.filter((task) => (task.progress || 0) < 100);
@@ -120,6 +75,10 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
 
   // Группируем задачи по проектам для отображения дополнительной информации
   const projectGroups = useMemo(() => {
+    if (!Array.isArray(safeTasks) || safeTasks.length === 0) {
+      return [];
+    }
+
     const projectMap: Record<
       string,
       {
@@ -146,7 +105,6 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     return Object.values(projectMap);
   }, [safeTasks]);
 
-  // ... keep existing code
   // Компонент для отображения проекта с задачами
   const ProjectGroup = ({
     projectInfo,
@@ -254,7 +212,6 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
       </div>
     );
   };
-  // ... keep existing code
 
   // Компонент для отображения задачи
   const TaskItem = ({ task }: { task: TaskWithProject }) => {
@@ -277,8 +234,6 @@ const EmployeeTasksCard: React.FC<EmployeeTasksCardProps> = ({
     // Приоритет: сначала даты задачи, затем проекта
     const startDate = task.startDate || projectData.startDate;
     const endDate = task.endDate || projectData.endDate;
-
-    // ... keep existing code
 
     // Генерируем уникальный идентификатор для задачи, если его нет
     const taskId =

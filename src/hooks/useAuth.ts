@@ -61,10 +61,8 @@ export function useAuth(navigateTo?: string) {
     [navigate, navigateTo],
   );
 
-  /**
-   * Проверяет существующую сессию пользователя
-   * Если сессия найдена, перенаправляет на соответствующую страницу
-   */
+  // Проверяет существующую сессию пользователя
+  // Если сессия найдена, перенаправляет на соответствующую страницу
   const checkExistingSession = useCallback(() => {
     try {
       // Удостоверимся, что у нас есть дефолтные пользователи
@@ -75,11 +73,12 @@ export function useAuth(navigateTo?: string) {
 
       // Если сессия существует и пользователь аутентифицирован
       if (session && session.isAuthenticated) {
-        // Используем setTimeout для предотвращения вызова функции во время рендеринга
-        setTimeout(() => {
-          redirectToRolePage(session.role as UserRole);
-        }, 0);
-        return true;
+        // Вместо прямого вызова redirectToRolePage, возвращаем true
+        // и данные о роли для дальнейшей обработки в компоненте
+        return {
+          authenticated: true,
+          role: session.role as UserRole,
+        };
       }
 
       // Проверяем наличие сообщения об ошибке
@@ -88,14 +87,20 @@ export function useAuth(navigateTo?: string) {
         setError(errorMessage);
       }
 
-      return false;
+      return {
+        authenticated: false,
+        role: null,
+      };
     } catch (error) {
       console.error("Ошибка при проверке сессии:", error);
       // В случае ошибки лучше сбросить сессию
       sessionService.clearSession();
-      return false;
+      return {
+        authenticated: false,
+        role: null,
+      };
     }
-  }, [redirectToRolePage]);
+  }, []);
 
   /**
    * Обработчик отправки формы входа

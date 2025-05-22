@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import "./App.css";
 import Login from "./pages/Login";
@@ -12,29 +12,43 @@ import { sessionService } from "./services/auth/sessionService";
 
 function App() {
   const navigate = useNavigate();
+  // Добавляем состояние для отслеживания инициализации сессии
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [initialRoute, setInitialRoute] = useState<string | null>(null);
 
   // Проверяем состояние сессии при загрузке приложения
   useEffect(() => {
     const checkSession = () => {
       const session = sessionService.getCurrentSession();
       if (session && session.isAuthenticated) {
-        // Перенаправляем пользователя на нужную страницу в зависимости от роли
+        // Определяем начальный маршрут на основе роли
         if (session.role === "manager") {
-          // Проверяем, что пользователь не уже на странице dashboard
-          if (window.location.pathname !== "/dashboard") {
-            navigate("/dashboard");
-          }
+          setInitialRoute("/dashboard");
         } else if (session.role === "employee") {
-          // Проверяем, что пользователь не уже на странице employee
-          if (window.location.pathname !== "/employee") {
-            navigate("/employee");
-          }
+          setInitialRoute("/employee");
         }
       }
+      setSessionChecked(true);
     };
 
     checkSession();
-  }, [navigate]);
+  }, []);
+
+  // Выполняем навигацию только после проверки сессии
+  useEffect(() => {
+    if (sessionChecked && initialRoute) {
+      // Проверяем, что текущий путь не совпадает с целевым,
+      // чтобы избежать ненужных перенаправлений
+      if (window.location.pathname !== initialRoute) {
+        navigate(initialRoute);
+      }
+    }
+  }, [sessionChecked, initialRoute, navigate]);
+
+  // Если сессия еще не проверена, показываем пустой div или лоадер
+  if (!sessionChecked) {
+    return <div className="min-h-screen bg-gray-50"></div>;
+  }
 
   return (
     <>

@@ -17,6 +17,7 @@ const AuthGuard = ({ children, requiredRole }: AuthGuardProps) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [redirect, setRedirect] = useState<string | null>(null);
 
   // Проверяем сессию пользователя при монтировании компонента
   useEffect(() => {
@@ -35,21 +36,29 @@ const AuthGuard = ({ children, requiredRole }: AuthGuardProps) => {
     checkAuth();
   }, [location.pathname]);
 
+  // Отдельный useEffect для перенаправления
+  useEffect(() => {
+    if (isAuthenticated === false) {
+      setRedirect("/login");
+    } else if (
+      isAuthenticated &&
+      userRole &&
+      requiredRole &&
+      userRole !== requiredRole
+    ) {
+      const redirectPath = userRole === "manager" ? "/dashboard" : "/employee";
+      setRedirect(redirectPath);
+    }
+  }, [isAuthenticated, userRole, requiredRole]);
+
   // Если проверка еще не завершена, возвращаем null или лоадер
   if (isAuthenticated === null) {
     return null; // или компонент загрузки
   }
 
-  // Если пользователь не аутентифицирован, перенаправляем на страницу входа
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  // Если требуется определенная роль и она не совпадает с ролью пользователя
-  if (requiredRole && userRole !== requiredRole) {
-    // Перенаправляем на соответствующую страницу в зависимости от роли пользователя
-    const redirectPath = userRole === "manager" ? "/dashboard" : "/employee";
-    return <Navigate to={redirectPath} state={{ from: location }} replace />;
+  // Если нужно перенаправить пользователя
+  if (redirect) {
+    return <Navigate to={redirect} state={{ from: location }} replace />;
   }
 
   // Если все проверки пройдены, рендерим защищенный контент

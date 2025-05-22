@@ -1,4 +1,3 @@
-
 /**
  * Сервис для работы с сессиями пользователей
  * Отвечает за сохранение и получение информации о текущей сессии
@@ -39,7 +38,25 @@ export const sessionService = {
     try {
       const sessionJson = localStorage.getItem(SESSION_KEY);
       if (sessionJson) {
-        return JSON.parse(sessionJson);
+        const session = JSON.parse(sessionJson);
+
+        // ИСПРАВЛЕНИЕ: Проверяем, что роль установлена правильно для известных пользователей
+        if (session && session.id) {
+          if (session.id === "default-manager" && session.role !== "manager") {
+            console.warn("Исправление некорректной роли для менеджера");
+            session.role = "manager";
+            this.saveSession(session);
+          } else if (
+            session.id === "default-employee" &&
+            session.role !== "employee"
+          ) {
+            console.warn("Исправление некорректной роли для сотрудника");
+            session.role = "employee";
+            this.saveSession(session);
+          }
+        }
+
+        return session;
       }
       return null;
     } catch (error) {

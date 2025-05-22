@@ -36,6 +36,18 @@ const Dashboard: React.FC = () => {
       }
 
       const userData = JSON.parse(userJson);
+
+      // ИСПРАВЛЕНИЕ: Проверяем и корректируем роль
+      if (
+        userData &&
+        userData.id === "default-manager" &&
+        userData.role !== "manager"
+      ) {
+        console.warn("Исправление роли для руководителя");
+        userData.role = "manager";
+        localStorage.setItem("user", JSON.stringify(userData));
+      }
+
       if (!userData || !userData.isAuthenticated) {
         navigate("/login");
         return;
@@ -43,8 +55,18 @@ const Dashboard: React.FC = () => {
 
       // Проверяем роль пользователя
       if (userData.role !== "manager") {
-        navigate("/employee");
-        return;
+        console.warn(
+          `Обнаружена неверная роль: ${userData.role}, ожидается: manager`,
+        );
+        // Пробуем скорректировать сессию
+        if (userData.id === "default-manager") {
+          userData.role = "manager";
+          localStorage.setItem("user", JSON.stringify(userData));
+          console.log("Роль пользователя скорректирована на manager");
+        } else {
+          navigate("/employee");
+          return;
+        }
       }
 
       setUser(userData);

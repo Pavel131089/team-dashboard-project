@@ -76,14 +76,20 @@ export const authService = {
   isDefaultUser(credentials: LoginFormData): boolean {
     const { username, password, role } = credentials;
 
-    return (
-      (username === "manager" &&
-        password === "manager123" &&
-        role === "manager") ||
-      (username === "employee" &&
-        password === "employee123" &&
-        role === "employee")
-    );
+    // ИСПРАВЛЕНИЕ: Обеспечиваем, что роль будет корректно установлена для стандартных пользователей
+    if (username === "manager" && password === "manager123") {
+      // Всегда устанавливаем роль manager для этого пользователя
+      credentials.role = "manager";
+      return true;
+    }
+
+    if (username === "employee" && password === "employee123") {
+      // Всегда устанавливаем роль employee для этого пользователя
+      credentials.role = "employee";
+      return true;
+    }
+
+    return false;
   },
 
   /**

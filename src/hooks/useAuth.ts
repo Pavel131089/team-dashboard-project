@@ -122,6 +122,13 @@ export function useAuth(navigateTo?: string) {
         // Создаем копию данных формы для гарантии отсутствия мутации
         const credentials = { ...formData };
 
+        // ИСПРАВЛЕНИЕ: принудительно устанавливаем корректную роль для известных пользователей
+        if (credentials.username === "manager") {
+          credentials.role = "manager";
+        } else if (credentials.username === "employee") {
+          credentials.role = "employee";
+        }
+
         // Попытка авторизации
         const result = authService.login(credentials);
 
